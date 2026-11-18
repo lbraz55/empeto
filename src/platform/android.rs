@@ -22,7 +22,17 @@ impl AndroidPlatform {
         let vm = unsafe { JavaVM::from_raw(self.app.vm_as_ptr() as *mut jni::sys::JavaVM) }.ok()?;
         let mut env = vm.attach_current_thread().ok()?;
         let activity = unsafe { JObject::from_raw(self.app.activity_as_ptr() as jni::sys::jobject) };
-        let r = f(&mut env, &activity);
+        // Quadro local: libera as referências criadas a cada chamada (a thread nativa nunca
+        // volta ao Java, então sem isso a tabela de referências locais cresceria sem limite).
+        let mut out = None;
+        let r = env.with_local_frame(16, |env| -> jni::errors::Result<()> {
+            out = Some(f(env, &activity));
+            Ok(())
+        });
+        if let Err(e) = r {
+            log::error!("JNI (quadro local): {e}");
+        }
+        let r = out.unwrap_or(Err(jni::errors::Error::JniCall(jni::errors::JniError::Unknown)));
         if env.exception_check().unwrap_or(false) {
             let _ = env.exception_describe();
             let _ = env.exception_clear();

@@ -33,17 +33,32 @@ fn android_main(app: slint::android::AndroidApp) {
     android_logger::init_once(
         android_logger::Config::default().with_max_level(log::LevelFilter::Info).with_tag("workout"),
     );
-    std::panic::set_hook(Box::new(|info| log::error!("panic: {info}")));
+    let files = app.internal_data_path().unwrap_or_else(|| std::path::PathBuf::from("/data/local/tmp"));
+    let crash_file = files.join("crash.txt");
+    {
+        let crash_file = crash_file.clone();
+        std::panic::set_hook(Box::new(move |info| {
+            let bt = std::backtrace::Backtrace::force_capture();
+            let msg = format!("panic: {info}\n\n{bt}");
+            log::error!("{msg}");
+            let _ = std::fs::write(&crash_file, msg);
+        }));
+    }
+    let fail = |msg: String| {
+        log::error!("{msg}");
+        let _ = std::fs::write(&crash_file, msg);
+    };
+    log::info!("android_main: iniciando (dados em {})", files.display());
     let platform = platform::android::AndroidPlatform::new(app.clone());
     if let Err(e) = slint::android::init_with_event_listener(app, |event| match event {
         PollEvent::Main(MainEvent::Pause) => app::lifecycle(false),
         PollEvent::Main(MainEvent::Resume { .. }) => app::lifecycle(true),
         _ => {}
     }) {
-        log::error!("falha ao iniciar Slint: {e}");
+        fail(format!("falha ao iniciar Slint: {e}"));
         return;
     }
     if let Err(e) = app::run(Box::new(platform)) {
-        log::error!("erro na interface: {e}");
+        fail(format!("erro na interface: {e}"));
     }
 }

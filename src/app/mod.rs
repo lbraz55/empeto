@@ -2446,6 +2446,13 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         }
     });
 
+    // A interface abriu: remove o marcador de inicialização usado pela tela de diagnóstico.
+    let marker = data_dir.join("startup.marker");
+    slint::Timer::single_shot(std::time::Duration::from_millis(1500), move || {
+        let _ = std::fs::remove_file(&marker);
+        log::info!("interface pronta");
+    });
+
     let r = ui.run();
     if let Ok(mut c) = ctrl.try_borrow_mut() {
         c.on_pause();
