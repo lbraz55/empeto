@@ -196,6 +196,26 @@ impl Db {
         Ok(out)
     }
 
+    /// Alternativas cadastradas explicitamente para o exercício.
+    pub fn list_alternatives(&self, exercise_id: Id) -> AppResult<Vec<(Exercise, String)>> {
+        let mut st = self.conn.prepare(&format!(
+            "SELECT {EX_COLS}, a.reason FROM exercise_alternative a JOIN exercise e ON e.id = a.alternative_id
+             WHERE a.exercise_id = ?1 ORDER BY e.name COLLATE NOCASE"
+        ))?;
+        let v = st
+            .query_map(params![exercise_id], |r| Ok((row_exercise(r, 0)?, r.get::<_, String>(7)?)))?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(v)
+    }
+
+    pub fn remove_alternative(&self, exercise_id: Id, alternative_id: Id) -> AppResult<()> {
+        self.conn.execute(
+            "DELETE FROM exercise_alternative WHERE exercise_id = ?1 AND alternative_id = ?2",
+            params![exercise_id, alternative_id],
+        )?;
+        Ok(())
+    }
+
     pub fn add_alternative(&self, exercise_id: Id, alternative_id: Id, reason: &str) -> AppResult<()> {
         if exercise_id == alternative_id {
             return validation("Um exercício não pode ser alternativa de si mesmo.");
@@ -591,6 +611,23 @@ mod tests {
         let r = db.list_exercises(&f).unwrap();
         assert_eq!(r.len(), 1);
         assert_eq!(r[0].name, "Supino na máquina");
+    }
+
+    #[test]
+    fn manual_alternatives() {
+        let db = Db::open_in_memory().unwrap();
+        let a = db.find_exercise_by_name("Prancha").unwrap().unwrap().id;
+        let b = db.find_exercise_by_name("Esteira").unwrap().unwrap().id;
+        assert!(db.add_alternative(a, a, "").is_err());
+        let before = db.list_alternatives(a).unwrap().len(); // sementes do mesmo grupo/padrão
+        db.add_alternative(a, b, "Cadastrada pelo usuário").unwrap();
+        db.add_alternative(a, b, "dup").unwrap(); // ignorado
+        let l = db.list_alternatives(a).unwrap();
+        assert_eq!(l.len(), before + 1);
+        assert!(l.iter().any(|(e, r)| e.id == b && r == "Cadastrada pelo usuário"));
+        assert!(db.suggested_alternatives(a).unwrap().iter().any(|(e, _)| e.id == b));
+        db.remove_alternative(a, b).unwrap();
+        assert_eq!(db.list_alternatives(a).unwrap().len(), before);
     }
 
     #[test]

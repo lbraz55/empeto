@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 pub const MIGRATIONS: &[&str] = &[
     include_str!("../../migrations/0001_init.sql"),
     include_str!("../../migrations/0002_seed_exercises.sql"),
+    include_str!("../../migrations/0003_rest_taken.sql"),
 ];
 
 pub const SCHEMA_VERSION: i64 = MIGRATIONS.len() as i64;

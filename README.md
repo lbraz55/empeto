@@ -98,6 +98,7 @@ docs/               arquitetura, decisões, formatos de arquivo, manual do usuá
 
 ## Documentação
 
+- [Estado atual e propostas de UX/UI](docs/ESTADO_ATUAL_E_UX.md)
 - [Manual do usuário](docs/MANUAL_USUARIO.md)
 - [Arquitetura e decisões técnicas](docs/ARQUITETURA.md)
 - [Decisões de produto adotadas](docs/DECISOES.md)

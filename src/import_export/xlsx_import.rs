@@ -553,6 +553,54 @@ pub fn build_preview(db: &Db, sheet: &SheetData, mapping: &Mapping, defaults: Im
     p
 }
 
+/// Junta as prévias de várias abas em uma só. Abas com erro (ex.: sem coluna de exercício)
+/// são ignoradas com aviso; fichas e dias de mesmo nome são agrupados.
+pub fn merge_previews(parts: Vec<ImportPreview>) -> ImportPreview {
+    let mut out = ImportPreview { sheet_name: "todas as abas".into(), ..Default::default() };
+    for p in parts {
+        if !p.can_import() {
+            let why = p.errors.first().cloned().unwrap_or_else(|| "sem linhas válidas".into());
+            push_limited(&mut out.warnings, format!("Aba \"{}\" ignorada: {why}", p.sheet_name));
+            continue;
+        }
+        out.data_rows += p.data_rows;
+        out.valid_rows += p.valid_rows;
+        for w in p.warnings {
+            push_limited(&mut out.warnings, format!("[{}] {w}", p.sheet_name));
+        }
+        for c in p.unrecognized_columns {
+            if !out.unrecognized_columns.contains(&c) {
+                out.unrecognized_columns.push(c);
+            }
+        }
+        for plan in p.plans {
+            match out.plans.iter_mut().find(|x| normalize(&x.name) == normalize(&plan.name)) {
+                None => out.plans.push(plan),
+                Some(existing) => {
+                    for day in plan.days {
+                        match existing.days.iter_mut().find(|d| normalize(&d.name) == normalize(&day.name)) {
+                            None => existing.days.push(day),
+                            Some(d) => {
+                                d.weekdays |= day.weekdays;
+                                d.exercises.extend(day.exercises);
+                            }
+                        }
+                    }
+                    existing.schedule = if existing.days.iter().all(|d| d.weekdays != 0) {
+                        ScheduleType::Weekday
+                    } else {
+                        ScheduleType::Sequence
+                    };
+                }
+            }
+        }
+    }
+    if out.valid_rows == 0 {
+        out.errors.push("Nenhuma aba tem linhas válidas para importar.".into());
+    }
+    out
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ConflictPolicy {
     /// Cria uma nova ficha com nome diferente (padrão seguro).
@@ -720,6 +768,27 @@ mod tests {
         assert_eq!(p.unrecognized_columns, vec!["Cor".to_string()]);
         assert!(p.warnings.iter().any(|w| w.contains("Linha 7")));
         assert_eq!(p.valid_rows, 3);
+    }
+
+    #[test]
+    fn merge_sheets() {
+        let db = Db::open_in_memory().unwrap();
+        let mut a = sheet(&[&["Ficha", "Dia", "Exercício"], &["F", "A", "Prancha"]]);
+        a.name = "Aba1".into();
+        let mut b = sheet(&[&["Ficha", "Dia", "Exercício"], &["F", "A", "Esteira"], &["F", "B", "Prancha"]]);
+        b.name = "Aba2".into();
+        let mut c = sheet(&[&["Nada"], &["x"]]);
+        c.name = "Lixo".into();
+        let parts = [a, b, c]
+            .iter()
+            .map(|s| build_preview(&db, s, &detect_mapping(s), ImportDefaults::default()))
+            .collect();
+        let m = merge_previews(parts);
+        assert!(m.can_import(), "{:?}", m.errors);
+        assert_eq!(m.plans.len(), 1);
+        assert_eq!(m.plans[0].days.len(), 2);
+        assert_eq!(m.plans[0].days[0].exercises.len(), 2);
+        assert!(m.warnings.iter().any(|w| w.contains("Lixo")));
     }
 
     #[test]

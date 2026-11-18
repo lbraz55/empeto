@@ -55,5 +55,8 @@ pub trait Platform {
     fn play_tone(&self, tone: i32, duration_ms: i32);
     fn vibrate(&self, ms: i64);
     fn keep_screen_on(&self, on: bool);
+    /// Abre a agenda do sistema com um evento preenchido (Intent ACTION_INSERT; sem permissão).
+    /// Devolve false se não houver app de agenda.
+    fn add_calendar_event(&self, title: &str, description: &str, begin_ms: i64, end_ms: i64, all_day: bool) -> bool;
     fn move_to_back(&self);
 }

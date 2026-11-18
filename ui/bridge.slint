@@ -35,6 +35,8 @@ export global Bridge {
     // 0 Home, 1 Treinos, 2 Calendário, 3 Histórico, 10 Editor de ficha, 11 Biblioteca,
     // 12 Sessão, 13 Cronômetro, 14 Detalhe da sessão, 15 Evolução, 20 Configurações, 21 Prévia de importação
     in-out property <int> page: 0;
+    // Direção da última navegação (1 avançar, -1 voltar, 0 neutra) — usada nas transições.
+    in-out property <int> nav-dir: 1;
     in-out property <string> toast;
     in-out property <string> dialog;
     in-out property <bool> busy;
@@ -122,6 +124,10 @@ export global Bridge {
     in-out property <bool> exf-editing;
     in-out property <bool> exf-archived;
     callback exf-save(string, string, string, string, string);
+    // Alternativas cadastradas manualmente (RF-09)
+    in-out property <[ExRow]> exf-alternatives;
+    callback exf-add-alt();
+    callback exf-remove-alt(int);
 
     // ---------------- Diálogos genéricos ----------------
     in-out property <string> confirm-title;
@@ -141,6 +147,7 @@ export global Bridge {
     in-out property <string> text-hint;
     in-out property <bool> text-multiline;
     in-out property <bool> text-numeric;
+    in-out property <bool> text-password;
     callback text-saved(string);
 
     in-out property <string> info-title;
@@ -218,6 +225,7 @@ export global Bridge {
     callback cal-set-week-view(bool);
     callback cal-select(string);
     callback cal-entry(int);
+    callback cal-add-to-agenda(int);
 
     // ---------------- Histórico ----------------
     in-out property <int> hist-tab;
@@ -290,11 +298,13 @@ export global Bridge {
     callback data-backup();
     callback data-restore();
     callback data-ics();
+    callback show-diagnostics();
 
     // ---------------- Importação ----------------
     in-out property <string> imp-file;
     in-out property <string> imp-sheet;
     in-out property <bool> imp-multi-sheet;
+    in-out property <bool> imp-all-sheets;
     in-out property <[MapCol]> imp-columns;
     in-out property <[PlanPreview]> imp-plans;
     in-out property <[string]> imp-warnings;

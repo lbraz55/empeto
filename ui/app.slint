@@ -1,6 +1,6 @@
 import { Theme, Icons } from "theme.slint";
 import { Bridge } from "bridge.slint";
-import { Icon, IconBtn } from "components/widgets.slint";
+import { Icon, IconBtn, PageTransition } from "components/widgets.slint";
 import { HomeScreen, PlansScreen, CalendarScreen, HistoryScreen } from "screens/main.slint";
 import { PlanEditorScreen, LibraryScreen, SessionScreen, TimerScreen } from "screens/training.slint";
 import { SessionDetailScreen, EvolutionScreen, SettingsScreen, ImportScreen } from "screens/more.slint";
@@ -170,18 +170,18 @@ export component AppWindow inherits Window {
             Rectangle {
                 vertical-stretch: 1;
                 clip: true;
-                if Bridge.page == 0: HomeScreen { width: parent.width; height: parent.height; }
-                if Bridge.page == 1: PlansScreen { width: parent.width; height: parent.height; }
-                if Bridge.page == 2: CalendarScreen { width: parent.width; height: parent.height; }
-                if Bridge.page == 3: HistoryScreen { width: parent.width; height: parent.height; }
-                if Bridge.page == 10: PlanEditorScreen { width: parent.width; height: parent.height; }
-                if Bridge.page == 11: LibraryScreen { width: parent.width; height: parent.height; }
-                if Bridge.page == 12: SessionScreen { width: parent.width; height: parent.height; }
-                if Bridge.page == 13: TimerScreen { width: parent.width; height: parent.height; }
-                if Bridge.page == 14: SessionDetailScreen { width: parent.width; height: parent.height; }
-                if Bridge.page == 15: EvolutionScreen { width: parent.width; height: parent.height; }
-                if Bridge.page == 20: SettingsScreen { width: parent.width; height: parent.height; }
-                if Bridge.page == 21: ImportScreen { width: parent.width; height: parent.height; }
+                if Bridge.page == 0: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; HomeScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 1: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; PlansScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 2: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; CalendarScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 3: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; HistoryScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 10: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; PlanEditorScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 11: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; LibraryScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 12: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; SessionScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 13: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; TimerScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 14: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; SessionDetailScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 15: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; EvolutionScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 20: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; SettingsScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 21: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; ImportScreen { width: parent.width; height: parent.height; } }
             }
 
             // Barra inferior: Calendário, Treinos, Home, Histórico (2.3).
@@ -232,11 +232,23 @@ export component AppWindow inherits Window {
         if Bridge.dialog == "exercise": ExerciseDialog { width: parent.width; height: parent.height; }
         if Bridge.dialog == "substitute": SubstituteDialog { width: parent.width; height: parent.height; }
 
-        if Bridge.toast != "": Rectangle {
+        if Bridge.toast != "": toast-box := Rectangle {
+            property <float> t: 0;
+            // Aciona a animação após o primeiro quadro (alterar no init não anima).
+    Timer {
+        interval: 1ms;
+        running: true;
+        triggered => {
+            self.running = false;
+            toast-box.t = 1;
+        }
+    }
+            animate t { duration: 200ms; easing: ease-out; }
+            opacity: self.t;
             x: 16px;
             width: parent.width - 32px;
             height: toast-text.preferred-height + 24px;
-            y: parent.height - self.height - 84px - root.safe-area-insets.bottom - root.kb;
+            y: parent.height - self.height - 84px - root.safe-area-insets.bottom - root.kb + (1 - self.t) * 16px;
             border-radius: 12px;
             background: Theme.text;
             TouchArea {

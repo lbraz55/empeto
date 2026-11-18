@@ -490,7 +490,18 @@ export component EmptyState inherits VerticalLayout {
 export component DialogFrame inherits Rectangle {
     in property <string> title;
     callback dismiss();
-    background: #000000c0;
+    property <float> t: 0;
+    // Aciona a animação após o primeiro quadro (alterar no init não anima).
+    Timer {
+        interval: 1ms;
+        running: true;
+        triggered => {
+            self.running = false;
+            root.t = 1;
+        }
+    }
+    animate t { duration: 180ms; easing: ease-out; }
+    background: Colors.rgba(0, 0, 0, 0.75 * self.t);
     TouchArea {
         clicked => { root.dismiss(); }
     }
@@ -498,7 +509,8 @@ export component DialogFrame inherits Rectangle {
         x: 12px;
         width: parent.width - 24px;
         height: min(parent.height - 48px, content.preferred-height);
-        y: max(24px, (parent.height - self.height) / 2);
+        y: max(24px, (parent.height - self.height) / 2) + (1 - root.t) * 24px;
+        opacity: root.t;
         background: Theme.surface;
         border-radius: 18px;
         border-width: 1px;
@@ -526,5 +538,31 @@ export component DialogFrame inherits Rectangle {
             }
             @children
         }
+    }
+}
+
+// Transição de entrada de tela: desliza alguns pixels na direção da navegação e esmaece.
+// dir: 1 = avançando (entra pela direita), -1 = voltando (entra pela esquerda), 0 = só esmaecer.
+export component PageTransition inherits Rectangle {
+    in property <int> dir: 1;
+    property <float> t: 0;
+    // Aciona a animação após o primeiro quadro (alterar no init não anima).
+    Timer {
+        interval: 1ms;
+        running: true;
+        triggered => {
+            self.running = false;
+            root.t = 1;
+        }
+    }
+    animate t { duration: 220ms; easing: ease-out; }
+    clip: true;
+    content := Rectangle {
+        x: (1 - root.t) * root.dir * 36px;
+        y: 0;
+        width: root.width;
+        height: root.height;
+        opacity: 0.25 + 0.75 * root.t;
+        @children
     }
 }

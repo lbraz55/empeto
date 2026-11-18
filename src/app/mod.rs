@@ -81,6 +81,8 @@ enum TextCtx {
     SessionNotes,
     ExerciseNotes(Id),
     TimerCustom,
+    BackupPassword,
+    RestorePassword,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -107,6 +109,7 @@ struct PeCtx {
 struct ImportState {
     file_name: String,
     workbook: Workbook,
+    /// Índice da aba; `usize::MAX` = todas as abas.
     sheet: usize,
     mapping: Mapping,
     preview: ImportPreview,
@@ -124,6 +127,10 @@ pub struct Controller {
     day_ctx: Option<(Option<Id>, u8)>,
     exf_id: Option<Id>,
     lib_pick: bool,
+    /// Escolhendo na biblioteca uma alternativa para este exercício.
+    alt_for: Option<Id>,
+    /// Arquivo de backup aguardando senha para validar.
+    restore_path: Option<std::path::PathBuf>,
     confirm: Option<ConfirmAction>,
     choice: Option<ChoiceCtx>,
     text: Option<TextCtx>,
@@ -231,6 +238,7 @@ impl Controller {
             b.set_text_value(ss(value));
             b.set_text_multiline(multiline);
             b.set_text_numeric(numeric);
+            b.set_text_password(false);
             b.set_dialog(ss("text"));
         });
     }
@@ -252,6 +260,23 @@ impl Controller {
     // ------------------------------------------------------------------
 
     fn navigate(&mut self, page: i32) {
+        // Ordem visual da barra inferior: Calendário, Treinos, Home, Histórico.
+        let tab_pos = |p: i32| -> i32 { match p {
+            P_CAL => 0,
+            P_PLANS => 1,
+            P_HOME => 2,
+            P_HIST => 3,
+            _ => 10,
+        } };
+        let cur = self.page();
+        let dir = if page < 10 && cur < 10 {
+            (tab_pos(page) - tab_pos(cur) as i32).signum()
+        } else if page < 10 {
+            -1
+        } else {
+            1
+        };
+        self.with_bridge(|b| b.set_nav_dir(dir));
         if page < 10 {
             self.stack.clear();
         } else if self.stack.last() == Some(&page) {
@@ -306,6 +331,18 @@ impl Controller {
         }
         if page == P_EDITOR {
             self.autosave_plan_header();
+        }
+        self.with_bridge(|b| b.set_nav_dir(-1));
+        if page == P_LIBRARY && self.alt_for.is_some() {
+            let base = self.alt_for.take();
+            self.lib_pick = false;
+            self.with_bridge(|b| b.set_lib_mode(ss("browse")));
+            let r = self.refresh_library();
+            self.report(r);
+            if let Some(id) = base {
+                self.open_exercise_form(Some(id));
+            }
+            return;
         }
         if page == P_LIBRARY && self.lib_pick {
             self.lib_pick = false;
@@ -818,6 +855,26 @@ impl Controller {
     }
 
     fn lib_item(&mut self, id: Id) {
+        if let Some(base) = self.alt_for {
+            self.alt_for = None;
+            self.lib_pick = false;
+            self.with_bridge(|b| b.set_lib_mode(ss("browse")));
+            let r = if id == base {
+                validation("Escolha um exercício diferente.")
+            } else {
+                self.db
+                    .add_alternative(base, id, "Cadastrada pelo usuário")
+                    .and_then(|_| self.db.add_alternative(id, base, "Cadastrada pelo usuário"))
+            };
+            match r {
+                Ok(()) => self.toast("Alternativa cadastrada (vale nos dois sentidos)."),
+                Err(e) => self.toast(e.to_string()),
+            }
+            let r = self.refresh_library();
+            self.report(r);
+            self.open_exercise_form(Some(base));
+            return;
+        }
         if self.lib_pick {
             let Ok(ex) = self.db.get_exercise(id) else { return };
             if let Some(pe) = self.pe.as_mut() {
@@ -851,6 +908,15 @@ impl Controller {
             b.set_exf_archived(e.archived);
             b.set_dialog(ss("exercise"));
         });
+        self.refresh_exf_alternatives();
+    }
+
+    fn refresh_exf_alternatives(&mut self) {
+        let rows: Vec<ExRow> = match self.exf_id {
+            Some(id) => self.db.list_alternatives(id).unwrap_or_default().iter().map(|(e, r)| ex_row(e, r)).collect(),
+            None => vec![],
+        };
+        self.with_bridge(|b| b.set_exf_alternatives(model(rows)));
     }
 
     fn exf_save(&mut self, input: ExerciseInput) {
@@ -1042,14 +1108,22 @@ impl Controller {
         })();
         match r {
             Ok((context, rest)) => {
+                // O descanso anterior termina quando a série seguinte é registrada.
+                self.finalize_rest();
                 let r = self.refresh_session();
                 self.report(r);
                 if self.prefs.auto_start_rest {
                     let secs = if rest > 0 { rest } else { self.prefs.timer_default_seconds };
                     self.start_rest(secs, &context);
+                    self.timer.linked_set = Some(set_id);
+                    self.save_timer();
                     self.toast(format!("Série registrada. Descanso de {} iniciado.", format_duration_s(secs)));
                 } else {
+                    if !self.timer.is_running() {
+                        self.timer.status = TimerStatus::Idle;
+                    }
                     self.timer.context = context;
+                    self.timer.linked_set = Some(set_id);
                     self.timer.set_duration(if rest > 0 { rest * 1000 } else { self.timer.duration_ms });
                     self.save_timer();
                     self.refresh_timer();
@@ -1174,6 +1248,21 @@ impl Controller {
         self.timer.pre_alert_ms = if self.prefs.pre_alert { self.prefs.pre_alert_seconds * 1000 } else { 0 };
     }
 
+    /// Grava o descanso cumprido na série ligada ao cronômetro (se houver) e desfaz a ligação.
+    fn finalize_rest(&mut self) {
+        let Some(set) = self.timer.linked_set else { return };
+        if self.timer.phase != TimerPhase::Rest || self.timer.status == TimerStatus::Idle {
+            return;
+        }
+        self.timer.linked_set = None;
+        let secs = self.timer.elapsed(Clock::now()) / 1000;
+        if secs >= 1 {
+            if let Err(e) = self.db.set_rest_taken(set, secs) {
+                log::warn!("descanso não gravado: {e}");
+            }
+        }
+    }
+
     fn start_rest(&mut self, secs: i64, context: &str) {
         self.timer.phase = TimerPhase::Rest;
         self.timer.context = context.to_string();
@@ -1224,6 +1313,7 @@ impl Controller {
                     }
                 }
                 TimerEvent::Finished(TimerPhase::Rest) => {
+                    self.finalize_rest();
                     if self.prefs.sound_enabled {
                         self.platform.play_tone(self.prefs.tone_rest_end, 700);
                     }
@@ -1468,6 +1558,41 @@ impl Controller {
         self.report(r);
     }
 
+    /// Abre o app de agenda do aparelho com o evento preenchido (intent; sem permissão de calendário).
+    fn cal_add_to_agenda(&mut self, i: usize) {
+        let entries = self.with_bridge(|b| b.get_cal_entries());
+        let Some(e) = entries.row_data(i) else { return };
+        let (begin, end, all_day) = if e.kind == "done" {
+            match self.db.get_session(e.session_id as Id) {
+                Ok(s) => (s.started_at, s.ended_at.unwrap_or(s.started_at + 3_600_000), false),
+                Err(_) => return,
+            }
+        } else {
+            let (a, b) = cal::day_bounds_ms(self.cal_selected);
+            (a, b, true)
+        };
+        let title = if e.kind == "done" { format!("Treino realizado: {}", e.title) } else { format!("Treino: {}", e.title) };
+        if !self.platform.add_calendar_event(&title, &e.subtitle, begin, end, all_day) {
+            self.toast("Nenhum app de agenda encontrado no aparelho.");
+        }
+    }
+
+    fn show_diagnostics(&mut self) {
+        let dir = self.platform.data_dir();
+        let trace = std::fs::read_to_string(dir.join("startup.log")).unwrap_or_else(|_| "(sem registro)".into());
+        let integrity = if self.db.integrity_ok().unwrap_or(false) { "ok" } else { "FALHOU" };
+        let text = format!(
+            "Versão do app: {}\nSchema do banco: {}\nIntegridade do banco: {}\nNotificações permitidas: {}\nCronômetro: {:?}\n\nEtapas da última abertura:\n{}",
+            self.platform.app_version(),
+            schema_version(&self.db.conn).unwrap_or(0),
+            integrity,
+            if self.platform.notifications_allowed() { "sim" } else { "não" },
+            self.timer.status,
+            trace.lines().rev().take(25).collect::<Vec<_>>().into_iter().rev().collect::<Vec<_>>().join("\n")
+        );
+        self.show_info(InfoCtx::Plain, "Diagnóstico", &text, "OK", "");
+    }
+
     fn cal_entry(&mut self, i: usize) {
         let entries = self.with_bridge(|b| b.get_cal_entries());
         let Some(e) = entries.row_data(i) else { return };
@@ -1558,10 +1683,13 @@ impl Controller {
                             (Some(l), Some(r)) => format!("{} × {}", format_load_unit(l, unit), r),
                             _ => "não registrada".to_string(),
                         };
-                        let rest = interval
-                            .get(&s.id)
-                            .map(|secs| format!(" · intervalo {}", format_duration_s(*secs)))
-                            .unwrap_or_default();
+                        let rest = match s.rest_taken_s {
+                            Some(secs) => format!(" · descanso {}", format_duration_s(secs)),
+                            None => interval
+                                .get(&s.id)
+                                .map(|secs| format!(" · intervalo {}", format_duration_s(*secs)))
+                                .unwrap_or_default(),
+                        };
                         ss(format!(
                             "Série {}: {}  (plan. {}{}){}",
                             s.set_number,
@@ -1882,8 +2010,12 @@ impl Controller {
             }
             ChoiceCtx::ImportSheet => {
                 if let Some(st) = self.import.as_mut() {
-                    st.sheet = (i as usize).min(st.workbook.sheets.len() - 1);
-                    st.mapping = detect_mapping(&st.workbook.sheets[st.sheet]);
+                    if i as usize >= st.workbook.sheets.len() {
+                        st.sheet = usize::MAX; // todas as abas
+                    } else {
+                        st.sheet = i as usize;
+                        st.mapping = detect_mapping(&st.workbook.sheets[st.sheet]);
+                    }
                 }
                 self.rebuild_import_preview();
             }
@@ -1946,10 +2078,22 @@ impl Controller {
     }
 
     fn data_backup(&mut self) {
+        self.ask_text(
+            TextCtx::BackupPassword,
+            "Senha do backup (opcional)",
+            "Com senha, o banco dentro do arquivo é criptografado (AES-256) e só pode ser restaurado com ela. Deixe em branco para não usar senha. Não há como recuperar uma senha esquecida.",
+            "",
+            false,
+            false,
+        );
+        self.with_bridge(|b| b.set_text_password(true));
+    }
+
+    fn do_backup(&mut self, password: Option<&str>) {
         let path = self.tmp_file(&format!("backup-{}.zip", now_ms()));
         let work = self.platform.tmp_dir();
         let version = self.platform.app_version();
-        match create_backup(&self.db, &path, &work, &version) {
+        match create_backup(&self.db, &path, &work, &version, password) {
             Ok(_) => {
                 let name = format!("workout-backup-{}.zip", Self::today_tag());
                 self.save_via_picker(path, &name, "application/zip", "Backup criado");
@@ -2004,8 +2148,40 @@ impl Controller {
                 }
             }
             (FileOp::Restore, FileResult::Opened { path, name: _ }) => {
+                match crate::import_export::backup::read_manifest(&path) {
+                    Ok(m) if m.encrypted => {
+                        self.restore_path = Some(path);
+                        self.ask_text(
+                            TextCtx::RestorePassword,
+                            "Backup protegido por senha",
+                            &format!("Backup de {}. Informe a senha usada ao criá-lo.", fmt_date_time(m.created_at)),
+                            "",
+                            false,
+                            false,
+                        );
+                        self.with_bridge(|b| b.set_text_password(true));
+                    }
+                    _ => self.validate_restore(path, None),
+                }
+            }
+            (op, res) => log::warn!("resultado de arquivo inesperado: {op:?} {res:?}"),
+        }
+    }
+
+    fn validate_restore(&mut self, path: std::path::PathBuf, password: Option<&str>) {
+        {
+            {
                 let work = self.platform.tmp_dir();
-                let r = validate_backup(&path, &work);
+                let r = validate_backup(&path, &work, password);
+                let wrong_password = matches!(&r, Err(AppError::Validation(m)) if m.contains("incorreta"));
+                if wrong_password {
+                    // Mantém o arquivo para nova tentativa.
+                    self.restore_path = Some(path);
+                    self.toast("Senha do backup incorreta. Tente novamente.");
+                    self.ask_text(TextCtx::RestorePassword, "Backup protegido por senha", "Senha incorreta. Informe novamente.", "", false, false);
+                    self.with_bridge(|b| b.set_text_password(true));
+                    return;
+                }
                 let _ = std::fs::remove_file(&path);
                 match r {
                     Ok(v) => {
@@ -2024,7 +2200,6 @@ impl Controller {
                     Err(e) => self.show_info(InfoCtx::Plain, "Backup inválido", &e.to_string(), "OK", ""),
                 }
             }
-            (op, res) => log::warn!("resultado de arquivo inesperado: {op:?} {res:?}"),
         }
     }
 
@@ -2036,8 +2211,18 @@ impl Controller {
             unit: self.prefs.unit,
         };
         if let Some(st) = self.import.as_mut() {
-            let sheet = &st.workbook.sheets[st.sheet];
-            st.preview = build_preview(&self.db, sheet, &st.mapping, defaults);
+            if st.sheet == usize::MAX {
+                let parts = st
+                    .workbook
+                    .sheets
+                    .iter()
+                    .map(|sh| build_preview(&self.db, sh, &detect_mapping(sh), defaults))
+                    .collect();
+                st.preview = crate::import_export::xlsx_import::merge_previews(parts);
+            } else {
+                let sheet = &st.workbook.sheets[st.sheet];
+                st.preview = build_preview(&self.db, sheet, &st.mapping, defaults);
+            }
         }
         self.with_bridge(|b| b.set_imp_reviewed(false));
         self.refresh_import();
@@ -2045,10 +2230,12 @@ impl Controller {
 
     fn refresh_import(&mut self) {
         let Some(st) = self.import.as_ref() else { return };
-        let sheet = &st.workbook.sheets[st.sheet];
-        let header = sheet.rows.get(st.mapping.header_row).cloned().unwrap_or_default();
+        let all = st.sheet == usize::MAX;
+        let sheet = &st.workbook.sheets[if all { 0 } else { st.sheet }];
+        let header = if all { vec![] } else { sheet.rows.get(st.mapping.header_row).cloned().unwrap_or_default() };
         let sample_row = sheet.rows.get(st.mapping.header_row + 1).cloned().unwrap_or_default();
-        let cols: Vec<MapCol> = (0..st.mapping.columns.len())
+        let ncols = if all { 0 } else { st.mapping.columns.len() };
+        let cols: Vec<MapCol> = (0..ncols)
             .filter(|c| header.get(*c).map(|h| !h.trim().is_empty()).unwrap_or(false) || st.mapping.columns[*c].is_some())
             .map(|c| MapCol {
                 index: c as i32,
@@ -2101,7 +2288,7 @@ impl Controller {
         let p = &st.preview;
         let (file, sheet_name, multi, can, conflicts, replace) = (
             st.file_name.clone(),
-            sheet.name.clone(),
+            if all { format!("Todas as abas ({})", st.workbook.sheets.len()) } else { sheet.name.clone() },
             st.workbook.sheets.len() > 1,
             p.can_import(),
             p.has_conflicts(),
@@ -2113,6 +2300,7 @@ impl Controller {
             b.set_imp_file(ss(file));
             b.set_imp_sheet(ss(sheet_name));
             b.set_imp_multi_sheet(multi);
+            b.set_imp_all_sheets(all);
             b.set_imp_columns(model(cols));
             b.set_imp_plans(model(plans));
             b.set_imp_warnings(model(warnings));
@@ -2245,7 +2433,29 @@ impl Controller {
 
     fn text_saved(&mut self, value: &str) {
         let Some(ctx) = self.text.clone() else { return };
+        match ctx {
+            TextCtx::BackupPassword => {
+                let pw = value.trim().to_string();
+                if !pw.is_empty() && pw.chars().count() < 4 {
+                    self.toast("A senha deve ter pelo menos 4 caracteres (ou deixe em branco).");
+                    return;
+                }
+                self.close_dialog();
+                self.do_backup(if pw.is_empty() { None } else { Some(&pw) });
+                return;
+            }
+            TextCtx::RestorePassword => {
+                self.close_dialog();
+                if let Some(path) = self.restore_path.take() {
+                    let pw = value.to_string();
+                    self.validate_restore(path, Some(&pw));
+                }
+                return;
+            }
+            _ => {}
+        }
         let r = match ctx {
+            TextCtx::BackupPassword | TextCtx::RestorePassword => Ok(()),
             TextCtx::SessionNotes => self.session_id.map(|sid| self.db.set_session_notes(sid, value)).unwrap_or(Ok(())),
             TextCtx::ExerciseNotes(se) => self.db.set_session_exercise_notes(se, value),
             TextCtx::TimerCustom => {
@@ -2393,6 +2603,8 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         day_ctx: None,
         exf_id: None,
         lib_pick: false,
+        alt_for: None,
+        restore_path: None,
         confirm: None,
         choice: None,
         text: None,
@@ -2619,6 +2831,11 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     // Diálogos
     cb!(b, ctrl, on_confirm_accepted, |c| { c.confirm_accepted(); });
     cb!(b, ctrl, on_dialog_closed, |c| {
+        if matches!(c.text, Some(TextCtx::RestorePassword)) {
+            if let Some(p) = c.restore_path.take() {
+                let _ = std::fs::remove_file(p);
+            }
+        }
         let was_pe = c.with_bridge(|b| b.get_dialog()) == "plan-ex";
         c.close_dialog();
         if was_pe {
@@ -2763,6 +2980,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         c.refresh_timer();
     });
     cb!(b, ctrl, on_timer_reset, |c| {
+        c.finalize_rest();
         c.timer.phase = TimerPhase::Rest;
         c.timer.reset();
         c.save_timer();
@@ -2776,6 +2994,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     });
     cb!(b, ctrl, on_timer_preset, |c, secs: i32| {
         if c.timer.is_running() {
+            c.finalize_rest();
             c.timer.set_duration(secs as i64 * 1000);
             c.timer.restart(Clock::now());
             c.after_timer_start();
@@ -2818,6 +3037,25 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         }
     });
     cb!(b, ctrl, on_cal_entry, |c, i: i32| { c.cal_entry(i as usize); });
+    cb!(b, ctrl, on_cal_add_to_agenda, |c, i: i32| { c.cal_add_to_agenda(i as usize); });
+    cb!(b, ctrl, on_show_diagnostics, |c| { c.show_diagnostics(); });
+    cb!(b, ctrl, on_exf_add_alt, |c| {
+        let Some(id) = c.exf_id else { return };
+        c.close_dialog();
+        c.alt_for = Some(id);
+        c.lib_pick = true;
+        c.with_bridge(|b| b.set_lib_mode(ss("pick")));
+        let r = c.refresh_library();
+        c.report(r);
+        c.toast("Escolha o exercício alternativo.");
+    });
+    cb!(b, ctrl, on_exf_remove_alt, |c, alt: i32| {
+        if let Some(id) = c.exf_id {
+            let r = c.db.remove_alternative(id, alt as Id).and_then(|_| c.db.remove_alternative(alt as Id, id));
+            c.report(r);
+            c.refresh_exf_alternatives();
+        }
+    });
 
     // Histórico
     cb!(b, ctrl, on_hist_set_tab, |c, i: i32| {
@@ -2886,7 +3124,12 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     // Importação
     cb!(b, ctrl, on_imp_choose_sheet, |c| {
         let (names, sel) = match c.import.as_ref() {
-            Some(st) => (st.workbook.sheets.iter().map(|s| s.name.clone()).collect::<Vec<_>>(), st.sheet as i32),
+            Some(st) => {
+                let mut v = st.workbook.sheets.iter().map(|s| s.name.clone()).collect::<Vec<_>>();
+                v.push("Todas as abas (juntar)".into());
+                let sel = if st.sheet == usize::MAX { v.len() as i32 - 1 } else { st.sheet as i32 };
+                (v, sel)
+            }
             None => return,
         };
         c.ask_choice(ChoiceCtx::ImportSheet, "Aba da planilha", "", names, sel);

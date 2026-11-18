@@ -229,11 +229,20 @@ export component CalendarScreen inherits Scroll {
             font-weight: 600;
         }
         if e.subtitle != "": Label { text: e.subtitle; }
-        if e.can-start: Btn {
-            text: "Iniciar treino";
-            icon: Icons.play;
-            kind: "primary";
-            clicked => { Bridge.cal-entry(i); }
+        HorizontalLayout {
+            spacing: 8px;
+            if e.can-start: Btn {
+                text: "Iniciar";
+                icon: Icons.play;
+                kind: "primary";
+                clicked => { Bridge.cal-entry(i); }
+            }
+            Btn {
+                text: "Agenda";
+                icon: Icons.calendar;
+                accessible-label: "Adicionar à agenda do aparelho";
+                clicked => { Bridge.cal-add-to-agenda(i); }
+            }
         }
     }
 }

@@ -292,6 +292,8 @@ pub struct SessionSet {
     pub actual_reps: Option<i64>,
     pub actual_load_g: Option<i64>,
     pub completed_at: Option<i64>,
+    /// Descanso cumprido após esta série, medido pelo cronômetro (segundos).
+    pub rest_taken_s: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

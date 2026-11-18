@@ -434,6 +434,28 @@ public class MainActivity extends NativeActivity {
         }});
     }
 
+    /** Abre a agenda do aparelho com o evento preenchido. Não exige READ/WRITE_CALENDAR. */
+    public boolean addCalendarEvent(String title, String description, long beginMs, long endMs, boolean allDay) {
+        final Intent i = new Intent(Intent.ACTION_INSERT)
+                .setData(android.provider.CalendarContract.Events.CONTENT_URI)
+                .putExtra(android.provider.CalendarContract.EXTRA_EVENT_BEGIN_TIME, beginMs)
+                .putExtra(android.provider.CalendarContract.EXTRA_EVENT_END_TIME, endMs)
+                .putExtra(android.provider.CalendarContract.EXTRA_EVENT_ALL_DAY, allDay)
+                .putExtra(android.provider.CalendarContract.Events.TITLE, title)
+                .putExtra(android.provider.CalendarContract.Events.DESCRIPTION, description);
+        try {
+            handler.post(new Runnable() { public void run() {
+                try {
+                    startActivity(i);
+                } catch (Exception ignored) {
+                }
+            }});
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public void moveToBack() {
         handler.post(new Runnable() { public void run() { moveTaskToBack(true); } });
     }

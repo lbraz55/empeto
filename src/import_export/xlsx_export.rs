@@ -25,7 +25,7 @@ pub const PLAN_HEADERS: [&str; 13] = [
 
 const PLAN_NOTES_HEADER: &str = "Observações";
 
-pub const SESSION_HEADERS: [&str; 16] = [
+pub const SESSION_HEADERS: [&str; 17] = [
     "Data",
     "Início",
     "Fim",
@@ -40,6 +40,7 @@ pub const SESSION_HEADERS: [&str; 16] = [
     "Reps realizadas",
     "Carga realizada (kg)",
     "Concluída às",
+    "Descanso realizado (s)",
     "Obs. do exercício",
     "Obs. da sessão",
 ];
@@ -112,6 +113,7 @@ fn write_history(db: &Db, ws: &mut Worksheet, bold: &Format) -> AppResult<usize>
         for e in &full.exercises {
             for set in &e.sets {
                 let r = row;
+                let r_row = |_v: i64| r;
                 let w = |ws: &mut Worksheet, c: u16, s: &str| ws.write_string(r, c, s).map(|_| ()).map_err(xerr);
                 w(ws, 0, &date_short(local_date_of(full.session.started_at)))?;
                 w(ws, 1, &local_time_of(full.session.started_at))?;
@@ -135,8 +137,11 @@ fn write_history(db: &Db, ws: &mut Worksheet, bold: &Format) -> AppResult<usize>
                     ws.write_number(r, 12, kg(v)).map_err(xerr)?;
                 }
                 w(ws, 13, &set.completed_at.map(local_time_of).unwrap_or_default())?;
-                w(ws, 14, &e.notes)?;
-                w(ws, 15, &full.session.notes)?;
+                if let Some(r) = set.rest_taken_s {
+                    ws.write_number(r_row(r), 14, r as f64).map_err(xerr)?;
+                }
+                w(ws, 15, &e.notes)?;
+                w(ws, 16, &full.session.notes)?;
                 row += 1;
             }
         }

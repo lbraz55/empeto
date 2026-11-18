@@ -196,6 +196,21 @@ impl Platform for AndroidPlatform {
         self.call_void("keepScreenOn", "(Z)V", |_| Ok(vec![OwnedArg::Bool(on)]));
     }
 
+    fn add_calendar_event(&self, title: &str, description: &str, begin_ms: i64, end_ms: i64, all_day: bool) -> bool {
+        self.with_env(|env, act| {
+            let t = env.new_string(title)?;
+            let d = env.new_string(description)?;
+            env.call_method(
+                act,
+                "addCalendarEvent",
+                "(Ljava/lang/String;Ljava/lang/String;JJZ)Z",
+                &[JValue::Object(&t), JValue::Object(&d), JValue::Long(begin_ms), JValue::Long(end_ms), JValue::Bool(all_day as u8)],
+            )?
+            .z()
+        })
+        .unwrap_or(false)
+    }
+
     fn move_to_back(&self) {
         self.call_void("moveToBack", "()V", |_| Ok(vec![]));
     }

@@ -432,6 +432,11 @@ export component SettingsScreen inherits Scroll {
         spacing: 10px;
         Title { text: "Workout " + Bridge.app-version; }
         Body { text: Bridge.about-text; }
+        Btn {
+            text: "Diagnóstico técnico";
+            icon: Icons.info;
+            clicked => { Bridge.show-diagnostics(); }
+        }
     }
 }
 
@@ -443,8 +448,9 @@ export component ImportScreen inherits Scroll {
         value: Bridge.imp-sheet;
         clicked => { Bridge.imp-choose-sheet(); }
     }
-    SectionTitle { text: "MAPEAMENTO DE COLUNAS"; }
-    Label { text: "Toque em uma coluna para mudar o campo correspondente. \"Exercício\" é obrigatório."; }
+    if Bridge.imp-all-sheets: Label { text: "Todas as abas: as colunas de cada aba são reconhecidas automaticamente. Para ajustar o mapeamento manualmente, escolha uma aba por vez."; }
+    if !Bridge.imp-all-sheets: SectionTitle { text: "MAPEAMENTO DE COLUNAS"; }
+    if !Bridge.imp-all-sheets: Label { text: "Toque em uma coluna para mudar o campo correspondente. \"Exercício\" é obrigatório."; }
     for c in Bridge.imp-columns: ValueRow {
         text: c.header;
         description: c.sample;

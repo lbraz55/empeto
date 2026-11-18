@@ -98,6 +98,9 @@ pub struct TimerState {
     pub pre_alert_done: bool,
     /// Contexto exibido: exercício e série relacionados.
     pub context: String,
+    /// Série da sessão a que este descanso se refere (para gravar o descanso cumprido).
+    #[serde(default)]
+    pub linked_set: Option<i64>,
 }
 
 pub const MIN_DURATION_MS: i64 = 1_000;
@@ -124,6 +127,7 @@ impl TimerState {
             pre_alert_ms: 0,
             pre_alert_done: false,
             context: String::new(),
+            linked_set: None,
         }
     }
 
@@ -273,6 +277,15 @@ impl TimerState {
             events.push(TimerEvent::Finished(self.phase));
         }
         events
+    }
+
+    /// Tempo efetivamente contado desde o início (exclui pausas), em ms.
+    pub fn elapsed(&self, now: Clock) -> i64 {
+        match self.status {
+            TimerStatus::Idle => 0,
+            TimerStatus::Finished => self.duration_ms,
+            _ => (self.duration_ms - self.remaining(now).max(0)).max(0),
+        }
     }
 
     /// Fração concluída (0..1) para a barra de progresso.

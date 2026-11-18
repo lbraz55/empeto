@@ -7,6 +7,8 @@
 //! banco anterior; qualquer falha preserva o banco anterior.
 
 use crate::domain::*;
+#[allow(unused_imports)]
+use crate::domain::validation;
 use crate::persistence::{migrate, schema_version, Db, DbCounts, SCHEMA_VERSION};
 use rusqlite::{params, Connection, OpenFlags};
 use serde::{Deserialize, Serialize};
@@ -28,6 +30,9 @@ pub struct BackupManifest {
     pub db_sha256: String,
     pub db_bytes: u64,
     pub counts: DbCounts,
+    /// O banco dentro do zip está protegido por senha (AES-256).
+    #[serde(default)]
+    pub encrypted: bool,
 }
 
 fn sha256_file(path: &Path) -> AppResult<(String, u64)> {
@@ -52,7 +57,19 @@ fn zip_err(e: zip::result::ZipError) -> AppError {
 }
 
 /// Cria o backup em `out_zip`, usando `work_dir` para arquivos temporários.
-pub fn create_backup(db: &Db, out_zip: &Path, work_dir: &Path, app_version: &str) -> AppResult<BackupManifest> {
+pub fn create_backup(
+    db: &Db,
+    out_zip: &Path,
+    work_dir: &Path,
+    app_version: &str,
+    password: Option<&str>,
+) -> AppResult<BackupManifest> {
+    let password = password.map(str::trim).filter(|p| !p.is_empty());
+    if let Some(p) = password {
+        if p.chars().count() < 4 {
+            return validation("A senha do backup deve ter pelo menos 4 caracteres.");
+        }
+    }
     std::fs::create_dir_all(work_dir)?;
     let tmp_db = work_dir.join(format!("backup-{}.db", now_ms()));
     let _ = std::fs::remove_file(&tmp_db);
@@ -68,13 +85,18 @@ pub fn create_backup(db: &Db, out_zip: &Path, work_dir: &Path, app_version: &str
             db_sha256: sha,
             db_bytes: bytes,
             counts: db.counts()?,
+            encrypted: password.is_some(),
         };
         let file = std::fs::File::create(out_zip)?;
         let mut zw = zip::ZipWriter::new(file);
         let opts = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
         zw.start_file("manifest.json", opts).map_err(zip_err)?;
         zw.write_all(serde_json::to_string_pretty(&manifest)?.as_bytes())?;
-        zw.start_file("workout.db", opts).map_err(zip_err)?;
+        let db_opts = match password {
+            Some(p) => opts.with_aes_encryption(zip::AesMode::Aes256, p),
+            None => opts,
+        };
+        zw.start_file("workout.db", db_opts).map_err(zip_err)?;
         let mut f = std::fs::File::open(&tmp_db)?;
         std::io::copy(&mut f, &mut zw)?;
         zw.finish().map_err(zip_err)?;
@@ -96,7 +118,21 @@ pub struct ValidatedBackup {
 
 /// Valida o arquivo: estrutura do zip, manifesto, hash, integridade do SQLite e versão do schema.
 /// Também aplica migrações na cópia extraída (backups de versões anteriores são aceitos).
-pub fn validate_backup(zip_path: &Path, work_dir: &Path) -> AppResult<ValidatedBackup> {
+/// Lê só o manifesto (para saber se o backup pede senha e mostrar o resumo).
+pub fn read_manifest(zip_path: &Path) -> AppResult<BackupManifest> {
+    let file = std::fs::File::open(zip_path)?;
+    let mut za = zip::ZipArchive::new(file)
+        .map_err(|_| AppError::File("O arquivo selecionado não é um backup do WORKOUT (.zip).".into()))?;
+    let mut m = za.by_name("manifest.json").map_err(|_| AppError::File("Backup sem manifesto (manifest.json).".into()))?;
+    if m.size() > 64 * 1024 {
+        return Err(AppError::File("Manifesto do backup inválido.".into()));
+    }
+    let mut s = String::new();
+    m.read_to_string(&mut s)?;
+    serde_json::from_str(&s).map_err(|_| AppError::File("Manifesto do backup inválido.".into()))
+}
+
+pub fn validate_backup(zip_path: &Path, work_dir: &Path, password: Option<&str>) -> AppResult<ValidatedBackup> {
     let meta = std::fs::metadata(zip_path).map_err(|_| AppError::File("Não foi possível ler o arquivo.".into()))?;
     if meta.len() > MAX_BACKUP_BYTES {
         return Err(AppError::File("Arquivo grande demais para ser um backup do WORKOUT.".into()));
@@ -129,7 +165,17 @@ pub fn validate_backup(zip_path: &Path, work_dir: &Path) -> AppResult<ValidatedB
     std::fs::create_dir_all(work_dir)?;
     let db_path = work_dir.join(format!("restore-{}.db", now_ms()));
     {
-        let mut entry = za.by_name("workout.db").map_err(|_| AppError::File("Backup sem banco de dados.".into()))?;
+        let mut entry = if manifest.encrypted {
+            let Some(p) = password.filter(|p| !p.is_empty()) else {
+                return Err(AppError::Validation("Este backup é protegido por senha. Informe a senha.".into()));
+            };
+            za.by_name_decrypt("workout.db", p.as_bytes()).map_err(|e| match e {
+                zip::result::ZipError::InvalidPassword => AppError::Validation("Senha do backup incorreta.".into()),
+                _ => AppError::File("Backup sem banco de dados.".into()),
+            })?
+        } else {
+            za.by_name("workout.db").map_err(|_| AppError::File("Backup sem banco de dados.".into()))?
+        };
         if entry.size() > MAX_BACKUP_BYTES {
             return Err(AppError::File("Banco de dados do backup grande demais.".into()));
         }

@@ -86,7 +86,7 @@ export component TextDialog inherits DialogFrame {
     Field {
         text <=> Bridge.text-value;
         multiline: Bridge.text-multiline;
-        input-type: Bridge.text-numeric ? InputType.number : InputType.text;
+        input-type: Bridge.text-password ? InputType.password : (Bridge.text-numeric ? InputType.number : InputType.text);
     }
     HorizontalLayout {
         spacing: 8px;
@@ -231,6 +231,35 @@ export component ExerciseDialog inherits DialogFrame {
                 label: "Padrão de movimento (opcional)";
                 placeholder: "Ex.: Empurrar horizontal";
                 text <=> Bridge.exf-pattern;
+            }
+            if Bridge.exf-editing: SectionTitle { text: "ALTERNATIVAS CADASTRADAS"; }
+            if Bridge.exf-editing: Text {
+                text: "Aparecem primeiro ao substituir este exercício na sessão. São sugestões suas, não equivalências garantidas.";
+                color: Theme.faint;
+                font-size: Theme.fs-xs;
+                wrap: word-wrap;
+            }
+            if Bridge.exf-editing: VerticalLayout {
+                for a in Bridge.exf-alternatives: HorizontalLayout {
+                    spacing: 4px;
+                    Text {
+                        text: a.name;
+                        color: Theme.text;
+                        font-size: Theme.fs-m;
+                        vertical-alignment: center;
+                        wrap: word-wrap;
+                    }
+                    IconBtn {
+                        icon: Icons.close;
+                        label: "Remover alternativa " + a.name;
+                        clicked => { Bridge.exf-remove-alt(a.id); }
+                    }
+                }
+            }
+            if Bridge.exf-editing: Btn {
+                text: "Adicionar alternativa";
+                icon: Icons.plus;
+                clicked => { Bridge.exf-add-alt(); }
             }
         }
     }

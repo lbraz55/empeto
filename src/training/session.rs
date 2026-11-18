@@ -124,7 +124,8 @@ impl Db {
             })?
             .collect::<Result<Vec<_>, _>>()?;
         let mut st = self.conn.prepare(
-            "SELECT id, set_number, planned_reps_min, planned_reps_max, planned_load_g, actual_reps, actual_load_g, completed_at
+            "SELECT id, set_number, planned_reps_min, planned_reps_max, planned_load_g, actual_reps, actual_load_g, completed_at,
+                    rest_taken_s
              FROM session_set WHERE session_exercise_id = ?1 ORDER BY set_number",
         )?;
         for e in exercises.iter_mut() {
@@ -139,6 +140,7 @@ impl Db {
                         actual_reps: r.get(5)?,
                         actual_load_g: r.get(6)?,
                         completed_at: r.get(7)?,
+                        rest_taken_s: r.get(8)?,
                     })
                 })?
                 .collect::<Result<Vec<_>, _>>()?;
@@ -195,11 +197,21 @@ impl Db {
         Ok(())
     }
 
+    /// Grava o descanso cumprido após a série (medido pelo cronômetro). Só em sessão em andamento.
+    pub fn set_rest_taken(&self, set_id: Id, seconds: i64) -> AppResult<()> {
+        self.ensure_in_progress_for_set(set_id)?;
+        self.conn.execute(
+            "UPDATE session_set SET rest_taken_s = ?2 WHERE id = ?1 AND completed_at IS NOT NULL",
+            params![set_id, seconds.clamp(0, 10_800)],
+        )?;
+        Ok(())
+    }
+
     /// Desfaz o registro de uma série (ainda na sessão em andamento).
     pub fn clear_set(&self, set_id: Id) -> AppResult<()> {
         self.ensure_in_progress_for_set(set_id)?;
         self.conn.execute(
-            "UPDATE session_set SET actual_reps=NULL, actual_load_g=NULL, completed_at=NULL WHERE id=?1",
+            "UPDATE session_set SET actual_reps=NULL, actual_load_g=NULL, completed_at=NULL, rest_taken_s=NULL WHERE id=?1",
             params![set_id],
         )?;
         Ok(())

@@ -280,13 +280,13 @@ fn ct10_backup_and_restore_on_clean_install() {
         complete_all_sets(&db, sid, 40_000);
         db.finish_session(sid, "ótima sessão").unwrap();
         db.set_pref("training.unit", "lb").unwrap();
-        create_backup(&db, &zip, &work, "0.1.0").unwrap();
+        create_backup(&db, &zip, &work, "0.1.0", None).unwrap();
         (db.list_plans().unwrap().len(), sid, db.all_prefs().unwrap())
     };
     // "Instalação limpa"
     let mut fresh = Db::open(&dir.path().join("b/workout.db")).unwrap();
     assert_eq!(fresh.list_plans().unwrap().len(), 0);
-    let v = validate_backup(&zip, &work).unwrap();
+    let v = validate_backup(&zip, &work, None).unwrap();
     assert_eq!(v.manifest.counts.sessions, 1);
     fresh.restore_from(v).unwrap();
     assert_eq!(fresh.list_plans().unwrap().len(), plan_count);
@@ -303,7 +303,7 @@ fn restore_rejects_tampered_backup_and_keeps_current_data() {
     let db = Db::open(&dir.path().join("w.db")).unwrap();
     sample_plan(&db);
     let zip = dir.path().join("b.zip");
-    create_backup(&db, &zip, &work, "0.1.0").unwrap();
+    create_backup(&db, &zip, &work, "0.1.0", None).unwrap();
     // adultera: troca o banco por outro conteúdo mantendo o manifesto
     let tampered = dir.path().join("t.zip");
     {
@@ -318,10 +318,10 @@ fn restore_rejects_tampered_backup_and_keeps_current_data() {
         std::io::Write::write_all(&mut w, b"not a database").unwrap();
         w.finish().unwrap();
     }
-    assert!(validate_backup(&tampered, &work).is_err());
+    assert!(validate_backup(&tampered, &work, None).is_err());
     let garbage = dir.path().join("g.zip");
     std::fs::write(&garbage, b"nope").unwrap();
-    assert!(validate_backup(&garbage, &work).is_err());
+    assert!(validate_backup(&garbage, &work, None).is_err());
     assert_eq!(db.list_plans().unwrap().len(), 1);
 }
 
@@ -508,4 +508,40 @@ fn android_manifest_is_minimal() {
     for forbidden in ["INTERNET", "CALENDAR", "STORAGE", "SCHEDULE_EXACT_ALARM", "LOCATION", "CAMERA"] {
         assert!(!perms.iter().any(|p| p.contains(forbidden)), "{forbidden}");
     }
+}
+
+#[test]
+fn backup_with_password() {
+    use workout::import_export::backup::read_manifest;
+    let dir = tempfile::tempdir().unwrap();
+    let work = dir.path().join("tmp");
+    let db = Db::open(&dir.path().join("w.db")).unwrap();
+    sample_plan(&db);
+    let zip = dir.path().join("b.zip");
+    assert!(create_backup(&db, &zip, &work, "0.1.4", Some("abc")).is_err()); // senha curta
+    create_backup(&db, &zip, &work, "0.1.4", Some("segredo123")).unwrap();
+    assert!(read_manifest(&zip).unwrap().encrypted);
+    assert!(validate_backup(&zip, &work, None).is_err());
+    let e = validate_backup(&zip, &work, Some("errada")).unwrap_err();
+    assert!(e.to_string().contains("incorreta"), "{e}");
+    let v = validate_backup(&zip, &work, Some("segredo123")).unwrap();
+    assert_eq!(v.manifest.counts.plans, 1);
+    // o banco não aparece em texto puro dentro do zip
+    let raw = std::fs::read(&zip).unwrap();
+    assert!(!raw.windows(15).any(|w| w == b"SQLite format 3"));
+}
+
+#[test]
+fn rest_taken_is_recorded_and_frozen() {
+    let mut db = Db::open_in_memory().unwrap();
+    let (_, a, _) = sample_plan(&db);
+    let sid = db.start_session(a).unwrap();
+    let set = db.get_session_full(sid).unwrap().exercises[0].sets[0].id;
+    assert!(db.set_rest_taken(set, 80).is_ok()); // série ainda não registrada: nada muda
+    assert_eq!(db.get_session_full(sid).unwrap().exercises[0].sets[0].rest_taken_s, None);
+    db.record_set(set, 10, 40_000).unwrap();
+    db.set_rest_taken(set, 95).unwrap();
+    db.finish_session(sid, "").unwrap();
+    assert_eq!(db.get_session_full(sid).unwrap().exercises[0].sets[0].rest_taken_s, Some(95));
+    assert!(db.set_rest_taken(set, 10).is_err());
 }
