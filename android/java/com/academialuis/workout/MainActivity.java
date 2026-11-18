@@ -55,10 +55,64 @@ public class MainActivity extends NativeActivity {
     private ToneGenerator toneGenerator;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
+    /** Acrescenta uma linha ao rastro de inicialização (files/startup.log). */
+    static void crumb(Context ctx, String msg) {
+        try {
+            FileOutputStream os = new FileOutputStream(new File(ctx.getFilesDir(), "startup.log"), true);
+            String t = new java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.US).format(new java.util.Date());
+            os.write((t + " [java] " + msg + "\n").getBytes("UTF-8"));
+            os.getFD().sync();
+            os.close();
+        } catch (Exception ignored) {
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        final Context app = getApplicationContext();
+        final Thread.UncaughtExceptionHandler previous = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            public void uncaughtException(Thread t, Throwable e) {
+                try {
+                    java.io.StringWriter sw = new java.io.StringWriter();
+                    e.printStackTrace(new java.io.PrintWriter(sw));
+                    FileOutputStream os = new FileOutputStream(new File(app.getFilesDir(), "crash.txt"), true);
+                    os.write(("exceção Java na thread " + t.getName() + ":\n" + sw).getBytes("UTF-8"));
+                    os.close();
+                } catch (Exception ignored) {
+                }
+                if (previous != null) previous.uncaughtException(t, e);
+            }
+        });
+        crumb(this, "MainActivity.onCreate: carregando biblioteca nativa");
         super.onCreate(savedInstanceState);
+        crumb(this, "MainActivity.onCreate: biblioteca nativa iniciada");
         createChannels(this);
+    }
+
+    @Override
+    protected void onStart() {
+        crumb(this, "onStart");
+        super.onStart();
+    }
+
+    @Override
+    protected void onResume() {
+        crumb(this, "onResume (início)");
+        super.onResume();
+        crumb(this, "onResume (fim)");
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        crumb(this, "onWindowFocusChanged " + hasFocus);
+        super.onWindowFocusChanged(hasFocus);
+    }
+
+    @Override
+    protected void onPause() {
+        crumb(this, "onPause");
+        super.onPause();
     }
 
     @Override

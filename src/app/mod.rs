@@ -2362,7 +2362,9 @@ fn target_text(t: &Target, rest: i64, unit: LoadUnit) -> String {
 
 /// Constrói a aplicação: abre o banco, cria a janela, registra callbacks e roda o loop de eventos.
 pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
+    crate::platform::crumbs::crumb("criando janela (AppWindow::new)");
     let ui = AppWindow::new()?;
+    crate::platform::crumbs::crumb("janela criada; abrindo banco de dados");
     let data_dir = platform.data_dir();
     let (db, open_error) = match Db::open(&data_dir.join("workout.db")) {
         Ok(db) => (db, None),
@@ -2377,6 +2379,7 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
             let _ = std::fs::remove_file(e.path());
         }
     }
+    crate::platform::crumbs::crumb("banco aberto; carregando preferências");
     let prefs = Prefs::load(&db).unwrap_or_default();
     let today = cal::today();
     let ctrl = Rc::new(RefCell::new(Controller {
@@ -2435,6 +2438,7 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
             );
         }
     }
+    crate::platform::crumbs::crumb("estado inicial pronto; registrando callbacks");
     register_callbacks(&ui, &ctrl);
     CONTROLLER.with(|c| *c.borrow_mut() = Some(ctrl.clone()));
 
@@ -2450,9 +2454,10 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
     let marker = data_dir.join("startup.marker");
     slint::Timer::single_shot(std::time::Duration::from_millis(1500), move || {
         let _ = std::fs::remove_file(&marker);
-        log::info!("interface pronta");
+        crate::platform::crumbs::crumb("interface pronta (laço de eventos rodando)");
     });
 
+    crate::platform::crumbs::crumb("iniciando laço de eventos (ui.run)");
     let r = ui.run();
     if let Ok(mut c) = ctrl.try_borrow_mut() {
         c.on_pause();

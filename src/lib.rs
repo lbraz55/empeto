@@ -35,6 +35,9 @@ fn android_main(app: slint::android::AndroidApp) {
     );
     let files = app.internal_data_path().unwrap_or_else(|| std::path::PathBuf::from("/data/local/tmp"));
     let crash_file = files.join("crash.txt");
+    platform::crumbs::init(files.clone());
+    platform::crumbs::crumb("android_main iniciou");
+    platform::crumbs::install_signal_handlers();
     {
         let crash_file = crash_file.clone();
         std::panic::set_hook(Box::new(move |info| {
@@ -50,14 +53,26 @@ fn android_main(app: slint::android::AndroidApp) {
     };
     log::info!("android_main: iniciando (dados em {})", files.display());
     let platform = platform::android::AndroidPlatform::new(app.clone());
+    platform::crumbs::crumb("iniciando backend Slint");
     if let Err(e) = slint::android::init_with_event_listener(app, |event| match event {
-        PollEvent::Main(MainEvent::Pause) => app::lifecycle(false),
-        PollEvent::Main(MainEvent::Resume { .. }) => app::lifecycle(true),
+        PollEvent::Main(MainEvent::Pause) => {
+            platform::crumbs::crumb("evento: Pause");
+            app::lifecycle(false)
+        }
+        PollEvent::Main(MainEvent::Resume { .. }) => {
+            platform::crumbs::crumb("evento: Resume");
+            app::lifecycle(true)
+        }
+        PollEvent::Main(MainEvent::InitWindow { .. }) => platform::crumbs::crumb("evento: InitWindow (superfície criada)"),
+        PollEvent::Main(MainEvent::TerminateWindow { .. }) => platform::crumbs::crumb("evento: TerminateWindow"),
+        PollEvent::Main(MainEvent::Start) => platform::crumbs::crumb("evento: Start"),
+        PollEvent::Main(MainEvent::Destroy) => platform::crumbs::crumb("evento: Destroy"),
         _ => {}
     }) {
         fail(format!("falha ao iniciar Slint: {e}"));
         return;
     }
+    platform::crumbs::crumb("backend Slint pronto; abrindo app");
     if let Err(e) = app::run(Box::new(platform)) {
         fail(format!("erro na interface: {e}"));
     }

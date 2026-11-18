@@ -29,6 +29,7 @@ import java.io.InputStreamReader;
 public class LauncherActivity extends Activity {
     static final String MARKER = "startup.marker";
     static final String CRASH = "crash.txt";
+    static final String TRACE = "startup.log";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +44,8 @@ public class LauncherActivity extends Activity {
     }
 
     private void launch(File marker) {
+        new File(getFilesDir(), TRACE).delete();
+        MainActivity.crumb(this, "LauncherActivity: abrindo MainActivity");
         try {
             FileOutputStream os = new FileOutputStream(marker);
             os.write(("iniciando " + System.currentTimeMillis()).getBytes("UTF-8"));
@@ -91,6 +94,8 @@ public class LauncherActivity extends Activity {
                 + "Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + "), "
                 + Build.MANUFACTURER + " " + Build.MODEL + ", ABI " + Build.SUPPORTED_ABIS[0] + "\n\n"
                 + "== Erro registrado ==\n" + (crash.exists() ? readFile(crash) : "(nenhum: o app pode ter travado)\n")
+                + "\n== Etapas da última abertura ==\n"
+                + (new File(getFilesDir(), TRACE).exists() ? readFile(new File(getFilesDir(), TRACE)) : "(sem registro)\n")
                 + "\n== Log do app ==\n" + readLogcat();
 
         LinearLayout root = new LinearLayout(this);
