@@ -1,0 +1,313 @@
+// Ponte entre a interface e a lógica em Rust. O Rust preenche propriedades e trata callbacks.
+
+export struct PlanRow { id: int, name: string, subtitle: string, active: bool }
+export struct PlanExRow { id: int, name: string, detail: string, notes: string }
+export struct DayRow { id: int, name: string, subtitle: string, exercises: [PlanExRow] }
+export struct ExRow { id: int, name: string, detail: string, note: string, archived: bool }
+export struct SetRow { id: int, number: int, planned: string, load: string, reps: string, done: bool, hint: string }
+export struct SessionExRow {
+    id: int,
+    name: string,
+    original: string,
+    muscle: string,
+    kind: string,
+    equipment: string,
+    substitution: string,
+    planned: string,
+    rest: int,
+    notes: string,
+    completed: bool,
+    done-sets: int,
+    sets: [SetRow],
+}
+export struct CardRow { kind: string, title: string, line1: string, line2: string, action: string, ref-id: int }
+export struct CalCell { key: string, day: int, in-month: bool, today: bool, selected: bool, planned: bool, done: bool }
+export struct CalEntry { kind: string, title: string, subtitle: string, session-id: int, day-id: int, can-start: bool }
+export struct HistRow { id: int, date: string, title: string, subtitle: string }
+export struct DetailEx { title: string, subtitle: string, badge: string, lines: [string], notes: string }
+export struct EvoRow { date: string, value: string, detail: string }
+export struct HistExRow { key: string, name: string, detail: string }
+export struct MapCol { index: int, header: string, sample: string, field: string }
+export struct PlanPreview { name: string, detail: string, conflict: bool }
+
+export global Bridge {
+    // ---------------- navegação ----------------
+    // 0 Home, 1 Treinos, 2 Calendário, 3 Histórico, 10 Editor de ficha, 11 Biblioteca,
+    // 12 Sessão, 13 Cronômetro, 14 Detalhe da sessão, 15 Evolução, 20 Configurações, 21 Prévia de importação
+    in-out property <int> page: 0;
+    in-out property <string> toast;
+    in-out property <string> dialog;
+    in-out property <bool> busy;
+    callback navigate(int);
+    callback back();
+
+    // ---------------- Home ----------------
+    in-out property <string> home-date;
+    in-out property <[CardRow]> home-cards;
+    callback home-card-clicked(string, int);
+
+    // ---------------- Treinos ----------------
+    in-out property <[PlanRow]> plans;
+    callback new-plan();
+    callback open-plan(int);
+    callback duplicate-plan(int);
+    callback delete-plan(int);
+    callback toggle-plan-active(int);
+    callback open-library();
+
+    // Editor de ficha
+    in-out property <int> edit-plan-id;
+    in-out property <string> edit-plan-name;
+    in-out property <string> edit-plan-desc;
+    in-out property <bool> edit-plan-weekday;
+    in-out property <bool> edit-plan-active;
+    in-out property <[DayRow]> edit-days;
+    callback save-plan-header(string, string);
+    callback set-plan-schedule(bool);
+    callback add-day();
+    callback edit-day(int);
+    callback delete-day(int);
+    callback move-day(int, int);
+    callback add-plan-ex(int);
+    callback edit-plan-ex(int);
+    callback move-plan-ex(int, int);
+    callback start-day(int);
+
+    // Formulário do dia
+    in-out property <string> day-title;
+    in-out property <string> day-name;
+    in-out property <[bool]> day-weekdays;
+    in-out property <bool> day-show-weekdays;
+    callback day-toggle(int);
+    callback day-save(string);
+
+    // Formulário de exercício na ficha
+    in-out property <string> pe-title;
+    in-out property <string> pe-exercise;
+    in-out property <string> pe-sets;
+    in-out property <string> pe-reps;
+    in-out property <string> pe-load;
+    in-out property <string> pe-rest;
+    in-out property <string> pe-notes;
+    in-out property <string> pe-unit;
+    in-out property <bool> pe-can-delete;
+    callback pe-pick();
+    callback pe-save(string, string, string, string, string);
+    callback pe-delete();
+
+    // Biblioteca de exercícios
+    in-out property <string> lib-mode; // "browse" | "pick"
+    in-out property <string> lib-search;
+    in-out property <string> lib-muscle;
+    in-out property <string> lib-equipment;
+    in-out property <string> lib-pattern;
+    in-out property <bool> lib-show-archived;
+    in-out property <[ExRow]> library;
+    callback lib-search-changed(string);
+    callback lib-filter(string);
+    callback lib-clear-filters();
+    callback lib-toggle-archived();
+    callback lib-item(int);
+    callback lib-new();
+    callback lib-edit(int);
+    callback lib-archive(int);
+
+    // Formulário de exercício (catálogo)
+    in-out property <string> exf-title;
+    in-out property <string> exf-name;
+    in-out property <string> exf-muscle;
+    in-out property <string> exf-type;
+    in-out property <string> exf-equipment;
+    in-out property <string> exf-pattern;
+    in-out property <bool> exf-editing;
+    in-out property <bool> exf-archived;
+    callback exf-save(string, string, string, string, string);
+
+    // ---------------- Diálogos genéricos ----------------
+    in-out property <string> confirm-title;
+    in-out property <string> confirm-text;
+    in-out property <string> confirm-ok;
+    callback confirm-accepted();
+    callback dialog-closed();
+
+    in-out property <string> choice-title;
+    in-out property <string> choice-text;
+    in-out property <[string]> choice-options;
+    in-out property <int> choice-selected;
+    callback choice-made(int);
+
+    in-out property <string> text-title;
+    in-out property <string> text-value;
+    in-out property <string> text-hint;
+    in-out property <bool> text-multiline;
+    in-out property <bool> text-numeric;
+    callback text-saved(string);
+
+    in-out property <string> info-title;
+    in-out property <string> info-text;
+    in-out property <string> info-ok;
+    in-out property <string> info-alt;
+    callback info-ok-clicked();
+    callback info-alt-clicked();
+
+    // ---------------- Sessão ----------------
+    in-out property <bool> session-active;
+    in-out property <string> session-title;
+    in-out property <string> session-subtitle;
+    in-out property <string> session-elapsed;
+    in-out property <string> session-progress;
+    in-out property <string> session-notes;
+    in-out property <[SessionExRow]> session-exercises;
+    in-out property <int> session-index;
+    in-out property <string> session-unit;
+    callback session-select(int);
+    callback session-record(int, string, string);
+    callback session-undo(int);
+    callback session-add-set(int);
+    callback session-remove-set(int);
+    callback session-substitute(int);
+    callback session-undo-sub(int);
+    callback session-ex-notes(int);
+    callback session-finish();
+    callback session-discard();
+    callback session-edit-notes();
+    pure callback adjust-load(string, int) -> string;
+    pure callback adjust-reps(string, int) -> string;
+
+    // Substituição
+    in-out property <string> sub-original;
+    in-out property <string> sub-search;
+    in-out property <[ExRow]> sub-suggestions;
+    in-out property <[ExRow]> sub-results;
+    in-out property <int> sub-selected-id;
+    in-out property <string> sub-selected-name;
+    in-out property <bool> sub-permanent;
+    in-out property <bool> sub-can-permanent;
+    callback sub-search-changed(string);
+    callback sub-select(int, string);
+    callback sub-confirm(bool);
+
+    // ---------------- Cronômetro ----------------
+    in-out property <string> timer-display: "1:30";
+    in-out property <string> timer-status: "idle"; // idle | running | paused | finished
+    in-out property <float> timer-progress;
+    in-out property <string> timer-context;
+    in-out property <string> timer-phase;
+    in-out property <string> timer-duration;
+    in-out property <string> timer-step;
+    in-out property <string> timer-notice;
+    in-out property <[int]> timer-presets;
+    callback timer-start();
+    callback timer-pause();
+    callback timer-reset();
+    callback timer-adjust(int);
+    callback timer-preset(int);
+    callback timer-custom();
+    callback open-timer();
+
+    // ---------------- Calendário ----------------
+    in-out property <string> cal-title;
+    in-out property <[string]> cal-weekday-labels;
+    in-out property <[CalCell]> cal-cells;
+    in-out property <bool> cal-week-view;
+    in-out property <string> cal-selected-title;
+    in-out property <[CalEntry]> cal-entries;
+    callback cal-prev();
+    callback cal-next();
+    callback cal-today();
+    callback cal-set-week-view(bool);
+    callback cal-select(string);
+    callback cal-entry(int);
+
+    // ---------------- Histórico ----------------
+    in-out property <int> hist-tab;
+    in-out property <string> hist-summary;
+    in-out property <[HistRow]> hist-rows;
+    in-out property <[HistExRow]> evo-exercises;
+    callback hist-set-tab(int);
+    callback hist-open(int);
+    callback evo-open(string);
+
+    in-out property <string> detail-title;
+    in-out property <string> detail-subtitle;
+    in-out property <string> detail-summary;
+    in-out property <string> detail-notes;
+    in-out property <[DetailEx]> detail-exercises;
+
+    in-out property <string> evo-name;
+    in-out property <int> evo-period;
+    in-out property <int> evo-metric;
+    in-out property <[EvoRow]> evo-rows;
+    in-out property <string> evo-path;
+    in-out property <string> evo-dots;
+    in-out property <string> evo-min;
+    in-out property <string> evo-max;
+    in-out property <string> evo-summary;
+    in-out property <string> evo-first-date;
+    in-out property <string> evo-last-date;
+    in-out property <bool> evo-has-data;
+    callback evo-set-period(int);
+    callback evo-set-metric(int);
+
+    // ---------------- Configurações ----------------
+    in-out property <int> settings-section; // 0 = lista de categorias
+    in-out property <bool> set-sound;
+    in-out property <string> set-tone-rest;
+    in-out property <string> set-tone-start;
+    in-out property <string> set-tone-pre;
+    in-out property <bool> set-vibrate;
+    in-out property <bool> set-pre-alert;
+    in-out property <string> set-pre-alert-s;
+    in-out property <bool> set-background;
+    in-out property <string> set-timer-default;
+    in-out property <string> set-adjust-step;
+    in-out property <bool> set-auto-rest;
+    in-out property <bool> set-rest-end-prepare;
+    in-out property <string> set-prepare-s;
+    in-out property <string> set-unit;
+    in-out property <string> set-load-step;
+    in-out property <bool> set-prefill-last;
+    in-out property <string> set-default-sets;
+    in-out property <string> set-default-reps;
+    in-out property <bool> set-week-monday;
+    in-out property <bool> set-week-view;
+    in-out property <bool> set-large-text;
+    in-out property <bool> set-keep-screen;
+    in-out property <bool> set-confirm-finish;
+    in-out property <string> notif-status;
+    in-out property <string> data-info;
+    in-out property <string> app-version;
+    in-out property <string> about-text;
+    callback settings-open(int);
+    callback pref-toggle(string);
+    callback pref-choose(string);
+    callback pref-step(string, int);
+    callback test-alert();
+    callback notif-settings();
+    callback data-import();
+    callback data-export();
+    callback data-template();
+    callback data-backup();
+    callback data-restore();
+    callback data-ics();
+
+    // ---------------- Importação ----------------
+    in-out property <string> imp-file;
+    in-out property <string> imp-sheet;
+    in-out property <bool> imp-multi-sheet;
+    in-out property <[MapCol]> imp-columns;
+    in-out property <[PlanPreview]> imp-plans;
+    in-out property <[string]> imp-warnings;
+    in-out property <[string]> imp-errors;
+    in-out property <string> imp-summary;
+    in-out property <bool> imp-can-import;
+    in-out property <bool> imp-has-conflicts;
+    in-out property <bool> imp-replace;
+    in-out property <bool> imp-reviewed;
+    callback imp-choose-sheet();
+    callback imp-map(int);
+    callback imp-set-replace(bool);
+    callback imp-set-reviewed(bool);
+    callback imp-confirm();
+    callback imp-cancel();
+}

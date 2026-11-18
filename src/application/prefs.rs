@@ -23,6 +23,8 @@ pub struct Prefs {
     pub pre_alert_seconds: i64,
     /// Alerta com app em segundo plano (notificação; requer POST_NOTIFICATIONS no Android 13+).
     pub background_alert: bool,
+    /// Já explicamos e pedimos a permissão de notificação ao menos uma vez.
+    pub notif_permission_asked: bool,
     // Cronômetro
     pub timer_default_seconds: i64,
     pub timer_adjust_step: i64,
@@ -54,7 +56,8 @@ impl Default for Prefs {
             vibrate: true,
             pre_alert: true,
             pre_alert_seconds: 10,
-            background_alert: false,
+            background_alert: true,
+            notif_permission_asked: false,
             timer_default_seconds: 90,
             timer_adjust_step: 15,
             auto_start_rest: false,
@@ -95,6 +98,7 @@ impl Prefs {
                 "alert.pre_alert" => p.pre_alert = bv,
                 "alert.pre_alert_seconds" => p.pre_alert_seconds = iv.unwrap_or(10).clamp(3, 60),
                 "alert.background" => p.background_alert = bv,
+                "alert.permission_asked" => p.notif_permission_asked = bv,
                 "timer.default_seconds" => p.timer_default_seconds = iv.unwrap_or(90).clamp(5, 3600),
                 "timer.adjust_step" => p.timer_adjust_step = iv.unwrap_or(15).clamp(5, 60),
                 "timer.auto_start_rest" => p.auto_start_rest = bv,
@@ -128,6 +132,7 @@ impl Prefs {
             ("alert.pre_alert", b(self.pre_alert)),
             ("alert.pre_alert_seconds", self.pre_alert_seconds.to_string()),
             ("alert.background", b(self.background_alert)),
+            ("alert.permission_asked", b(self.notif_permission_asked)),
             ("timer.default_seconds", self.timer_default_seconds.to_string()),
             ("timer.adjust_step", self.timer_adjust_step.to_string()),
             ("timer.auto_start_rest", b(self.auto_start_rest)),

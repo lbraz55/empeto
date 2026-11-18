@@ -1,0 +1,506 @@
+import { Theme, Icons } from "../theme.slint";
+import { Bridge } from "../bridge.slint";
+import { Btn, IconBtn, Card, Label, Title, SectionTitle, Body, Scroll, EmptyState, Segmented, Badge, ToggleRow, ValueRow, StepperRow, Divider, Icon } from "../components/widgets.slint";
+
+// 6.6: detalhe da sessão (data, treino, exercícios, cargas, séries, repetições, descansos,
+// substituições e observações).
+export component SessionDetailScreen inherits Scroll {
+    Title {
+        text: Bridge.detail-title;
+        font-size: Theme.fs-xl;
+    }
+    Label { text: Bridge.detail-subtitle; }
+    if Bridge.detail-summary != "": Body { text: Bridge.detail-summary; }
+    for e in Bridge.detail-exercises: Card {
+        Body {
+            text: e.title;
+            font-weight: 700;
+        }
+        if e.subtitle != "": Label { text: e.subtitle; }
+        if e.badge != "": HorizontalLayout {
+            alignment: start;
+            Badge { text: e.badge; }
+        }
+        for l in e.lines: Text {
+            text: l;
+            color: Theme.text;
+            font-size: Theme.fs-s;
+            wrap: word-wrap;
+        }
+        if e.notes != "": Label { text: "Obs.: " + e.notes; }
+    }
+    if Bridge.detail-notes != "": Card {
+        SectionTitle { text: "OBSERVAÇÕES DA SESSÃO"; }
+        Body { text: Bridge.detail-notes; }
+    }
+    Label {
+        text: "Registro histórico: alterações posteriores na ficha não modificam esta sessão.";
+        color: Theme.faint;
+    }
+}
+
+// RF-15: evolução de um exercício ao longo de um período.
+export component EvolutionScreen inherits Scroll {
+    Title {
+        text: Bridge.evo-name;
+        font-size: Theme.fs-xl;
+    }
+    Segmented {
+        items: ["30 dias", "90 dias", "1 ano", "Tudo"];
+        selected: Bridge.evo-period;
+        select(i) => { Bridge.evo-set-period(i); }
+    }
+    Segmented {
+        items: ["Carga máx.", "Volume", "1RM est.", "Reps"];
+        selected: Bridge.evo-metric;
+        select(i) => { Bridge.evo-set-metric(i); }
+    }
+    if !Bridge.evo-has-data: EmptyState {
+        title: "Sem registros no período";
+        text: "Escolha um período maior.";
+    }
+    if Bridge.evo-has-data: Card {
+        HorizontalLayout {
+            Label { text: Bridge.evo-max; }
+        }
+        chart := Rectangle {
+            height: 180px;
+            border-width: 1px;
+            border-color: Theme.border;
+            border-radius: 8px;
+            Path {
+                x: 8px;
+                y: 8px;
+                width: parent.width - 16px;
+                height: parent.height - 16px;
+                viewbox-width: 1000;
+                viewbox-height: 1000;
+                commands: Bridge.evo-path;
+                stroke: Theme.text;
+                stroke-width: 2px;
+                fill: transparent;
+            }
+            Path {
+                x: 8px;
+                y: 8px;
+                width: parent.width - 16px;
+                height: parent.height - 16px;
+                viewbox-width: 1000;
+                viewbox-height: 1000;
+                commands: Bridge.evo-dots;
+                stroke: Theme.text;
+                stroke-width: 6px;
+                stroke-line-cap: round;
+                fill: transparent;
+            }
+        }
+        HorizontalLayout {
+            Label { text: Bridge.evo-min; }
+        }
+        HorizontalLayout {
+            Label { text: Bridge.evo-first-date; }
+            Label {
+                text: Bridge.evo-last-date;
+                horizontal-alignment: right;
+            }
+        }
+    }
+    if Bridge.evo-summary != "": Body { text: Bridge.evo-summary; }
+    if Bridge.evo-metric == 2: Label {
+        text: "1RM estimada pela fórmula de Epley — apenas indicativa, não é recomendação de treino.";
+        color: Theme.faint;
+    }
+    for r in Bridge.evo-rows: Rectangle {
+        min-height: 44px;
+        HorizontalLayout {
+            spacing: 8px;
+            Text {
+                text: r.date;
+                color: Theme.muted;
+                font-size: Theme.fs-s;
+                vertical-alignment: center;
+                min-width: 90px;
+            }
+            Text {
+                text: r.value;
+                color: Theme.text;
+                font-size: Theme.fs-m;
+                font-weight: 600;
+                vertical-alignment: center;
+            }
+            Text {
+                text: r.detail;
+                color: Theme.muted;
+                font-size: Theme.fs-s;
+                vertical-alignment: center;
+                horizontal-alignment: right;
+                wrap: word-wrap;
+            }
+        }
+    }
+}
+
+component CategoryRow inherits Rectangle {
+    in property <string> icon;
+    in property <string> text;
+    in property <string> description;
+    callback clicked();
+    min-height: 64px;
+    border-radius: 12px;
+    background: ta.pressed ? Theme.surface2 : Theme.surface;
+    accessible-role: button;
+    accessible-label: text;
+    accessible-action-default => { clicked(); }
+    ta := TouchArea {
+        clicked => { root.clicked(); }
+    }
+    HorizontalLayout {
+        padding: 12px;
+        spacing: 14px;
+        Icon {
+            y: (parent.height - self.height) / 2;
+            cmd: root.icon;
+        }
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            Text {
+                text: root.text;
+                color: Theme.text;
+                font-size: Theme.fs-m;
+                font-weight: 600;
+            }
+            Text {
+                text: root.description;
+                color: Theme.muted;
+                font-size: Theme.fs-s;
+                wrap: word-wrap;
+            }
+        }
+        Icon {
+            y: (parent.height - self.height) / 2;
+            cmd: Icons.forward;
+            tint: Theme.faint;
+            size: 18px;
+        }
+    }
+}
+
+// RF-20 / 6.7: Preferências (aba principal) com categorias.
+export component SettingsScreen inherits Scroll {
+    if Bridge.settings-section == 0: VerticalLayout {
+        spacing: 8px;
+        CategoryRow {
+            icon: Icons.bell;
+            text: "Sons e alertas";
+            description: "Fim do descanso, início de série, pré-alerta, vibração";
+            clicked => { Bridge.settings-open(1); }
+        }
+        CategoryRow {
+            icon: Icons.timer;
+            text: "Cronômetro";
+            description: "Duração padrão, ajuste, modo manual/automático";
+            clicked => { Bridge.settings-open(2); }
+        }
+        CategoryRow {
+            icon: Icons.dumbbell;
+            text: "Treinamento";
+            description: "Unidade de carga, incremento, valores padrão";
+            clicked => { Bridge.settings-open(3); }
+        }
+        CategoryRow {
+            icon: Icons.calendar;
+            text: "Calendário";
+            description: "Início da semana e visualização";
+            clicked => { Bridge.settings-open(4); }
+        }
+        CategoryRow {
+            icon: Icons.eye;
+            text: "Interface";
+            description: "Tamanho do texto, tela ligada durante o treino";
+            clicked => { Bridge.settings-open(5); }
+        }
+        CategoryRow {
+            icon: Icons.database;
+            text: "Dados e armazenamento";
+            description: "Importar, exportar, backup e restauração";
+            clicked => { Bridge.settings-open(6); }
+        }
+        CategoryRow {
+            icon: Icons.info;
+            text: "Sobre";
+            description: "Versão, privacidade e limitações";
+            clicked => { Bridge.settings-open(7); }
+        }
+    }
+    if Bridge.settings-section == 1: VerticalLayout {
+        spacing: 2px;
+        ToggleRow {
+            text: "Sons";
+            description: "Respeita o volume de notificações do sistema.";
+            checked: Bridge.set-sound;
+            toggled => { Bridge.pref-toggle("sound"); }
+        }
+        ValueRow {
+            text: "Som do fim do descanso";
+            value: Bridge.set-tone-rest;
+            clicked => { Bridge.pref-choose("tone-rest"); }
+        }
+        ValueRow {
+            text: "Som do início de série";
+            value: Bridge.set-tone-start;
+            description: "Usado na contagem de preparação (Cronômetro).";
+            clicked => { Bridge.pref-choose("tone-start"); }
+        }
+        ValueRow {
+            text: "Som do pré-alerta";
+            value: Bridge.set-tone-pre;
+            clicked => { Bridge.pref-choose("tone-pre"); }
+        }
+        ToggleRow {
+            text: "Vibração";
+            checked: Bridge.set-vibrate;
+            toggled => { Bridge.pref-toggle("vibrate"); }
+        }
+        ToggleRow {
+            text: "Pré-alerta";
+            description: "Aviso alguns segundos antes do fim do descanso.";
+            checked: Bridge.set-pre-alert;
+            toggled => { Bridge.pref-toggle("pre-alert"); }
+        }
+        StepperRow {
+            text: "Antecedência do pré-alerta";
+            value: Bridge.set-pre-alert-s;
+            step(d) => { Bridge.pref-step("pre-alert-s", d); }
+        }
+        ToggleRow {
+            text: "Alerta com app em segundo plano";
+            description: Bridge.notif-status;
+            checked: Bridge.set-background;
+            toggled => { Bridge.pref-toggle("background"); }
+        }
+        HorizontalLayout {
+            spacing: 8px;
+            Btn {
+                text: "Testar alerta";
+                icon: Icons.bell;
+                clicked => { Bridge.test-alert(); }
+            }
+            Btn {
+                text: "Notificações do sistema";
+                clicked => { Bridge.notif-settings(); }
+            }
+        }
+    }
+    if Bridge.settings-section == 2: VerticalLayout {
+        spacing: 2px;
+        StepperRow {
+            text: "Duração padrão do descanso";
+            description: "Usada quando o exercício não define descanso.";
+            value: Bridge.set-timer-default;
+            step(d) => { Bridge.pref-step("timer-default", d); }
+        }
+        StepperRow {
+            text: "Passo do ajuste (+/−)";
+            value: Bridge.set-adjust-step;
+            step(d) => { Bridge.pref-step("adjust-step", d); }
+        }
+        ToggleRow {
+            text: "Iniciar descanso automaticamente";
+            description: "Modo automático: ao registrar uma série, o cronômetro começa com o descanso do exercício. Desligado = modo manual.";
+            checked: Bridge.set-auto-rest;
+            toggled => { Bridge.pref-toggle("auto-rest"); }
+        }
+        ToggleRow {
+            text: "Contagem de preparação ao fim do descanso";
+            description: "Ação opcional: após o descanso, conta alguns segundos e toca o alerta de início de série. A série nunca é concluída automaticamente.";
+            checked: Bridge.set-rest-end-prepare;
+            toggled => { Bridge.pref-toggle("rest-end-prepare"); }
+        }
+        StepperRow {
+            text: "Duração da preparação";
+            value: Bridge.set-prepare-s;
+            step(d) => { Bridge.pref-step("prepare-s", d); }
+        }
+    }
+    if Bridge.settings-section == 3: VerticalLayout {
+        spacing: 2px;
+        ValueRow {
+            text: "Unidade de carga";
+            value: Bridge.set-unit;
+            clicked => { Bridge.pref-choose("unit"); }
+        }
+        ValueRow {
+            text: "Incremento de carga (+/−)";
+            value: Bridge.set-load-step;
+            clicked => { Bridge.pref-choose("load-step"); }
+        }
+        ToggleRow {
+            text: "Sugerir carga da última sessão";
+            description: "Pré-preenche a carga com o último valor realizado; desligado usa a carga-alvo da ficha.";
+            checked: Bridge.set-prefill-last;
+            toggled => { Bridge.pref-toggle("prefill-last"); }
+        }
+        StepperRow {
+            text: "Séries padrão (novo exercício)";
+            value: Bridge.set-default-sets;
+            step(d) => { Bridge.pref-step("default-sets", d); }
+        }
+        StepperRow {
+            text: "Repetições padrão";
+            value: Bridge.set-default-reps;
+            step(d) => { Bridge.pref-step("default-reps", d); }
+        }
+        ToggleRow {
+            text: "Confirmar ao finalizar sessão";
+            checked: Bridge.set-confirm-finish;
+            toggled => { Bridge.pref-toggle("confirm-finish"); }
+        }
+    }
+    if Bridge.settings-section == 4: VerticalLayout {
+        spacing: 2px;
+        ToggleRow {
+            text: "Semana começa na segunda-feira";
+            description: "Desligado: começa no domingo.";
+            checked: Bridge.set-week-monday;
+            toggled => { Bridge.pref-toggle("week-monday"); }
+        }
+        ToggleRow {
+            text: "Abrir calendário na visão semanal";
+            checked: Bridge.set-week-view;
+            toggled => { Bridge.pref-toggle("week-view"); }
+        }
+        Label { text: "O calendário é interno ao app e não pede acesso à agenda do aparelho. Para levar seus treinos a outro calendário, use Dados e armazenamento › Exportar calendário (.ics)."; }
+    }
+    if Bridge.settings-section == 5: VerticalLayout {
+        spacing: 2px;
+        ToggleRow {
+            text: "Texto grande";
+            checked: Bridge.set-large-text;
+            toggled => { Bridge.pref-toggle("large-text"); }
+        }
+        ToggleRow {
+            text: "Manter tela ligada durante a sessão";
+            checked: Bridge.set-keep-screen;
+            toggled => { Bridge.pref-toggle("keep-screen"); }
+        }
+    }
+    if Bridge.settings-section == 6: VerticalLayout {
+        spacing: 10px;
+        Card {
+            SectionTitle { text: "ARMAZENAMENTO LOCAL"; }
+            Body { text: Bridge.data-info; }
+        }
+        SectionTitle { text: "PLANILHAS"; }
+        Btn {
+            text: "Importar planilha (XLSX)";
+            icon: Icons.upload;
+            clicked => { Bridge.data-import(); }
+        }
+        Btn {
+            text: "Exportar planilha…";
+            icon: Icons.download;
+            clicked => { Bridge.data-export(); }
+        }
+        Btn {
+            text: "Baixar modelo de importação";
+            icon: Icons.download;
+            clicked => { Bridge.data-template(); }
+        }
+        SectionTitle { text: "BACKUP"; }
+        Label { text: "O backup guarda o estado completo do app (fichas, sessões, exercícios e preferências) para restauração. É diferente da planilha. Guarde cópias em local seguro: desinstalar o app apaga os dados locais."; }
+        Btn {
+            text: "Criar backup";
+            icon: Icons.download;
+            kind: "primary";
+            clicked => { Bridge.data-backup(); }
+        }
+        Btn {
+            text: "Restaurar backup";
+            icon: Icons.upload;
+            kind: "danger";
+            clicked => { Bridge.data-restore(); }
+        }
+        SectionTitle { text: "CALENDÁRIO"; }
+        Btn {
+            text: "Exportar calendário (.ics)";
+            icon: Icons.calendar;
+            clicked => { Bridge.data-ics(); }
+        }
+    }
+    if Bridge.settings-section == 7: VerticalLayout {
+        spacing: 10px;
+        Title { text: "Workout " + Bridge.app-version; }
+        Body { text: Bridge.about-text; }
+    }
+}
+
+// RF-16 / RN-09 / RN-10: prévia e mapeamento antes de gravar.
+export component ImportScreen inherits Scroll {
+    Label { text: "Arquivo: " + Bridge.imp-file; }
+    if Bridge.imp-multi-sheet: ValueRow {
+        text: "Aba";
+        value: Bridge.imp-sheet;
+        clicked => { Bridge.imp-choose-sheet(); }
+    }
+    SectionTitle { text: "MAPEAMENTO DE COLUNAS"; }
+    Label { text: "Toque em uma coluna para mudar o campo correspondente. \"Exercício\" é obrigatório."; }
+    for c in Bridge.imp-columns: ValueRow {
+        text: c.header;
+        description: c.sample;
+        value: c.field;
+        clicked => { Bridge.imp-map(c.index); }
+    }
+    SectionTitle { text: "PRÉVIA"; }
+    Body { text: Bridge.imp-summary; }
+    for p in Bridge.imp-plans: Card {
+        HorizontalLayout {
+            spacing: 8px;
+            Body {
+                text: p.name;
+                font-weight: 700;
+            }
+            if p.conflict: Badge { text: "Já existe"; }
+        }
+        Label { text: p.detail; }
+    }
+    if Bridge.imp-has-conflicts: ToggleRow {
+        text: "Substituir fichas existentes com o mesmo nome";
+        description: Bridge.imp-replace
+            ? "A ficha existente será apagada e recriada. Sessões do histórico são mantidas."
+            : "Desligado: a ficha importada é criada com o sufixo \"(importada)\"; nada é sobrescrito.";
+        checked: Bridge.imp-replace;
+        toggled => { Bridge.imp-set-replace(!Bridge.imp-replace); }
+    }
+    if Bridge.imp-errors.length > 0: Card {
+        SectionTitle { text: "ERROS (" + Bridge.imp-errors.length + ")"; }
+        for e in Bridge.imp-errors: Body { text: "✕ " + e; }
+    }
+    if Bridge.imp-warnings.length > 0: Card {
+        SectionTitle { text: "AVISOS (" + Bridge.imp-warnings.length + ")"; }
+        for w in Bridge.imp-warnings: Label {
+            text: "! " + w;
+            color: Theme.text;
+        }
+    }
+    if Bridge.imp-warnings.length > 0: ToggleRow {
+        text: "Conferi os avisos acima";
+        description: "Necessário para confirmar a importação.";
+        checked: Bridge.imp-reviewed;
+        toggled => { Bridge.imp-set-reviewed(!Bridge.imp-reviewed); }
+    }
+    HorizontalLayout {
+        spacing: 8px;
+        Btn {
+            text: "Cancelar";
+            clicked => { Bridge.imp-cancel(); }
+        }
+        Btn {
+            text: "Importar";
+            icon: Icons.check;
+            kind: "primary";
+            enabled: Bridge.imp-can-import && (Bridge.imp-warnings.length == 0 || Bridge.imp-reviewed);
+            clicked => { Bridge.imp-confirm(); }
+        }
+    }
+}

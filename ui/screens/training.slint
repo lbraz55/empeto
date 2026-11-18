@@ -1,0 +1,573 @@
+import { Theme, Icons } from "../theme.slint";
+import { Bridge, SetRow, SessionExRow } from "../bridge.slint";
+import { Btn, IconBtn, Card, Label, Title, SectionTitle, Body, Scroll, EmptyState, Segmented, Badge, Field, ToggleRow, Chip, Icon, Divider } from "../components/widgets.slint";
+
+// RF-01..RF-03: edição da ficha (dias/sequência, exercícios, séries, repetições, carga-alvo).
+export component PlanEditorScreen inherits Scroll {
+    Field {
+        label: "Nome da ficha";
+        placeholder: "Ex.: Hipertrofia ABC";
+        text <=> Bridge.edit-plan-name;
+    }
+    Field {
+        label: "Descrição (opcional)";
+        placeholder: "Objetivo, período, observações";
+        text <=> Bridge.edit-plan-desc;
+    }
+    Btn {
+        text: "Salvar nome e descrição";
+        icon: Icons.check;
+        clicked => { Bridge.save-plan-header(Bridge.edit-plan-name, Bridge.edit-plan-desc); }
+    }
+    SectionTitle { text: "ORGANIZAÇÃO"; }
+    Segmented {
+        items: ["Dias da semana", "Sequência A/B/C"];
+        selected: Bridge.edit-plan-weekday ? 0 : 1;
+        select(i) => { Bridge.set-plan-schedule(i == 0); }
+    }
+    Label {
+        text: Bridge.edit-plan-weekday
+            ? "Cada dia da ficha é associado a dias da semana; aparece no calendário nessas datas."
+            : "Os dias seguem em fila (A → B → C → A…). A Home mostra o próximo da sequência.";
+    }
+    ToggleRow {
+        text: "Ficha ativa";
+        description: "Fichas ativas aparecem na Home e no calendário.";
+        checked: Bridge.edit-plan-active;
+        toggled => { Bridge.toggle-plan-active(Bridge.edit-plan-id); }
+    }
+    SectionTitle { text: "DIAS DE TREINO"; }
+    if Bridge.edit-days.length == 0: Label { text: "Adicione o primeiro dia (ex.: Treino A, Peito e tríceps)."; }
+    for d in Bridge.edit-days: Card {
+        HorizontalLayout {
+            spacing: 0px;
+            VerticalLayout {
+                alignment: center;
+                spacing: 2px;
+                Title { text: d.name; }
+                if d.subtitle != "": Label { text: d.subtitle; }
+            }
+            IconBtn {
+                icon: Icons.up;
+                label: "Mover dia para cima";
+                clicked => { Bridge.move-day(d.id, -1); }
+            }
+            IconBtn {
+                icon: Icons.down;
+                label: "Mover dia para baixo";
+                clicked => { Bridge.move-day(d.id, 1); }
+            }
+            IconBtn {
+                icon: Icons.edit;
+                label: "Editar dia " + d.name;
+                clicked => { Bridge.edit-day(d.id); }
+            }
+            IconBtn {
+                icon: Icons.trash;
+                label: "Excluir dia " + d.name;
+                clicked => { Bridge.delete-day(d.id); }
+            }
+        }
+        if d.exercises.length == 0: Label { text: "Nenhum exercício neste dia."; }
+        for e[i] in d.exercises: Rectangle {
+            min-height: Theme.touch + 8px;
+            background: ta.pressed ? Theme.surface3 : transparent;
+            border-radius: 10px;
+            accessible-role: button;
+            accessible-label: "Editar " + e.name;
+            accessible-action-default => { Bridge.edit-plan-ex(e.id); }
+            ta := TouchArea {
+                clicked => { Bridge.edit-plan-ex(e.id); }
+            }
+            HorizontalLayout {
+                padding-left: 4px;
+                spacing: 0px;
+                Text {
+                    width: 24px;
+                    text: (i + 1) + ".";
+                    color: Theme.faint;
+                    font-size: Theme.fs-s;
+                    vertical-alignment: center;
+                }
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 2px;
+                    Body { text: e.name; }
+                    Label { text: e.detail; }
+                    if e.notes != "": Label {
+                        text: "Obs.: " + e.notes;
+                        color: Theme.faint;
+                    }
+                }
+                IconBtn {
+                    icon: Icons.up;
+                    label: "Mover exercício para cima";
+                    clicked => { Bridge.move-plan-ex(e.id, -1); }
+                }
+                IconBtn {
+                    icon: Icons.down;
+                    label: "Mover exercício para baixo";
+                    clicked => { Bridge.move-plan-ex(e.id, 1); }
+                }
+            }
+        }
+        HorizontalLayout {
+            spacing: 8px;
+            Btn {
+                text: "Exercício";
+                icon: Icons.plus;
+                clicked => { Bridge.add-plan-ex(d.id); }
+            }
+            Btn {
+                text: "Iniciar";
+                icon: Icons.play;
+                kind: "primary";
+                enabled: d.exercises.length > 0;
+                clicked => { Bridge.start-day(d.id); }
+            }
+        }
+    }
+    Btn {
+        text: "Adicionar dia";
+        icon: Icons.plus;
+        clicked => { Bridge.add-day(); }
+    }
+}
+
+// RF-09: biblioteca pesquisável por grupo muscular, equipamento e padrão de movimento.
+export component LibraryScreen inherits Scroll {
+    if Bridge.lib-mode == "pick": Label { text: "Toque em um exercício para selecioná-lo."; }
+    Field {
+        placeholder: "Buscar por nome, músculo, equipamento…";
+        input-type: InputType.text;
+        text <=> Bridge.lib-search;
+        edited(t) => { Bridge.lib-search-changed(t); }
+    }
+    HorizontalLayout {
+        spacing: 6px;
+        Chip {
+            horizontal-stretch: 1;
+            text: Bridge.lib-muscle == "" ? "Músculo" : Bridge.lib-muscle;
+            selected: Bridge.lib-muscle != "";
+            clicked => { Bridge.lib-filter("muscle"); }
+        }
+        Chip {
+            horizontal-stretch: 1;
+            text: Bridge.lib-equipment == "" ? "Equipamento" : Bridge.lib-equipment;
+            selected: Bridge.lib-equipment != "";
+            clicked => { Bridge.lib-filter("equipment"); }
+        }
+        Chip {
+            horizontal-stretch: 1;
+            text: Bridge.lib-pattern == "" ? "Movimento" : Bridge.lib-pattern;
+            selected: Bridge.lib-pattern != "";
+            clicked => { Bridge.lib-filter("pattern"); }
+        }
+    }
+    HorizontalLayout {
+        spacing: 8px;
+        Btn {
+            text: "Novo exercício";
+            icon: Icons.plus;
+            kind: "primary";
+            clicked => { Bridge.lib-new(); }
+        }
+        if Bridge.lib-muscle != "" || Bridge.lib-equipment != "" || Bridge.lib-pattern != "" || Bridge.lib-search != "": Btn {
+            text: "Limpar";
+            icon: Icons.close;
+            clicked => { Bridge.lib-clear-filters(); }
+        }
+    }
+    if Bridge.lib-mode == "browse": ToggleRow {
+        text: "Mostrar arquivados";
+        checked: Bridge.lib-show-archived;
+        toggled => { Bridge.lib-toggle-archived(); }
+    }
+    Label { text: Bridge.library.length + " exercício(s)"; }
+    for e in Bridge.library: Card {
+        clickable: true;
+        accessible-role: button;
+        accessible-label: e.name;
+        clicked => { Bridge.lib-item(e.id); }
+        HorizontalLayout {
+            spacing: 4px;
+            VerticalLayout {
+                alignment: center;
+                spacing: 2px;
+                Body {
+                    text: e.name;
+                    font-weight: 600;
+                }
+                Label { text: e.detail; }
+                if e.archived: HorizontalLayout {
+                    alignment: start;
+                    Badge { text: "Arquivado"; }
+                }
+            }
+            if Bridge.lib-mode == "browse": IconBtn {
+                icon: Icons.edit;
+                label: "Editar " + e.name;
+                clicked => { Bridge.lib-edit(e.id); }
+            }
+        }
+    }
+}
+
+component SetLine inherits Rectangle {
+    in property <SetRow> s;
+    in property <string> unit;
+    in property <int> se-id;
+    property <string> load: s.load;
+    property <string> reps: s.reps;
+    min-height: 92px;
+    border-radius: 12px;
+    background: s.done ? Theme.surface2 : Theme.surface;
+    border-width: 1px;
+    border-color: s.done ? Theme.border-strong : Theme.border;
+    VerticalLayout {
+        padding: 10px;
+        spacing: 6px;
+        HorizontalLayout {
+            spacing: 8px;
+            Text {
+                text: "Série " + root.s.number;
+                color: Theme.text;
+                font-size: Theme.fs-m;
+                font-weight: 700;
+            }
+            Text {
+                text: root.s.planned;
+                color: Theme.muted;
+                font-size: Theme.fs-s;
+                horizontal-alignment: right;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+        }
+        if root.s.done: HorizontalLayout {
+            spacing: 8px;
+            Icon {
+                y: (parent.height - self.height) / 2;
+                cmd: Icons.check;
+                size: 22px;
+            }
+            Text {
+                text: root.s.load + " " + root.unit + "  ×  " + root.s.reps + " reps";
+                color: Theme.text;
+                font-size: Theme.fs-l;
+                font-weight: 600;
+                vertical-alignment: center;
+            }
+            Btn {
+                text: "Desfazer";
+                compact: true;
+                horizontal-stretch: 0;
+                clicked => { Bridge.session-undo(root.s.id); }
+            }
+        }
+        if !root.s.done: HorizontalLayout {
+            spacing: 6px;
+            IconBtn {
+                width: 40px;
+                icon: Icons.minus;
+                label: "Diminuir carga";
+                clicked => { root.load = Bridge.adjust-load(root.load, -1); }
+            }
+            Field {
+                horizontal-stretch: 2;
+                text <=> root.load;
+                placeholder: root.unit;
+                input-type: InputType.decimal;
+                align: center;
+                font-size: Theme.fs-l;
+            }
+            IconBtn {
+                width: 40px;
+                icon: Icons.plus;
+                label: "Aumentar carga";
+                clicked => { root.load = Bridge.adjust-load(root.load, 1); }
+            }
+            Text {
+                text: "×";
+                color: Theme.muted;
+                vertical-alignment: center;
+            }
+            Field {
+                horizontal-stretch: 1;
+                text <=> root.reps;
+                placeholder: "reps";
+                input-type: InputType.number;
+                align: center;
+                font-size: Theme.fs-l;
+            }
+            Btn {
+                horizontal-stretch: 0;
+                icon: Icons.check;
+                kind: "primary";
+                accessible-label: "Registrar série " + root.s.number;
+                clicked => { Bridge.session-record(root.s.id, root.load, root.reps); }
+            }
+        }
+        if root.s.hint != "": Text {
+            text: root.s.hint;
+            color: Theme.faint;
+            font-size: Theme.fs-xs;
+        }
+    }
+}
+
+// RF-04..RF-08, 6.3: exercício centralizado; dados operacionais fáceis de localizar.
+export component SessionScreen inherits Rectangle {
+    property <SessionExRow> cur: Bridge.session-exercises[Bridge.session-index];
+    property <int> count: Bridge.session-exercises.length;
+    VerticalLayout {
+        Rectangle {
+            height: 40px;
+            background: Theme.surface;
+            HorizontalLayout {
+                padding-left: Theme.pad;
+                padding-right: Theme.pad;
+                Text {
+                    text: Bridge.session-progress;
+                    color: Theme.muted;
+                    font-size: Theme.fs-s;
+                    vertical-alignment: center;
+                }
+                Text {
+                    text: "⏱ " + Bridge.session-elapsed;
+                    color: Theme.muted;
+                    font-size: Theme.fs-s;
+                    horizontal-alignment: right;
+                    vertical-alignment: center;
+                }
+            }
+        }
+        Scroll {
+            vertical-stretch: 1;
+            VerticalLayout {
+                padding-top: 8px;
+                padding-bottom: 8px;
+                spacing: 6px;
+                Text {
+                    text: "Exercício " + (Bridge.session-index + 1) + " de " + root.count;
+                    color: Theme.muted;
+                    font-size: Theme.fs-s;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    text: root.cur.name;
+                    color: Theme.text;
+                    font-size: Theme.fs-xxl;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                    wrap: word-wrap;
+                }
+                Text {
+                    text: root.cur.muscle + (root.cur.kind != "" ? "  ·  " + root.cur.kind : "") + (root.cur.equipment != "" ? "  ·  " + root.cur.equipment : "");
+                    color: Theme.muted;
+                    font-size: Theme.fs-m;
+                    horizontal-alignment: center;
+                    wrap: word-wrap;
+                }
+                if root.cur.substitution != "": HorizontalLayout {
+                    alignment: center;
+                    Badge { text: root.cur.substitution; }
+                }
+                Text {
+                    text: root.cur.planned;
+                    color: Theme.text;
+                    font-size: Theme.fs-m;
+                    horizontal-alignment: center;
+                    wrap: word-wrap;
+                }
+            }
+            for st in root.cur.sets: SetLine {
+                s: st;
+                unit: Bridge.session-unit;
+                se-id: root.cur.id;
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                Btn {
+                    text: "Série";
+                    icon: Icons.plus;
+                    compact: true;
+                    clicked => { Bridge.session-add-set(root.cur.id); }
+                }
+                Btn {
+                    text: "Série";
+                    icon: Icons.minus;
+                    compact: true;
+                    clicked => { Bridge.session-remove-set(root.cur.id); }
+                }
+                Btn {
+                    text: "Obs.";
+                    icon: Icons.note;
+                    compact: true;
+                    clicked => { Bridge.session-ex-notes(root.cur.id); }
+                }
+            }
+            Btn {
+                text: "Substituir exercício";
+                icon: Icons.swap;
+                clicked => { Bridge.session-substitute(root.cur.id); }
+            }
+            if root.cur.notes != "": Label { text: "Obs.: " + root.cur.notes; }
+            Divider { }
+            Btn {
+                text: "Observações da sessão";
+                icon: Icons.note;
+                kind: "ghost";
+                clicked => { Bridge.session-edit-notes(); }
+            }
+            if Bridge.session-notes != "": Label { text: Bridge.session-notes; }
+            HorizontalLayout {
+                spacing: 8px;
+                Btn {
+                    text: "Descartar";
+                    kind: "danger";
+                    clicked => { Bridge.session-discard(); }
+                }
+                Btn {
+                    text: "Finalizar sessão";
+                    icon: Icons.check;
+                    kind: "primary";
+                    clicked => { Bridge.session-finish(); }
+                }
+            }
+        }
+        Rectangle {
+            height: 64px;
+            background: Theme.surface;
+            HorizontalLayout {
+                padding: 8px;
+                spacing: 8px;
+                Btn {
+                    icon: Icons.back;
+                    text: "Anterior";
+                    enabled: Bridge.session-index > 0;
+                    clicked => { Bridge.session-select(Bridge.session-index - 1); }
+                }
+                Btn {
+                    icon: Icons.timer;
+                    text: "Cronômetro";
+                    clicked => { Bridge.open-timer(); }
+                }
+                Btn {
+                    icon: Icons.forward;
+                    text: "Próximo";
+                    enabled: Bridge.session-index < root.count - 1;
+                    clicked => { Bridge.session-select(Bridge.session-index + 1); }
+                }
+            }
+        }
+    }
+}
+
+// RF-10..RF-12, 6.4: tela própria do cronômetro.
+export component TimerScreen inherits Scroll {
+    gap: 14px;
+    Rectangle { height: 8px; }
+    Text {
+        text: Bridge.timer-phase;
+        color: Theme.muted;
+        font-size: Theme.fs-m;
+        horizontal-alignment: center;
+    }
+    if Bridge.timer-context != "": Text {
+        text: Bridge.timer-context;
+        color: Theme.text;
+        font-size: Theme.fs-m;
+        horizontal-alignment: center;
+        wrap: word-wrap;
+    }
+    Text {
+        text: Bridge.timer-display;
+        color: Bridge.timer-status == "paused" ? Theme.muted : Theme.text;
+        font-size: Theme.fs-timer;
+        font-weight: 300;
+        horizontal-alignment: center;
+        accessible-role: text;
+        accessible-label: "Tempo restante " + Bridge.timer-display;
+    }
+    Rectangle {
+        height: 8px;
+        border-radius: 4px;
+        background: Theme.surface3;
+        Rectangle {
+            x: 0;
+            width: parent.width * Bridge.timer-progress;
+            height: parent.height;
+            border-radius: 4px;
+            background: Theme.accent;
+        }
+    }
+    Text {
+        text: Bridge.timer-status == "running" ? "Em contagem"
+            : Bridge.timer-status == "paused" ? "Pausado"
+            : Bridge.timer-status == "finished" ? "Tempo encerrado — a série só é registrada por você."
+            : "Pronto para iniciar";
+        color: Theme.muted;
+        font-size: Theme.fs-s;
+        horizontal-alignment: center;
+        wrap: word-wrap;
+    }
+    HorizontalLayout {
+        spacing: 10px;
+        Btn {
+            text: "−" + Bridge.timer-step;
+            clicked => { Bridge.timer-adjust(-1); }
+        }
+        Btn {
+            text: "+" + Bridge.timer-step;
+            clicked => { Bridge.timer-adjust(1); }
+        }
+    }
+    HorizontalLayout {
+        spacing: 10px;
+        Btn {
+            min-height: 60px;
+            text: Bridge.timer-status == "running" ? "Pausar" : Bridge.timer-status == "paused" ? "Retomar" : "Iniciar";
+            icon: Bridge.timer-status == "running" ? Icons.pause : Icons.play;
+            kind: "primary";
+            font-size: Theme.fs-l;
+            clicked => {
+                if (Bridge.timer-status == "running") {
+                    Bridge.timer-pause();
+                } else {
+                    Bridge.timer-start();
+                }
+            }
+        }
+        Btn {
+            min-height: 60px;
+            text: "Reiniciar";
+            icon: Icons.reset;
+            font-size: Theme.fs-l;
+            clicked => { Bridge.timer-reset(); }
+        }
+    }
+    SectionTitle { text: "DURAÇÃO"; }
+    HorizontalLayout {
+        spacing: 6px;
+        for p in Bridge.timer-presets: Chip {
+            horizontal-stretch: 1;
+            text: p >= 60 && Math.mod(p, 60) == 0 ? (p / 60) + " min" : p + " s";
+            clicked => { Bridge.timer-preset(p); }
+        }
+    }
+    HorizontalLayout {
+        spacing: 8px;
+        Label {
+            text: "Duração atual: " + Bridge.timer-duration;
+            vertical-alignment: center;
+        }
+        Btn {
+            text: "Outra…";
+            compact: true;
+            horizontal-stretch: 0;
+            clicked => { Bridge.timer-custom(); }
+        }
+    }
+    if Bridge.timer-notice != "": Label { text: Bridge.timer-notice; }
+}

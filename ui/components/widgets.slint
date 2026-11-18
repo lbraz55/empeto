@@ -1,0 +1,530 @@
+import { Theme, Icons } from "../theme.slint";
+
+export component Icon inherits Rectangle {
+    in property <string> cmd;
+    in property <brush> tint: Theme.text;
+    in property <length> size: 24px;
+    in property <length> stroke: 2px;
+    width: size;
+    height: size;
+    Path {
+        width: parent.width;
+        height: parent.height;
+        commands: root.cmd;
+        stroke: root.tint;
+        stroke-width: root.stroke;
+        stroke-line-cap: round;
+        stroke-line-join: round;
+        fill: transparent;
+        viewbox-width: 24;
+        viewbox-height: 24;
+    }
+}
+
+// Botão principal/secundário. kind: "primary" | "secondary" | "ghost" | "danger"
+export component Btn inherits Rectangle {
+    in property <string> text;
+    in property <string> icon;
+    in property <string> kind: "secondary";
+    in property <bool> enabled: true;
+    in property <bool> compact: false;
+    in property <length> font-size: Theme.fs-m;
+    callback clicked();
+    min-height: compact ? 40px : Theme.touch;
+    min-width: compact ? 40px : Theme.touch;
+    horizontal-stretch: 1;
+    border-radius: Theme.radius;
+    background: !enabled ? Theme.surface2
+        : ta.pressed ? (kind == "primary" ? #cfcfcf : Theme.pressed)
+        : kind == "primary" ? Theme.accent
+        : kind == "ghost" ? transparent
+        : Theme.surface2;
+    border-width: kind == "danger" || kind == "secondary" ? 1px : 0px;
+    border-color: kind == "danger" ? Theme.border-strong : Theme.border;
+    opacity: enabled ? 1.0 : 0.45;
+    accessible-role: button;
+    accessible-label: text;
+    accessible-action-default => { if (enabled) { clicked(); } }
+    ta := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+    HorizontalLayout {
+        padding-left: compact ? 10px : 14px;
+        padding-right: compact ? 10px : 14px;
+        spacing: 8px;
+        alignment: center;
+        if root.icon != "": Icon {
+            y: (parent.height - self.height) / 2;
+            cmd: root.icon;
+            size: 20px;
+            tint: root.kind == "primary" ? Theme.on-accent : Theme.text;
+        }
+        if root.text != "": Text {
+            text: root.text;
+            font-size: root.font-size;
+            font-weight: root.kind == "primary" ? 700 : 500;
+            color: root.kind == "primary" ? Theme.on-accent : Theme.text;
+            vertical-alignment: center;
+            horizontal-alignment: center;
+            overflow: elide;
+        }
+    }
+}
+
+export component IconBtn inherits Rectangle {
+    in property <string> icon;
+    in property <string> label;
+    in property <bool> enabled: true;
+    in property <brush> tint: Theme.text;
+    callback clicked();
+    width: Theme.touch;
+    height: Theme.touch;
+    border-radius: Theme.touch / 2;
+    background: ta.pressed ? Theme.pressed : transparent;
+    opacity: enabled ? 1 : 0.35;
+    accessible-role: button;
+    accessible-label: label;
+    accessible-action-default => { clicked(); }
+    ta := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+    Icon {
+        cmd: root.icon;
+        tint: root.tint;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+    }
+}
+
+export component Card inherits Rectangle {
+    in property <bool> clickable: false;
+    callback clicked();
+    background: ta.pressed && clickable ? Theme.surface3 : Theme.surface;
+    border-radius: Theme.radius;
+    border-width: 1px;
+    border-color: Theme.border;
+    ta := TouchArea {
+        enabled: root.clickable;
+        clicked => { root.clicked(); }
+    }
+    VerticalLayout {
+        padding: 14px;
+        spacing: 6px;
+        @children
+    }
+}
+
+export component Label inherits Text {
+    color: Theme.muted;
+    font-size: Theme.fs-s;
+    wrap: word-wrap;
+}
+
+export component Title inherits Text {
+    color: Theme.text;
+    font-size: Theme.fs-l;
+    font-weight: 700;
+    wrap: word-wrap;
+}
+
+export component SectionTitle inherits Text {
+    color: Theme.muted;
+    font-size: Theme.fs-xs;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+export component Body inherits Text {
+    color: Theme.text;
+    font-size: Theme.fs-m;
+    wrap: word-wrap;
+}
+
+export component Divider inherits Rectangle {
+    height: 1px;
+    background: Theme.border;
+}
+
+// Campo de texto com rótulo opcional.
+export component Field inherits VerticalLayout {
+    in property <string> label;
+    in property <string> placeholder;
+    in-out property <string> text <=> ti.text;
+    in property <InputType> input-type: InputType.text;
+    in property <bool> multiline: false;
+    in property <TextHorizontalAlignment> align: left;
+    in property <length> font-size: Theme.fs-m;
+    callback edited(string);
+    callback accepted(string);
+    spacing: 4px;
+    if root.label != "": Text {
+        text: root.label;
+        color: Theme.muted;
+        font-size: Theme.fs-s;
+    }
+    box := Rectangle {
+        min-height: root.multiline ? 96px : Theme.touch;
+        border-radius: 10px;
+        background: Theme.surface2;
+        border-width: ti.has-focus ? 2px : 1px;
+        border-color: ti.has-focus ? Theme.accent : Theme.border;
+        TouchArea {
+            clicked => { ti.focus(); }
+        }
+        if ti.text == "": Text {
+            x: 12px;
+            y: root.multiline ? 12px : (parent.height - self.height) / 2;
+            width: parent.width - 24px;
+            text: root.placeholder;
+            color: Theme.faint;
+            font-size: root.font-size;
+            horizontal-alignment: root.align;
+        }
+        ti := TextInput {
+            x: 12px;
+            y: root.multiline ? 12px : (parent.height - self.height) / 2;
+            width: parent.width - 24px;
+            height: root.multiline ? parent.height - 24px : self.preferred-height;
+            color: Theme.text;
+            font-size: root.font-size;
+            single-line: !root.multiline;
+            wrap: root.multiline ? word-wrap : no-wrap;
+            input-type: root.input-type;
+            horizontal-alignment: root.align;
+            selection-background-color: #555555;
+            selection-foreground-color: Theme.text;
+            edited => { root.edited(self.text); }
+            accepted => { root.accepted(self.text); }
+        }
+    }
+}
+
+// Interruptor acessível com rótulo e descrição (informação não depende só de cor).
+export component ToggleRow inherits Rectangle {
+    in property <string> text;
+    in property <string> description;
+    in property <bool> checked;
+    in property <bool> enabled: true;
+    callback toggled();
+    min-height: Theme.touch + 8px;
+    opacity: enabled ? 1 : 0.45;
+    accessible-role: switch;
+    accessible-label: text;
+    accessible-checked: checked;
+    accessible-action-default => { toggled(); }
+    TouchArea {
+        enabled: root.enabled;
+        clicked => { root.toggled(); }
+    }
+    HorizontalLayout {
+        spacing: 12px;
+        padding-top: 6px;
+        padding-bottom: 6px;
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            Text {
+                text: root.text;
+                color: Theme.text;
+                font-size: Theme.fs-m;
+                wrap: word-wrap;
+            }
+            if root.description != "": Text {
+                text: root.description;
+                color: Theme.muted;
+                font-size: Theme.fs-s;
+                wrap: word-wrap;
+            }
+        }
+        Rectangle {
+            width: 52px;
+            height: 30px;
+            y: (parent.height - self.height) / 2;
+            border-radius: 15px;
+            background: root.checked ? Theme.accent : Theme.surface3;
+            border-width: 1px;
+            border-color: root.checked ? Theme.accent : Theme.border-strong;
+            Rectangle {
+                width: 22px;
+                height: 22px;
+                border-radius: 11px;
+                y: 4px;
+                x: root.checked ? parent.width - self.width - 4px : 4px;
+                background: root.checked ? Theme.on-accent : Theme.muted;
+                animate x { duration: 120ms; }
+            }
+            Text {
+                // marca textual para quem não distingue tons
+                text: root.checked ? "ON" : "";
+                font-size: 9px;
+                color: Theme.on-accent;
+                x: 7px;
+                y: (parent.height - self.height) / 2;
+            }
+        }
+    }
+}
+
+// Linha de configuração que abre escolha/valor.
+export component ValueRow inherits Rectangle {
+    in property <string> text;
+    in property <string> value;
+    in property <string> description;
+    callback clicked();
+    min-height: Theme.touch + 8px;
+    accessible-role: button;
+    accessible-label: text + ": " + value;
+    accessible-action-default => { clicked(); }
+    background: ta.pressed ? Theme.surface2 : transparent;
+    ta := TouchArea {
+        clicked => { root.clicked(); }
+    }
+    HorizontalLayout {
+        spacing: 12px;
+        padding-top: 6px;
+        padding-bottom: 6px;
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            Text {
+                text: root.text;
+                color: Theme.text;
+                font-size: Theme.fs-m;
+                wrap: word-wrap;
+            }
+            if root.description != "": Text {
+                text: root.description;
+                color: Theme.muted;
+                font-size: Theme.fs-s;
+                wrap: word-wrap;
+            }
+        }
+        Text {
+            text: root.value;
+            color: Theme.muted;
+            font-size: Theme.fs-m;
+            vertical-alignment: center;
+            horizontal-alignment: right;
+        }
+        Icon {
+            y: (parent.height - self.height) / 2;
+            cmd: Icons.forward;
+            size: 18px;
+            tint: Theme.faint;
+        }
+    }
+}
+
+// Linha com valor numérico e botões - / +.
+export component StepperRow inherits Rectangle {
+    in property <string> text;
+    in property <string> value;
+    in property <string> description;
+    callback step(int);
+    min-height: Theme.touch + 8px;
+    HorizontalLayout {
+        spacing: 8px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            Text {
+                text: root.text;
+                color: Theme.text;
+                font-size: Theme.fs-m;
+                wrap: word-wrap;
+            }
+            if root.description != "": Text {
+                text: root.description;
+                color: Theme.muted;
+                font-size: Theme.fs-s;
+                wrap: word-wrap;
+            }
+        }
+        IconBtn {
+            icon: Icons.minus;
+            label: "Diminuir " + root.text;
+            clicked => { root.step(-1); }
+        }
+        Text {
+            min-width: 64px;
+            text: root.value;
+            color: Theme.text;
+            font-size: Theme.fs-m;
+            font-weight: 600;
+            vertical-alignment: center;
+            horizontal-alignment: center;
+        }
+        IconBtn {
+            icon: Icons.plus;
+            label: "Aumentar " + root.text;
+            clicked => { root.step(1); }
+        }
+    }
+}
+
+// Controle segmentado (abas internas).
+export component Segmented inherits Rectangle {
+    in property <[string]> items;
+    in property <int> selected;
+    callback select(int);
+    height: 44px;
+    border-radius: 12px;
+    background: Theme.surface2;
+    HorizontalLayout {
+        padding: 3px;
+        spacing: 3px;
+        for it[i] in root.items: Rectangle {
+            border-radius: 10px;
+            background: i == root.selected ? Theme.accent : (ta.pressed ? Theme.pressed : transparent);
+            accessible-role: tab;
+            accessible-label: it;
+            accessible-checked: i == root.selected;
+            accessible-action-default => { root.select(i); }
+            ta := TouchArea {
+                clicked => { root.select(i); }
+            }
+            Text {
+                text: it;
+                color: i == root.selected ? Theme.on-accent : Theme.text;
+                font-size: Theme.fs-s;
+                font-weight: i == root.selected ? 700 : 500;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+    }
+}
+
+export component Chip inherits Rectangle {
+    in property <string> text;
+    in property <bool> selected;
+    callback clicked();
+    height: 36px;
+    min-width: 44px;
+    border-radius: 18px;
+    background: selected ? Theme.accent : (ta.pressed ? Theme.pressed : Theme.surface2);
+    border-width: 1px;
+    border-color: selected ? Theme.accent : Theme.border;
+    accessible-role: button;
+    accessible-label: text;
+    accessible-checked: selected;
+    accessible-action-default => { clicked(); }
+    ta := TouchArea {
+        clicked => { root.clicked(); }
+    }
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        Text {
+            text: root.text;
+            color: root.selected ? Theme.on-accent : Theme.text;
+            font-size: Theme.fs-s;
+            vertical-alignment: center;
+            horizontal-alignment: center;
+        }
+    }
+}
+
+export component Badge inherits Rectangle {
+    in property <string> text;
+    height: 24px;
+    border-radius: 12px;
+    border-width: 1px;
+    border-color: Theme.border-strong;
+    background: Theme.surface2;
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 10px;
+        Text {
+            text: root.text;
+            color: Theme.text;
+            font-size: Theme.fs-xs;
+            vertical-alignment: center;
+        }
+    }
+}
+
+// Área rolável com coluna de conteúdo.
+export component Scroll inherits Flickable {
+    in property <length> pad: Theme.pad;
+    in property <length> gap: Theme.gap;
+    content-width: self.width;
+    content-height: max(self.height, inner.preferred-height);
+    inner := VerticalLayout {
+        width: root.width;
+        padding: root.pad;
+        spacing: root.gap;
+        alignment: start;
+        @children
+    }
+}
+
+export component EmptyState inherits VerticalLayout {
+    in property <string> title;
+    in property <string> text;
+    padding: 24px;
+    spacing: 8px;
+    alignment: center;
+    Text {
+        text: root.title;
+        color: Theme.text;
+        font-size: Theme.fs-l;
+        font-weight: 600;
+        horizontal-alignment: center;
+        wrap: word-wrap;
+    }
+    Text {
+        text: root.text;
+        color: Theme.muted;
+        font-size: Theme.fs-m;
+        horizontal-alignment: center;
+        wrap: word-wrap;
+    }
+}
+
+// Moldura de diálogo modal (o conteúdo vai em @children).
+export component DialogFrame inherits Rectangle {
+    in property <string> title;
+    callback dismiss();
+    background: #000000c0;
+    TouchArea {
+        clicked => { root.dismiss(); }
+    }
+    panel := Rectangle {
+        x: 12px;
+        width: parent.width - 24px;
+        height: min(parent.height - 48px, content.preferred-height);
+        y: max(24px, (parent.height - self.height) / 2);
+        background: Theme.surface;
+        border-radius: 18px;
+        border-width: 1px;
+        border-color: Theme.border-strong;
+        clip: true;
+        TouchArea { }
+        content := VerticalLayout {
+            padding: 16px;
+            spacing: 12px;
+            HorizontalLayout {
+                spacing: 8px;
+                Text {
+                    text: root.title;
+                    color: Theme.text;
+                    font-size: Theme.fs-l;
+                    font-weight: 700;
+                    wrap: word-wrap;
+                    vertical-alignment: center;
+                }
+                IconBtn {
+                    icon: Icons.close;
+                    label: "Fechar";
+                    clicked => { root.dismiss(); }
+                }
+            }
+            @children
+        }
+    }
+}

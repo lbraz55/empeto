@@ -1,0 +1,342 @@
+import { Theme, Icons } from "theme.slint";
+import { Bridge } from "bridge.slint";
+import { Btn, IconBtn, Label, Body, Field, DialogFrame, Chip, ValueRow, Segmented, Icon, SectionTitle, Divider } from "components/widgets.slint";
+
+export component ConfirmDialog inherits DialogFrame {
+    title: Bridge.confirm-title;
+    dismiss => { Bridge.dialog-closed(); }
+    Body { text: Bridge.confirm-text; }
+    HorizontalLayout {
+        spacing: 8px;
+        Btn {
+            text: "Cancelar";
+            clicked => { Bridge.dialog-closed(); }
+        }
+        Btn {
+            text: Bridge.confirm-ok;
+            kind: "primary";
+            clicked => { Bridge.confirm-accepted(); }
+        }
+    }
+}
+
+export component InfoDialog inherits DialogFrame {
+    title: Bridge.info-title;
+    dismiss => { Bridge.dialog-closed(); }
+    Body { text: Bridge.info-text; }
+    HorizontalLayout {
+        spacing: 8px;
+        if Bridge.info-alt != "": Btn {
+            text: Bridge.info-alt;
+            clicked => { Bridge.info-alt-clicked(); }
+        }
+        Btn {
+            text: Bridge.info-ok;
+            kind: "primary";
+            clicked => { Bridge.info-ok-clicked(); }
+        }
+    }
+}
+
+export component ChoiceDialog inherits DialogFrame {
+    title: Bridge.choice-title;
+    dismiss => { Bridge.dialog-closed(); }
+    if Bridge.choice-text != "": Label { text: Bridge.choice-text; }
+    list := Flickable {
+        height: min(380px, col.preferred-height);
+        content-height: col.preferred-height;
+        col := VerticalLayout {
+            width: list.width;
+            for o[i] in Bridge.choice-options: Rectangle {
+                min-height: Theme.touch;
+                border-radius: 10px;
+                background: ta.pressed ? Theme.surface3 : (i == Bridge.choice-selected ? Theme.surface2 : transparent);
+                accessible-role: button;
+                accessible-label: o;
+                accessible-checked: i == Bridge.choice-selected;
+                accessible-action-default => { Bridge.choice-made(i); }
+                ta := TouchArea {
+                    clicked => { Bridge.choice-made(i); }
+                }
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 12px;
+                    spacing: 10px;
+                    Text {
+                        text: o;
+                        color: Theme.text;
+                        font-size: Theme.fs-m;
+                        vertical-alignment: center;
+                        wrap: word-wrap;
+                    }
+                    if i == Bridge.choice-selected: Icon {
+                        y: (parent.height - self.height) / 2;
+                        cmd: Icons.check;
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component TextDialog inherits DialogFrame {
+    title: Bridge.text-title;
+    dismiss => { Bridge.dialog-closed(); }
+    if Bridge.text-hint != "": Label { text: Bridge.text-hint; }
+    Field {
+        text <=> Bridge.text-value;
+        multiline: Bridge.text-multiline;
+        input-type: Bridge.text-numeric ? InputType.number : InputType.text;
+    }
+    HorizontalLayout {
+        spacing: 8px;
+        Btn {
+            text: "Cancelar";
+            clicked => { Bridge.dialog-closed(); }
+        }
+        Btn {
+            text: "Salvar";
+            kind: "primary";
+            clicked => { Bridge.text-saved(Bridge.text-value); }
+        }
+    }
+}
+
+export component DayDialog inherits DialogFrame {
+    title: Bridge.day-title;
+    dismiss => { Bridge.dialog-closed(); }
+    Field {
+        label: "Nome do dia";
+        placeholder: "Ex.: Treino A — Peito e tríceps";
+        text <=> Bridge.day-name;
+    }
+    if Bridge.day-show-weekdays: Label { text: "Dias da semana deste treino:"; }
+    if Bridge.day-show-weekdays: HorizontalLayout {
+        spacing: 4px;
+        for w[i] in ["S", "T", "Q", "Q", "S", "S", "D"]: Chip {
+            horizontal-stretch: 1;
+            min-width: 36px;
+            text: w;
+            accessible-label: ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"][i];
+            selected: Bridge.day-weekdays[i];
+            clicked => { Bridge.day-toggle(i); }
+        }
+    }
+    if !Bridge.day-show-weekdays: Label { text: "Ficha em sequência: a ordem dos dias define a fila (use as setas no editor)."; }
+    HorizontalLayout {
+        spacing: 8px;
+        Btn {
+            text: "Cancelar";
+            clicked => { Bridge.dialog-closed(); }
+        }
+        Btn {
+            text: "Salvar";
+            kind: "primary";
+            clicked => { Bridge.day-save(Bridge.day-name); }
+        }
+    }
+}
+
+export component PlanExDialog inherits DialogFrame {
+    title: Bridge.pe-title;
+    dismiss => { Bridge.dialog-closed(); }
+    flick := Flickable {
+        height: min(460px, col.preferred-height);
+        content-height: col.preferred-height;
+        col := VerticalLayout {
+            width: flick.width;
+            spacing: 10px;
+            ValueRow {
+                text: "Exercício";
+                value: Bridge.pe-exercise == "" ? "Escolher…" : "";
+                description: Bridge.pe-exercise;
+                clicked => { Bridge.pe-pick(); }
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                Field {
+                    label: "Séries";
+                    text <=> Bridge.pe-sets;
+                    input-type: InputType.number;
+                }
+                Field {
+                    label: "Repetições (ex.: 8-12)";
+                    text <=> Bridge.pe-reps;
+                }
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                Field {
+                    label: "Carga-alvo (" + Bridge.pe-unit + ")";
+                    text <=> Bridge.pe-load;
+                    input-type: InputType.decimal;
+                }
+                Field {
+                    label: "Descanso (s)";
+                    text <=> Bridge.pe-rest;
+                    input-type: InputType.number;
+                }
+            }
+            Field {
+                label: "Observações";
+                text <=> Bridge.pe-notes;
+            }
+        }
+    }
+    HorizontalLayout {
+        spacing: 8px;
+        if Bridge.pe-can-delete: Btn {
+            text: "Remover";
+            icon: Icons.trash;
+            kind: "danger";
+            clicked => { Bridge.pe-delete(); }
+        }
+        Btn {
+            text: "Salvar";
+            kind: "primary";
+            clicked => { Bridge.pe-save(Bridge.pe-sets, Bridge.pe-reps, Bridge.pe-load, Bridge.pe-rest, Bridge.pe-notes); }
+        }
+    }
+}
+
+export component ExerciseDialog inherits DialogFrame {
+    title: Bridge.exf-title;
+    dismiss => { Bridge.dialog-closed(); }
+    flick := Flickable {
+        height: min(440px, col.preferred-height);
+        content-height: col.preferred-height;
+        col := VerticalLayout {
+            width: flick.width;
+            spacing: 10px;
+            Field {
+                label: "Nome";
+                text <=> Bridge.exf-name;
+            }
+            Field {
+                label: "Grupo muscular foco";
+                placeholder: "Ex.: Peito";
+                text <=> Bridge.exf-muscle;
+            }
+            Field {
+                label: "Tipo";
+                placeholder: "Ex.: Composto, Isolado";
+                text <=> Bridge.exf-type;
+            }
+            Field {
+                label: "Equipamento (opcional)";
+                placeholder: "Ex.: Barra, Halteres, Máquina";
+                text <=> Bridge.exf-equipment;
+            }
+            Field {
+                label: "Padrão de movimento (opcional)";
+                placeholder: "Ex.: Empurrar horizontal";
+                text <=> Bridge.exf-pattern;
+            }
+        }
+    }
+    HorizontalLayout {
+        spacing: 8px;
+        if Bridge.exf-editing: Btn {
+            text: Bridge.exf-archived ? "Reativar" : "Arquivar";
+            kind: "danger";
+            clicked => { Bridge.lib-archive(-1); }
+        }
+        Btn {
+            text: "Salvar";
+            kind: "primary";
+            clicked => { Bridge.exf-save(Bridge.exf-name, Bridge.exf-muscle, Bridge.exf-type, Bridge.exf-equipment, Bridge.exf-pattern); }
+        }
+    }
+}
+
+// RF-08 / RF-09 / RN-03: substituição com escolha explícita do alcance.
+export component SubstituteDialog inherits DialogFrame {
+    title: "Substituir exercício";
+    dismiss => { Bridge.dialog-closed(); }
+    Label { text: "Atual: " + Bridge.sub-original; }
+    Field {
+        placeholder: "Buscar exercício…";
+        text <=> Bridge.sub-search;
+        edited(t) => { Bridge.sub-search-changed(t); }
+    }
+    Text {
+        text: "Sugestões organizacionais (mesmo grupo/padrão). Não há garantia de equivalência biomecânica — avalie com seu profissional.";
+        color: Theme.faint;
+        font-size: Theme.fs-xs;
+        wrap: word-wrap;
+    }
+    list := Flickable {
+        height: min(220px, col.preferred-height);
+        content-height: col.preferred-height;
+        col := VerticalLayout {
+            width: list.width;
+            for e in (Bridge.sub-search == "" ? Bridge.sub-suggestions : Bridge.sub-results): Rectangle {
+                min-height: Theme.touch;
+                border-radius: 10px;
+                background: e.id == Bridge.sub-selected-id ? Theme.surface3 : (ta.pressed ? Theme.surface2 : transparent);
+                border-width: e.id == Bridge.sub-selected-id ? 1px : 0px;
+                border-color: Theme.accent;
+                accessible-role: button;
+                accessible-label: e.name;
+                accessible-checked: e.id == Bridge.sub-selected-id;
+                ta := TouchArea {
+                    clicked => { Bridge.sub-select(e.id, e.name); }
+                }
+                HorizontalLayout {
+                    padding: 8px;
+                    spacing: 8px;
+                    VerticalLayout {
+                        spacing: 2px;
+                        Text {
+                            text: e.name;
+                            color: Theme.text;
+                            font-size: Theme.fs-m;
+                            wrap: word-wrap;
+                        }
+                        Text {
+                            text: e.detail + (e.note != "" ? " — " + e.note : "");
+                            color: Theme.muted;
+                            font-size: Theme.fs-xs;
+                            wrap: word-wrap;
+                        }
+                    }
+                    if e.id == Bridge.sub-selected-id: Icon {
+                        y: (parent.height - self.height) / 2;
+                        cmd: Icons.check;
+                    }
+                }
+            }
+        }
+    }
+    Segmented {
+        items: ["Só nesta sessão", "Também na ficha"];
+        selected: Bridge.sub-permanent ? 1 : 0;
+        select(i) => {
+            if (i == 1 && !Bridge.sub-can-permanent) {
+                return;
+            }
+            Bridge.sub-permanent = i == 1;
+        }
+    }
+    Text {
+        text: Bridge.sub-permanent
+            ? "A ficha passará a usar o substituto a partir de agora. Sessões anteriores não mudam."
+            : (Bridge.sub-can-permanent ? "A ficha não muda; vale apenas para esta sessão." : "A ficha original não existe mais; a troca vale só nesta sessão.");
+        color: Theme.muted;
+        font-size: Theme.fs-s;
+        wrap: word-wrap;
+    }
+    HorizontalLayout {
+        spacing: 8px;
+        Btn {
+            text: "Voltar ao original";
+            clicked => { Bridge.session-undo-sub(-1); }
+        }
+        Btn {
+            text: "Substituir";
+            kind: "primary";
+            enabled: Bridge.sub-selected-id > 0;
+            clicked => { Bridge.sub-confirm(Bridge.sub-permanent); }
+        }
+    }
+}

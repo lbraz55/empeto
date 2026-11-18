@@ -1,0 +1,58 @@
+//! AndroidAdapter (seção 3.2): notificações, vibração, alarmes, seletor de arquivos e ciclo de vida.
+//! Em desktop (desenvolvimento) há uma implementação simples para testar a interface.
+
+#[cfg(target_os = "android")]
+pub mod android;
+#[cfg(not(target_os = "android"))]
+pub mod desktop;
+
+use std::path::{Path, PathBuf};
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FileResult {
+    /// Arquivo escolhido pelo usuário, copiado para um temporário privado.
+    Opened { path: PathBuf, name: String },
+    /// Arquivo salvo no destino escolhido.
+    Saved { name: String },
+    Cancelled,
+    Error(String),
+}
+
+/// IDs de alarmes do cronômetro.
+pub const ALARM_END: i32 = 2001;
+pub const ALARM_PRE: i32 = 2002;
+
+pub trait Platform {
+    fn is_android(&self) -> bool;
+    /// Diretório privado do app (banco SQLite e temporários).
+    fn data_dir(&self) -> PathBuf;
+    fn tmp_dir(&self) -> PathBuf {
+        self.data_dir().join("tmp")
+    }
+    fn app_version(&self) -> String {
+        env!("CARGO_PKG_VERSION").to_string()
+    }
+
+    /// Abre o seletor de documentos (ACTION_OPEN_DOCUMENT). Resultado via `poll_file_result`.
+    fn open_document(&self, mimes: &[&str]);
+    /// Pede o destino (ACTION_CREATE_DOCUMENT) e copia `src` para lá. Resultado via `poll_file_result`.
+    fn save_document(&self, suggested_name: &str, mime: &str, src: &Path);
+    fn poll_file_result(&self) -> Option<FileResult>;
+
+    fn notifications_allowed(&self) -> bool;
+    fn request_notification_permission(&self);
+    /// Some(true/false) quando o usuário responde ao diálogo de permissão.
+    fn poll_permission_result(&self) -> Option<bool>;
+    fn open_notification_settings(&self);
+
+    /// Agenda alerta no relógio monotônico com suspensão (CLOCK_BOOTTIME = elapsedRealtime).
+    fn schedule_alarm(&self, id: i32, at_boot_ms: i64, title: &str, text: &str, sound: bool, vibrate: bool);
+    fn cancel_alarm(&self, id: i32);
+    fn show_countdown(&self, end_wall_ms: i64, title: &str, text: &str);
+    fn cancel_countdown(&self);
+
+    fn play_tone(&self, tone: i32, duration_ms: i32);
+    fn vibrate(&self, ms: i64);
+    fn keep_screen_on(&self, on: bool);
+    fn move_to_back(&self);
+}

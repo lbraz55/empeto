@@ -1,0 +1,262 @@
+import { Theme, Icons } from "theme.slint";
+import { Bridge } from "bridge.slint";
+import { Icon, IconBtn } from "components/widgets.slint";
+import { HomeScreen, PlansScreen, CalendarScreen, HistoryScreen } from "screens/main.slint";
+import { PlanEditorScreen, LibraryScreen, SessionScreen, TimerScreen } from "screens/training.slint";
+import { SessionDetailScreen, EvolutionScreen, SettingsScreen, ImportScreen } from "screens/more.slint";
+import { ConfirmDialog, InfoDialog, ChoiceDialog, TextDialog, DayDialog, PlanExDialog, ExerciseDialog, SubstituteDialog } from "dialogs.slint";
+
+export { Bridge, Theme }
+
+component NavItem inherits Rectangle {
+    in property <string> icon;
+    in property <string> text;
+    in property <bool> selected;
+    callback clicked();
+    accessible-role: tab;
+    accessible-label: text;
+    accessible-checked: selected;
+    accessible-action-default => { clicked(); }
+    TouchArea {
+        clicked => { root.clicked(); }
+    }
+    VerticalLayout {
+        alignment: center;
+        spacing: 3px;
+        Rectangle {
+            height: 30px;
+            Rectangle {
+                width: 56px;
+                height: 30px;
+                x: (parent.width - self.width) / 2;
+                border-radius: 15px;
+                background: root.selected ? Theme.surface3 : transparent;
+                Icon {
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    cmd: root.icon;
+                    tint: root.selected ? Theme.text : Theme.muted;
+                    size: 22px;
+                }
+            }
+        }
+        Text {
+            text: root.text;
+            color: root.selected ? Theme.text : Theme.muted;
+            font-size: Theme.fs-xs;
+            font-weight: root.selected ? 700 : 400;
+            horizontal-alignment: center;
+        }
+    }
+}
+
+export component AppWindow inherits Window {
+    title: "Workout";
+    background: Theme.bg;
+    preferred-width: 400px;
+    preferred-height: 820px;
+    min-width: 320px;
+    min-height: 480px;
+    default-font-size: Theme.fs-m;
+
+    property <length> kb: self.virtual-keyboard-size.height;
+    property <bool> main-page: Bridge.page < 10;
+    property <string> page-title:
+        Bridge.page == 0 ? "Workout"
+        : Bridge.page == 1 ? "Treinos"
+        : Bridge.page == 2 ? "Calendário"
+        : Bridge.page == 3 ? "Histórico"
+        : Bridge.page == 10 ? "Editar ficha"
+        : Bridge.page == 11 ? (Bridge.lib-mode == "pick" ? "Escolher exercício" : "Exercícios")
+        : Bridge.page == 12 ? Bridge.session-title
+        : Bridge.page == 13 ? "Cronômetro"
+        : Bridge.page == 14 ? "Sessão realizada"
+        : Bridge.page == 15 ? "Evolução"
+        : Bridge.page == 20 ? (
+            Bridge.settings-section == 0 ? "Preferências"
+            : Bridge.settings-section == 1 ? "Sons e alertas"
+            : Bridge.settings-section == 2 ? "Cronômetro"
+            : Bridge.settings-section == 3 ? "Treinamento"
+            : Bridge.settings-section == 4 ? "Calendário"
+            : Bridge.settings-section == 5 ? "Interface"
+            : Bridge.settings-section == 6 ? "Dados e armazenamento"
+            : "Sobre")
+        : Bridge.page == 21 ? "Importar planilha"
+        : "";
+
+    fs := FocusScope {
+        init => { self.focus(); }
+        key-pressed(e) => {
+            if (e.text == Key.Back || e.text == Key.Escape) {
+                Bridge.back();
+                return accept;
+            }
+            return reject;
+        }
+
+        VerticalLayout {
+            padding-top: root.safe-area-insets.top;
+            padding-left: root.safe-area-insets.left;
+            padding-right: root.safe-area-insets.right;
+            padding-bottom: root.kb > 0 ? root.kb : root.safe-area-insets.bottom;
+
+            // Cabeçalho: título + atalho do cronômetro + engrenagem (Configurações) em todas as telas.
+            Rectangle {
+                height: 56px;
+                background: Theme.bg;
+                HorizontalLayout {
+                    padding-left: 4px;
+                    padding-right: 4px;
+                    spacing: 2px;
+                    if !root.main-page: IconBtn {
+                        icon: Icons.back;
+                        label: "Voltar";
+                        clicked => { Bridge.back(); }
+                    }
+                    if root.main-page: Rectangle { width: 12px; }
+                    Text {
+                        text: root.page-title;
+                        color: Theme.text;
+                        font-size: Theme.fs-xl;
+                        font-weight: 700;
+                        vertical-alignment: center;
+                        overflow: elide;
+                        horizontal-stretch: 1;
+                    }
+                    if Bridge.page != 13 && (Bridge.timer-status == "running" || Bridge.timer-status == "paused" || Bridge.timer-status == "finished"): Rectangle {
+                        width: chip.preferred-width + 20px;
+                        height: 36px;
+                        y: 10px;
+                        border-radius: 18px;
+                        background: Bridge.timer-status == "finished" ? Theme.accent : Theme.surface3;
+                        accessible-role: button;
+                        accessible-label: "Abrir cronômetro, " + Bridge.timer-display;
+                        accessible-action-default => { Bridge.open-timer(); }
+                        TouchArea {
+                            clicked => { Bridge.open-timer(); }
+                        }
+                        chip := HorizontalLayout {
+                            x: 10px;
+                            spacing: 4px;
+                            Icon {
+                                y: (parent.height - self.height) / 2;
+                                cmd: Icons.timer;
+                                size: 18px;
+                                tint: Bridge.timer-status == "finished" ? Theme.on-accent : Theme.text;
+                            }
+                            Text {
+                                text: Bridge.timer-display;
+                                color: Bridge.timer-status == "finished" ? Theme.on-accent : Theme.text;
+                                font-size: Theme.fs-s;
+                                font-weight: 700;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                    if Bridge.page != 20: IconBtn {
+                        icon: Icons.gear;
+                        label: "Configurações";
+                        clicked => { Bridge.navigate(20); }
+                    }
+                }
+            }
+
+            Rectangle {
+                vertical-stretch: 1;
+                clip: true;
+                if Bridge.page == 0: HomeScreen { width: parent.width; height: parent.height; }
+                if Bridge.page == 1: PlansScreen { width: parent.width; height: parent.height; }
+                if Bridge.page == 2: CalendarScreen { width: parent.width; height: parent.height; }
+                if Bridge.page == 3: HistoryScreen { width: parent.width; height: parent.height; }
+                if Bridge.page == 10: PlanEditorScreen { width: parent.width; height: parent.height; }
+                if Bridge.page == 11: LibraryScreen { width: parent.width; height: parent.height; }
+                if Bridge.page == 12: SessionScreen { width: parent.width; height: parent.height; }
+                if Bridge.page == 13: TimerScreen { width: parent.width; height: parent.height; }
+                if Bridge.page == 14: SessionDetailScreen { width: parent.width; height: parent.height; }
+                if Bridge.page == 15: EvolutionScreen { width: parent.width; height: parent.height; }
+                if Bridge.page == 20: SettingsScreen { width: parent.width; height: parent.height; }
+                if Bridge.page == 21: ImportScreen { width: parent.width; height: parent.height; }
+            }
+
+            // Barra inferior: Calendário, Treinos, Home, Histórico (2.3).
+            if root.main-page && root.kb == 0: Rectangle {
+                height: 64px;
+                background: Theme.surface;
+                Rectangle {
+                    y: 0;
+                    height: 1px;
+                    background: Theme.border;
+                }
+                HorizontalLayout {
+                    NavItem {
+                        icon: Icons.calendar;
+                        text: "Calendário";
+                        selected: Bridge.page == 2;
+                        clicked => { Bridge.navigate(2); }
+                    }
+                    NavItem {
+                        icon: Icons.dumbbell;
+                        text: "Treinos";
+                        selected: Bridge.page == 1;
+                        clicked => { Bridge.navigate(1); }
+                    }
+                    NavItem {
+                        icon: Icons.home;
+                        text: "Home";
+                        selected: Bridge.page == 0;
+                        clicked => { Bridge.navigate(0); }
+                    }
+                    NavItem {
+                        icon: Icons.history;
+                        text: "Histórico";
+                        selected: Bridge.page == 3;
+                        clicked => { Bridge.navigate(3); }
+                    }
+                }
+            }
+        }
+
+        // Diálogos (dentro do FocusScope para que o botão Voltar do Android os feche).
+        if Bridge.dialog == "confirm": ConfirmDialog { width: parent.width; height: parent.height; }
+        if Bridge.dialog == "info": InfoDialog { width: parent.width; height: parent.height; }
+        if Bridge.dialog == "choice": ChoiceDialog { width: parent.width; height: parent.height; }
+        if Bridge.dialog == "text": TextDialog { width: parent.width; height: parent.height; }
+        if Bridge.dialog == "day": DayDialog { width: parent.width; height: parent.height; }
+        if Bridge.dialog == "plan-ex": PlanExDialog { width: parent.width; height: parent.height; }
+        if Bridge.dialog == "exercise": ExerciseDialog { width: parent.width; height: parent.height; }
+        if Bridge.dialog == "substitute": SubstituteDialog { width: parent.width; height: parent.height; }
+
+        if Bridge.toast != "": Rectangle {
+            x: 16px;
+            width: parent.width - 32px;
+            height: toast-text.preferred-height + 24px;
+            y: parent.height - self.height - 84px - root.safe-area-insets.bottom - root.kb;
+            border-radius: 12px;
+            background: Theme.text;
+            TouchArea {
+                clicked => { Bridge.toast = ""; }
+            }
+            toast-text := Text {
+                x: 14px;
+                width: parent.width - 28px;
+                y: 12px;
+                text: Bridge.toast;
+                color: Theme.on-accent;
+                font-size: Theme.fs-s;
+                wrap: word-wrap;
+            }
+        }
+
+        if Bridge.busy: Rectangle {
+            background: #000000a0;
+            TouchArea { }
+            Text {
+                text: "Processando…";
+                color: Theme.text;
+                font-size: Theme.fs-l;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+    }
+}

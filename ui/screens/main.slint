@@ -1,0 +1,297 @@
+import { Theme, Icons } from "../theme.slint";
+import { Bridge } from "../bridge.slint";
+import { Btn, IconBtn, Card, Label, Title, SectionTitle, Body, Scroll, EmptyState, Segmented, Badge, Icon } from "../components/widgets.slint";
+
+// RF-19 / 6.2: cartões informativos clicáveis.
+export component HomeScreen inherits Scroll {
+    Text {
+        text: Bridge.home-date;
+        color: Theme.muted;
+        font-size: Theme.fs-s;
+    }
+    for c in Bridge.home-cards: Card {
+        clickable: true;
+        accessible-role: button;
+        accessible-label: c.title + ". " + c.line1 + ". " + c.line2;
+        clicked => { Bridge.home-card-clicked(c.kind, c.ref-id); }
+        SectionTitle { text: c.title; }
+        Text {
+            text: c.line1;
+            color: Theme.text;
+            font-size: Theme.fs-l;
+            font-weight: 700;
+            wrap: word-wrap;
+        }
+        if c.line2 != "": Label { text: c.line2; }
+        if c.action != "": HorizontalLayout {
+            alignment: end;
+            Text {
+                text: c.action + "  ›";
+                color: Theme.text;
+                font-size: Theme.fs-s;
+                font-weight: 600;
+            }
+        }
+    }
+}
+
+export component PlansScreen inherits Scroll {
+    HorizontalLayout {
+        spacing: 8px;
+        Btn {
+            text: "Nova ficha";
+            icon: Icons.plus;
+            kind: "primary";
+            clicked => { Bridge.new-plan(); }
+        }
+        Btn {
+            text: "Exercícios";
+            icon: Icons.list;
+            clicked => { Bridge.open-library(); }
+        }
+    }
+    if Bridge.plans.length == 0: EmptyState {
+        title: "Nenhuma ficha ainda";
+        text: "Crie uma ficha com seus dias de treino ou importe uma planilha em Configurações › Dados e armazenamento.";
+    }
+    for p in Bridge.plans: Card {
+        clickable: true;
+        accessible-role: button;
+        accessible-label: "Ficha " + p.name;
+        clicked => { Bridge.open-plan(p.id); }
+        HorizontalLayout {
+            spacing: 4px;
+            VerticalLayout {
+                spacing: 4px;
+                alignment: center;
+                Title { text: p.name; }
+                Label { text: p.subtitle; }
+                if !p.active: HorizontalLayout {
+                    alignment: start;
+                    Badge { text: "Inativa"; }
+                }
+            }
+            IconBtn {
+                icon: Icons.copy;
+                label: "Duplicar ficha " + p.name;
+                clicked => { Bridge.duplicate-plan(p.id); }
+            }
+            IconBtn {
+                icon: Icons.trash;
+                label: "Excluir ficha " + p.name;
+                clicked => { Bridge.delete-plan(p.id); }
+            }
+        }
+    }
+}
+
+// RF-13 / 6.5: calendário interno focado, sem excesso de estatísticas.
+export component CalendarScreen inherits Scroll {
+    HorizontalLayout {
+        IconBtn {
+            icon: Icons.back;
+            label: "Período anterior";
+            clicked => { Bridge.cal-prev(); }
+        }
+        Text {
+            text: Bridge.cal-title;
+            color: Theme.text;
+            font-size: Theme.fs-l;
+            font-weight: 700;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+        }
+        IconBtn {
+            icon: Icons.forward;
+            label: "Próximo período";
+            clicked => { Bridge.cal-next(); }
+        }
+    }
+    HorizontalLayout {
+        spacing: 8px;
+        Segmented {
+            horizontal-stretch: 1;
+            items: ["Mês", "Semana"];
+            selected: Bridge.cal-week-view ? 1 : 0;
+            select(i) => { Bridge.cal-set-week-view(i == 1); }
+        }
+        Btn {
+            text: "Hoje";
+            compact: true;
+            horizontal-stretch: 0;
+            clicked => { Bridge.cal-today(); }
+        }
+    }
+    HorizontalLayout {
+        for w in Bridge.cal-weekday-labels: Text {
+            text: w;
+            color: Theme.muted;
+            font-size: Theme.fs-xs;
+            horizontal-alignment: center;
+            horizontal-stretch: 1;
+        }
+    }
+    grid := Rectangle {
+        property <length> cell-h: 50px;
+        height: Math.ceil(Bridge.cal-cells.length / 7) * self.cell-h;
+        for c[i] in Bridge.cal-cells: Rectangle {
+            x: Math.mod(i, 7) * (parent.width / 7);
+            y: Math.floor(i / 7) * grid.cell-h;
+            width: parent.width / 7;
+            height: grid.cell-h;
+            accessible-role: button;
+            accessible-label: c.day + (c.planned ? ", treino planejado" : "") + (c.done ? ", treino realizado" : "") + (c.today ? ", hoje" : "");
+            accessible-action-default => { Bridge.cal-select(c.key); }
+            TouchArea {
+                clicked => { Bridge.cal-select(c.key); }
+            }
+            Rectangle {
+                width: 40px;
+                height: 40px;
+                x: (parent.width - self.width) / 2;
+                y: 2px;
+                border-radius: 20px;
+                background: c.selected ? Theme.accent : transparent;
+                border-width: c.today && !c.selected ? 2px : 0px;
+                border-color: Theme.text;
+                Text {
+                    y: 6px;
+                    width: parent.width;
+                    text: c.day;
+                    horizontal-alignment: center;
+                    font-size: Theme.fs-s;
+                    font-weight: c.today ? 700 : 400;
+                    color: c.selected ? Theme.on-accent : (c.in-month ? Theme.text : Theme.faint);
+                }
+                // marcadores: cheio = realizado, vazado = planejado (forma, não só cor)
+                HorizontalLayout {
+                    y: 27px;
+                    height: 7px;
+                    alignment: center;
+                    spacing: 3px;
+                    if c.done: Rectangle {
+                        width: 7px;
+                        height: 7px;
+                        border-radius: 3.5px;
+                        background: c.selected ? Theme.on-accent : Theme.text;
+                    }
+                    if c.planned: Rectangle {
+                        width: 7px;
+                        height: 7px;
+                        border-radius: 3.5px;
+                        border-width: 1.5px;
+                        border-color: c.selected ? Theme.on-accent : Theme.muted;
+                    }
+                }
+            }
+        }
+    }
+    HorizontalLayout {
+        spacing: 16px;
+        alignment: center;
+        HorizontalLayout {
+            spacing: 6px;
+            Rectangle {
+                width: 8px;
+                height: 8px;
+                y: 5px;
+                border-radius: 4px;
+                background: Theme.text;
+            }
+            Label { text: "realizado"; }
+        }
+        HorizontalLayout {
+            spacing: 6px;
+            Rectangle {
+                width: 8px;
+                height: 8px;
+                y: 5px;
+                border-radius: 4px;
+                border-width: 1.5px;
+                border-color: Theme.muted;
+            }
+            Label { text: "planejado"; }
+        }
+    }
+    Rectangle { height: 4px; }
+    Title { text: Bridge.cal-selected-title; }
+    if Bridge.cal-entries.length == 0: Label { text: "Nada planejado ou realizado nesta data."; }
+    for e[i] in Bridge.cal-entries: Card {
+        clickable: true;
+        clicked => { Bridge.cal-entry(i); }
+        HorizontalLayout {
+            alignment: start;
+            Badge { text: e.kind == "done" ? "Realizado" : "Planejado"; }
+        }
+        Body {
+            text: e.title;
+            font-weight: 600;
+        }
+        if e.subtitle != "": Label { text: e.subtitle; }
+        if e.can-start: Btn {
+            text: "Iniciar treino";
+            icon: Icons.play;
+            kind: "primary";
+            clicked => { Bridge.cal-entry(i); }
+        }
+    }
+}
+
+// RF-14 / RF-15 / 6.6: visão geral; detalhe e evolução abrem em telas próprias.
+export component HistoryScreen inherits Scroll {
+    Segmented {
+        items: ["Sessões", "Evolução por exercício"];
+        selected: Bridge.hist-tab;
+        select(i) => { Bridge.hist-set-tab(i); }
+    }
+    if Bridge.hist-tab == 0 && Bridge.hist-summary != "": Label { text: Bridge.hist-summary; }
+    if Bridge.hist-tab == 0 && Bridge.hist-rows.length == 0: EmptyState {
+        title: "Nenhuma sessão concluída";
+        text: "Inicie um treino em Treinos ou na Home. Ao finalizar, ele aparece aqui.";
+    }
+    if Bridge.hist-tab == 0: VerticalLayout {
+        spacing: Theme.gap;
+        for r in Bridge.hist-rows: Card {
+            clickable: true;
+            accessible-role: button;
+            accessible-label: r.date + " " + r.title;
+            clicked => { Bridge.hist-open(r.id); }
+            Label { text: r.date; }
+            Body {
+                text: r.title;
+                font-weight: 600;
+            }
+            Label { text: r.subtitle; }
+        }
+    }
+    if Bridge.hist-tab == 1 && Bridge.evo-exercises.length == 0: EmptyState {
+        title: "Sem dados de evolução";
+        text: "A evolução aparece depois que você registrar séries em sessões concluídas.";
+    }
+    if Bridge.hist-tab == 1: VerticalLayout {
+        spacing: Theme.gap;
+        for x in Bridge.evo-exercises: Card {
+            clickable: true;
+            accessible-role: button;
+            accessible-label: "Evolução de " + x.name;
+            clicked => { Bridge.evo-open(x.key); }
+            HorizontalLayout {
+                spacing: 8px;
+                VerticalLayout {
+                    spacing: 2px;
+                    Body {
+                        text: x.name;
+                        font-weight: 600;
+                    }
+                    Label { text: x.detail; }
+                }
+                Icon {
+                    y: (parent.height - self.height) / 2;
+                    cmd: Icons.chart;
+                    tint: Theme.muted;
+                }
+            }
+        }
+    }
+}
