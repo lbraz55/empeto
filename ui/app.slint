@@ -60,6 +60,12 @@ export component AppWindow inherits Window {
     default-font-size: Theme.fs-m;
 
     property <length> kb: self.virtual-keyboard-size.height;
+    // Mantém o foco no FocusScope raiz para o botão Voltar do Android funcionar após
+    // fechar diálogos ou trocar de tela.
+    property <string> dlg: Bridge.dialog;
+    property <int> pg: Bridge.page;
+    changed dlg => { if (self.dlg == "") { fs.focus(); } }
+    changed pg => { fs.focus(); }
     property <bool> main-page: Bridge.page < 10;
     property <string> page-title:
         Bridge.page == 0 ? "Workout"

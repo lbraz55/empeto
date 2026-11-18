@@ -430,6 +430,7 @@ impl Controller {
         let seq_names: Vec<String> = plans
             .iter()
             .filter(|p| p.plan.active && p.plan.schedule_type == ScheduleType::Sequence)
+            .filter(|p| !planned.iter().any(|x| x.plan_id == p.plan.id))
             .filter_map(|p| {
                 let did = next.get(&p.plan.id)?;
                 let d = p.days.iter().find(|d| d.day.id == *did)?;

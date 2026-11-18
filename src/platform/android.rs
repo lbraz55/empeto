@@ -36,7 +36,7 @@ impl AndroidPlatform {
         }
     }
 
-    fn call_void(&self, name: &str, sig: &str, args: impl FnOnce(&mut JNIEnv) -> jni::errors::Result<Vec<OwnedArg>>) {
+    fn call_void(&self, name: &str, sig: &str, args: impl for<'e> FnOnce(&mut JNIEnv<'e>) -> jni::errors::Result<Vec<OwnedArg<'e>>>) {
         self.with_env(|env, act| {
             let owned = args(env)?;
             let vals: Vec<JValue> = owned.iter().map(|a| a.as_jvalue()).collect();

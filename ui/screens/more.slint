@@ -282,12 +282,12 @@ export component SettingsScreen inherits Scroll {
         HorizontalLayout {
             spacing: 8px;
             Btn {
-                text: "Testar alerta";
+                text: "Testar";
                 icon: Icons.bell;
                 clicked => { Bridge.test-alert(); }
             }
             Btn {
-                text: "Notificações do sistema";
+                text: "Notificações";
                 clicked => { Bridge.notif-settings(); }
             }
         }

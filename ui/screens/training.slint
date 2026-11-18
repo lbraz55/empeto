@@ -444,7 +444,9 @@ export component SessionScreen inherits Rectangle {
                 spacing: 8px;
                 Btn {
                     icon: Icons.back;
-                    text: "Anterior";
+                    horizontal-stretch: 0;
+                    min-width: 72px;
+                    accessible-label: "Exercício anterior";
                     enabled: Bridge.session-index > 0;
                     clicked => { Bridge.session-select(Bridge.session-index - 1); }
                 }
@@ -455,7 +457,9 @@ export component SessionScreen inherits Rectangle {
                 }
                 Btn {
                     icon: Icons.forward;
-                    text: "Próximo";
+                    horizontal-stretch: 0;
+                    min-width: 72px;
+                    accessible-label: "Próximo exercício";
                     enabled: Bridge.session-index < root.count - 1;
                     clicked => { Bridge.session-select(Bridge.session-index + 1); }
                 }

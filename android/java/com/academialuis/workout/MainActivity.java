@@ -98,7 +98,7 @@ public class MainActivity extends NativeActivity {
 
     /** Abre o seletor de documentos. Resultado: pollFileResult() -> "open|ok|<caminho local>|<nome>". */
     public void openDocument(final String mimeTypesCsv) {
-        handler.post(() -> {
+        handler.post(new Runnable() { public void run() {
             Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             i.addCategory(Intent.CATEGORY_OPENABLE);
             i.setType("*/*");
@@ -109,13 +109,13 @@ public class MainActivity extends NativeActivity {
             } catch (Exception e) {
                 fileResult = "open|error|Nenhum seletor de arquivos disponível.";
             }
-        });
+        }});
     }
 
     /** Pede ao usuário onde salvar; copia srcPath (arquivo temporário privado) para o destino. */
     public void createDocument(final String suggestedName, final String mime, final String srcPath) {
         pendingExportPath = srcPath;
-        handler.post(() -> {
+        handler.post(new Runnable() { public void run() {
             Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
             i.addCategory(Intent.CATEGORY_OPENABLE);
             i.setType(mime);
@@ -125,7 +125,7 @@ public class MainActivity extends NativeActivity {
             } catch (Exception e) {
                 fileResult = "create|error|Nenhum seletor de arquivos disponível.";
             }
-        });
+        }});
     }
 
     public String pollFileResult() {
@@ -145,13 +145,13 @@ public class MainActivity extends NativeActivity {
             return;
         }
         final Uri uri = data.getData();
-        new Thread(() -> {
+        new Thread(new Runnable() { public void run() {
             if (requestCode == REQ_OPEN) {
                 fileResult = copyIn(uri);
             } else {
                 fileResult = copyOut(uri);
             }
-        }).start();
+        }}).start();
     }
 
     private String displayName(Uri uri) {
@@ -238,7 +238,7 @@ public class MainActivity extends NativeActivity {
             permissionResult = notificationsAllowed() ? 1 : 0;
             return;
         }
-        handler.post(() -> requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIF_PERMISSION));
+        handler.post(new Runnable() { public void run() { requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIF_PERMISSION); } });
     }
 
     public int pollPermissionResult() {
@@ -256,7 +256,7 @@ public class MainActivity extends NativeActivity {
 
     /** Atalho para as configurações de notificação do app (somente quando o usuário pede). */
     public void openNotificationSettings() {
-        handler.post(() -> {
+        handler.post(new Runnable() { public void run() {
             try {
                 Intent i = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
                 i.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
@@ -264,7 +264,7 @@ public class MainActivity extends NativeActivity {
                 startActivity(i);
             } catch (Exception ignored) {
             }
-        });
+        }});
     }
 
     // ------------------------------------------------------------------
@@ -374,14 +374,14 @@ public class MainActivity extends NativeActivity {
     // ------------------------------------------------------------------
 
     public void keepScreenOn(final boolean on) {
-        handler.post(() -> {
+        handler.post(new Runnable() { public void run() {
             if (on) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        });
+        }});
     }
 
     public void moveToBack() {
-        handler.post(() -> moveTaskToBack(true));
+        handler.post(new Runnable() { public void run() { moveTaskToBack(true); } });
     }
 
     public String appVersion() {

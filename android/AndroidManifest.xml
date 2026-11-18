@@ -28,7 +28,7 @@
         android:fullBackupContent="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:hasCode="true"
-        android:extractNativeLibs="false"
+        android:extractNativeLibs="true"
         android:theme="@style/AppTheme">
 
         <activity
