@@ -1,0 +1,13 @@
+/target
+/build
+/dist
+*.apk
+*.aab
+*.idsig
+*.keystore
+*.jks
+keystore.properties
+/workout-data
+.DS_Store
+.idea/
+.vscode/
