@@ -5,7 +5,7 @@
 #   - Rust (stable) com alvos Android:  rustup target add aarch64-linux-android x86_64-linux-android
 #   - cargo-ndk:                        cargo install cargo-ndk
 #   - Android SDK com build-tools >= 35 e platform android-36  (ANDROID_HOME)
-#   - Android NDK r27+                                          (ANDROID_NDK_HOME ou $ANDROID_HOME/ndk/<versão>)
+#   - Android NDK r30+ (exigido pelo Skia pré-compilado)                                          (ANDROID_NDK_HOME ou $ANDROID_HOME/ndk/<versão>)
 #   - JDK 17+ (javac, keytool)                                  (JAVA_HOME)
 #
 # Variáveis opcionais:
@@ -62,6 +62,20 @@ CARGO_PROFILE_ARGS=()
 [ "$PROFILE" = "release" ] && CARGO_PROFILE_ARGS+=(--release)
 cargo ndk "${TARGET_ARGS[@]}" -P "$MIN_SDK" -o "$OUT/apk/lib" build --lib "${CARGO_PROFILE_ARGS[@]}"
 find "$OUT/apk/lib" -type f ! -name 'libworkout.so' -delete
+
+# 1b) Verificação: nenhuma referência a C++ (libc++) pode ficar sem resolver.
+#     O Skia pré-compilado exige a libc++ de NDK recente (r30+); com NDK antigo o link "passa",
+#     mas o Android recusa carregar a biblioteca (UnsatisfiedLinkError em dlopen).
+NM="$(ls "$ANDROID_NDK_HOME"/toolchains/llvm/prebuilt/*/bin/llvm-nm | head -1)"
+for so in "$OUT"/apk/lib/*/libworkout.so; do
+  BAD="$("$NM" -D --undefined-only "$so" | grep -E '__ndk1|_ZNSt|__cxa_' | grep -v '@LIBC' || true)"
+  if [ -n "$BAD" ]; then
+    echo "ERRO: $so tem símbolos C++ não resolvidos (NDK incompatível com o Skia; use NDK r30+):"
+    echo "$BAD" | head -20
+    exit 1
+  fi
+done
+echo "==> verificação de símbolos nativos: OK"
 ls -la "$OUT"/apk/lib/*/
 
 # 2) Recursos + manifesto

@@ -54,7 +54,7 @@ mudança e restaurado ao abrir. Detalhes de comportamento em [DECISOES.md](DECIS
 (páginas de 16 KB) e `apksigner`. O backend Android do Slint compila seu próprio helper Java e o
 carrega em memória (requer `ANDROID_HOME`/`ANDROID_JAR` no build).
 
-Versões fixadas: `Cargo.lock` (dependências Rust), NDK 29 no CI, platform 36, build-tools 36, JDK 21.
+Versões fixadas: `Cargo.lock` (dependências Rust), NDK 30 no CI (exigido pelo Skia pré-compilado), platform 36, build-tools 36, JDK 21.
 
 ## Testes (seção 4)
 

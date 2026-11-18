@@ -55,7 +55,7 @@ cargo run --bin workout-desktop
 
 ### APK Android
 
-Pré-requisitos: Android SDK (platform 36, build-tools ≥ 35), NDK r27+, JDK 17+, Rust com alvos Android e `cargo-ndk`.
+Pré-requisitos: Android SDK (platform 36, build-tools ≥ 35), NDK r30+, JDK 17+, Rust com alvos Android e `cargo-ndk`.
 
 ```bash
 rustup target add aarch64-linux-android x86_64-linux-android
