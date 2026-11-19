@@ -1,0 +1,93 @@
+import { Theme, Icons } from "../theme.slint";
+import { Icon } from "widgets.slint";
+
+component Key inherits Rectangle {
+    in property <string> text;
+    in property <string> icon;
+    in property <string> label;
+    in property <bool> enabled: true;
+    callback clicked();
+    min-height: 54px;
+    horizontal-stretch: 1;
+    border-radius: 12px;
+    background: ta.pressed ? Theme.surface3 : Theme.surface2;
+    opacity: enabled ? 1 : 0.35;
+    accessible-role: button;
+    accessible-label: label != "" ? label : text;
+    accessible-action-default => { clicked(); }
+    ta := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+    if root.icon == "": Text {
+        text: root.text;
+        color: Theme.text;
+        font-size: Theme.fs-xl;
+        font-weight: 600;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    if root.icon != "": Icon {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        cmd: root.icon;
+    }
+}
+
+// Teclado numérico do app (3.4): dígitos, vírgula, apagar, limpar, ± incremento e confirmar.
+// Só emite teclas; a validação e o rascunho ficam na camada Rust. Nada é salvo antes de confirmar.
+export component NumericKeypad inherits VerticalLayout {
+    in property <bool> allow-decimal: true;
+    in property <string> step-label;
+    in property <string> confirm-text: "Confirmar";
+    callback key(string);
+    callback step(int);
+    callback confirm();
+    spacing: 6px;
+    HorizontalLayout {
+        spacing: 6px;
+        Key { text: "1"; clicked => { root.key("1"); } }
+        Key { text: "2"; clicked => { root.key("2"); } }
+        Key { text: "3"; clicked => { root.key("3"); } }
+        Key { text: "−" + root.step-label; label: "Diminuir " + root.step-label; clicked => { root.step(-1); } }
+    }
+    HorizontalLayout {
+        spacing: 6px;
+        Key { text: "4"; clicked => { root.key("4"); } }
+        Key { text: "5"; clicked => { root.key("5"); } }
+        Key { text: "6"; clicked => { root.key("6"); } }
+        Key { text: "+" + root.step-label; label: "Aumentar " + root.step-label; clicked => { root.step(1); } }
+    }
+    HorizontalLayout {
+        spacing: 6px;
+        Key { text: "7"; clicked => { root.key("7"); } }
+        Key { text: "8"; clicked => { root.key("8"); } }
+        Key { text: "9"; clicked => { root.key("9"); } }
+        Key { text: "C"; label: "Limpar campo"; clicked => { root.key("clear"); } }
+    }
+    HorizontalLayout {
+        spacing: 6px;
+        Key { text: ","; label: "Vírgula decimal"; enabled: root.allow-decimal; clicked => { root.key(","); } }
+        Key { text: "0"; clicked => { root.key("0"); } }
+        Key { icon: Icons.backspace; label: "Apagar último caractere"; clicked => { root.key("back"); } }
+        Rectangle {
+            min-height: 54px;
+            horizontal-stretch: 1;
+            border-radius: 12px;
+            background: ok.pressed ? Theme.accent-pressed : Theme.accent;
+            accessible-role: button;
+            accessible-label: root.confirm-text;
+            accessible-action-default => { root.confirm(); }
+            ok := TouchArea {
+                clicked => { root.confirm(); }
+            }
+            Icon {
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2;
+                cmd: Icons.check;
+                tint: Theme.on-accent;
+                size: 26px;
+            }
+        }
+    }
+}

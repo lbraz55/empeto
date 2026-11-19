@@ -72,6 +72,10 @@ pub struct Prefs {
     pub tone_set_start: i32,
     pub tone_pre_alert: i32,
     pub vibrate: bool,
+    /// Vibração curta em ações (registrar série, desfazer) — 3.5.
+    pub haptics: bool,
+    /// Teclado numérico do app no modo foco (3.4); desligado = teclado do sistema.
+    pub app_keypad: bool,
     pub pre_alert: bool,
     pub pre_alert_seconds: i64,
     /// Alerta com app em segundo plano (notificação; requer POST_NOTIFICATIONS no Android 13+).
@@ -114,6 +118,8 @@ impl Default for Prefs {
             tone_set_start: 2,
             tone_pre_alert: 0,
             vibrate: true,
+            haptics: true,
+            app_keypad: true,
             pre_alert: true,
             pre_alert_seconds: 10,
             background_alert: true,
@@ -161,6 +167,8 @@ impl Prefs {
                 "sound.tone_set_start" => p.tone_set_start = iv.unwrap_or(2).clamp(0, 3) as i32,
                 "sound.tone_pre_alert" => p.tone_pre_alert = iv.unwrap_or(0).clamp(0, 3) as i32,
                 "alert.vibrate" => p.vibrate = bv,
+                "alert.haptics" => p.haptics = bv,
+                "ui.app_keypad" => p.app_keypad = bv,
                 "alert.pre_alert" => p.pre_alert = bv,
                 "alert.pre_alert_seconds" => p.pre_alert_seconds = iv.unwrap_or(10).clamp(3, 60),
                 "alert.background" => p.background_alert = bv,
@@ -207,6 +215,8 @@ impl Prefs {
             ("sound.tone_set_start", self.tone_set_start.to_string()),
             ("sound.tone_pre_alert", self.tone_pre_alert.to_string()),
             ("alert.vibrate", b(self.vibrate)),
+            ("alert.haptics", b(self.haptics)),
+            ("ui.app_keypad", b(self.app_keypad)),
             ("alert.pre_alert", b(self.pre_alert)),
             ("alert.pre_alert_seconds", self.pre_alert_seconds.to_string()),
             ("alert.background", b(self.background_alert)),

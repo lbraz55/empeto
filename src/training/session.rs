@@ -385,6 +385,91 @@ impl Db {
         Ok(())
     }
 
+    /// Carga/repetições da série anterior registrada do mesmo exercício (3.3 — "repetir última série").
+    pub fn previous_set_values(&self, set_id: Id) -> AppResult<Option<(i64, i64)>> {
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT p.actual_load_g, p.actual_reps FROM session_set s
+                 JOIN session_set p ON p.session_exercise_id = s.session_exercise_id
+                 WHERE s.id = ?1 AND p.set_number < s.set_number AND p.completed_at IS NOT NULL
+                 ORDER BY p.set_number DESC LIMIT 1",
+                params![set_id],
+                |r| Ok((r.get::<_, Option<i64>>(0)?.unwrap_or(0), r.get::<_, Option<i64>>(1)?.unwrap_or(0))),
+            )
+            .optional()?)
+    }
+
+    /// Valores planejados da série (carga, repetições máximas da faixa).
+    pub fn planned_set_values(&self, set_id: Id) -> AppResult<(i64, i64)> {
+        self.conn
+            .query_row(
+                "SELECT planned_load_g, planned_reps_max FROM session_set WHERE id = ?1",
+                params![set_id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()?
+            .ok_or_else(|| AppError::NotFound("Série não encontrada.".into()))
+    }
+
+    /// Valores da mesma série na última execução concluída do exercício.
+    pub fn last_execution_values(&self, set_id: Id) -> AppResult<Option<(i64, i64)>> {
+        let found: Option<(Option<Id>, i64, Id)> = self
+            .conn
+            .query_row(
+                "SELECT e.performed_exercise_id, s.set_number, e.session_id FROM session_set s
+                 JOIN session_exercise e ON e.id = s.session_exercise_id WHERE s.id = ?1",
+                params![set_id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .optional()?;
+        let Some((Some(ex), n, sid)) = found else { return Ok(None) };
+        let Some(last) = self.last_performance(ex, sid)? else { return Ok(None) };
+        let pick = last.sets.iter().find(|x| x.0 == n).or(last.sets.last());
+        Ok(pick.and_then(|(_, r, l)| Some((l.unwrap_or(0), (*r)?))))
+    }
+
+    /// Restaura exatamente um estado anterior da série (usado pelo "Desfazer"; só em sessão em andamento).
+    pub fn restore_set_state(
+        &self,
+        set_id: Id,
+        reps: Option<i64>,
+        load_g: Option<i64>,
+        completed_at: Option<i64>,
+        rest_taken_s: Option<i64>,
+    ) -> AppResult<()> {
+        self.ensure_in_progress_for_set(set_id)?;
+        self.conn.execute(
+            "UPDATE session_set SET actual_reps=?2, actual_load_g=?3, completed_at=?4, rest_taken_s=?5 WHERE id=?1",
+            params![set_id, reps, load_g, completed_at, rest_taken_s],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_session_set(&self, set_id: Id) -> AppResult<SessionSet> {
+        self.conn
+            .query_row(
+                "SELECT id, set_number, planned_reps_min, planned_reps_max, planned_load_g, actual_reps, actual_load_g,
+                        completed_at, rest_taken_s FROM session_set WHERE id = ?1",
+                params![set_id],
+                |r| {
+                    Ok(SessionSet {
+                        id: r.get(0)?,
+                        set_number: r.get(1)?,
+                        planned_reps_min: r.get(2)?,
+                        planned_reps_max: r.get(3)?,
+                        planned_load_g: r.get(4)?,
+                        actual_reps: r.get(5)?,
+                        actual_load_g: r.get(6)?,
+                        completed_at: r.get(7)?,
+                        rest_taken_s: r.get(8)?,
+                    })
+                },
+            )
+            .optional()?
+            .ok_or_else(|| AppError::NotFound("Série não encontrada.".into()))
+    }
+
     /// Último desempenho concluído de um exercício (por id do exercício realizado).
     pub fn last_performance(&self, exercise_id: Id, before_session: Id) -> AppResult<Option<LastPerformance>> {
         let found: Option<(Id, i64)> = self

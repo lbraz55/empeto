@@ -6,6 +6,7 @@ import { Branding } from "themes/branding.slint";
 import { HomeScreen, PlansScreen, CalendarScreen, HistoryScreen } from "screens/main.slint";
 import { PlanEditorScreen, LibraryScreen, SessionScreen, TimerScreen } from "screens/training.slint";
 import { SessionDetailScreen, EvolutionScreen, SettingsScreen, ImportScreen } from "screens/more.slint";
+import { FocusScreen } from "screens/focus.slint";
 import { ConfirmDialog, InfoDialog, ChoiceDialog, TextDialog, DayDialog, PlanExDialog, ExerciseDialog, SubstituteDialog } from "dialogs.slint";
 
 export { Bridge, Theme }
@@ -78,6 +79,7 @@ export component AppWindow inherits Window {
         : Bridge.page == 11 ? (Bridge.lib-mode == "pick" ? "Escolher exercício" : "Exercícios")
         : Bridge.page == 12 ? Bridge.session-title
         : Bridge.page == 13 ? "Cronômetro"
+        : Bridge.page == 16 ? "Modo foco"
         : Bridge.page == 14 ? "Sessão realizada"
         : Bridge.page == 15 ? "Evolução"
         : Bridge.page == 20 ? (
@@ -187,6 +189,7 @@ export component AppWindow inherits Window {
                 if Bridge.page == 13: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; TimerScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 14: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; SessionDetailScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 15: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; EvolutionScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 16: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; FocusScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 20: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; SettingsScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 21: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; ImportScreen { width: parent.width; height: parent.height; } }
             }
@@ -254,21 +257,45 @@ export component AppWindow inherits Window {
             opacity: self.t;
             x: 16px;
             width: parent.width - 32px;
-            height: toast-text.preferred-height + 24px;
+            height: max(48px, toast-text.preferred-height + 24px);
             y: parent.height - self.height - 84px - root.safe-area-insets.bottom - root.kb + (1 - self.t) * 16px;
             border-radius: 12px;
             background: Theme.text;
             TouchArea {
                 clicked => { Bridge.toast = ""; }
             }
-            toast-text := Text {
+            HorizontalLayout {
                 x: 14px;
-                width: parent.width - 28px;
-                y: 12px;
-                text: Bridge.toast;
-                color: Theme.on-accent;
-                font-size: Theme.fs-s;
-                wrap: word-wrap;
+                width: parent.width - 20px;
+                y: 6px;
+                height: parent.height - 12px;
+                spacing: 8px;
+                toast-text := Text {
+                    text: Bridge.toast;
+                    color: Theme.on-accent;
+                    font-size: Theme.fs-s;
+                    wrap: word-wrap;
+                    vertical-alignment: center;
+                }
+                if Bridge.toast-action != "": Rectangle {
+                    width: act.preferred-width + 24px;
+                    border-radius: 10px;
+                    background: aa.pressed ? Theme.on-accent.with-alpha(0.2) : transparent;
+                    accessible-role: button;
+                    accessible-label: Bridge.toast-action;
+                    accessible-action-default => { Bridge.toast-action-clicked(); }
+                    aa := TouchArea {
+                        clicked => { Bridge.toast-action-clicked(); }
+                    }
+                    act := Text {
+                        text: Bridge.toast-action;
+                        color: Theme.on-accent;
+                        font-size: Theme.fs-m;
+                        font-weight: 800;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
             }
         }
 

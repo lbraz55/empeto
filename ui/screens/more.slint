@@ -266,6 +266,12 @@ export component SettingsScreen inherits Scroll {
             toggled => { Bridge.pref-toggle("vibrate"); }
         }
         ToggleRow {
+            text: "Vibração em ações";
+            description: "Toque curto ao registrar série e ao desfazer. Não vibra em toda interação.";
+            checked: Bridge.set-haptics;
+            toggled => { Bridge.pref-toggle("haptics"); }
+        }
+        ToggleRow {
             text: "Pré-alerta";
             description: "Aviso alguns segundos antes do fim do descanso.";
             checked: Bridge.set-pre-alert;
@@ -353,6 +359,12 @@ export component SettingsScreen inherits Scroll {
             text: "Repetições padrão";
             value: Bridge.set-default-reps;
             step(d) => { Bridge.pref-step("default-reps", d); }
+        }
+        ToggleRow {
+            text: "Teclado numérico do app no modo foco";
+            description: "Botões grandes com vírgula, apagar e ±incremento. Desligado: usa o teclado do sistema.";
+            checked: Bridge.set-app-keypad;
+            toggled => { Bridge.pref-toggle("app-keypad"); }
         }
         ToggleRow {
             text: "Confirmar ao finalizar sessão";

@@ -106,6 +106,9 @@ impl Platform for DesktopPlatform {
         log::info!("[desktop] som {tone}");
         eprint!("\x07");
     }
+    fn haptic(&self, event: super::HapticEvent) {
+        log::info!("[desktop] háptico {event:?}");
+    }
     fn vibrate(&self, ms: i64) {
         log::info!("[desktop] vibrar {ms} ms");
     }

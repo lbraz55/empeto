@@ -192,6 +192,10 @@ impl Platform for AndroidPlatform {
         self.call_void("vibrate", "(J)V", |_| Ok(vec![OwnedArg::Long(ms)]));
     }
 
+    fn haptic(&self, event: super::HapticEvent) {
+        self.call_void("haptic", "(I)V", |_| Ok(vec![OwnedArg::Int(event.code())]));
+    }
+
     fn keep_screen_on(&self, on: bool) {
         self.call_void("keepScreenOn", "(Z)V", |_| Ok(vec![OwnedArg::Bool(on)]));
     }

@@ -1,5 +1,6 @@
 //! Domínio: entidades, validações e regras independentes de interface e banco.
 
+pub mod input;
 pub mod timer;
 
 use serde::{Deserialize, Serialize};
@@ -320,6 +321,28 @@ pub struct SessionExercise {
 pub struct SessionFull {
     pub session: Session,
     pub exercises: Vec<SessionExercise>,
+}
+
+/// Estado de um exercício na barra de progresso (3.7).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExerciseProgress {
+    NotStarted,
+    Partial,
+    Done,
+}
+
+impl SessionExercise {
+    /// Calculado só pelas séries registradas (o cronômetro não conclui exercício).
+    pub fn progress(&self) -> ExerciseProgress {
+        let done = self.sets.iter().filter(|s| s.completed_at.is_some()).count();
+        if done == 0 {
+            ExerciseProgress::NotStarted
+        } else if done < self.sets.len() {
+            ExerciseProgress::Partial
+        } else {
+            ExerciseProgress::Done
+        }
+    }
 }
 
 impl SessionFull {

@@ -32,6 +32,7 @@ export struct PlanPreview { name: string, detail: string, conflict: bool }
 
 export global Bridge {
     // ---------------- navegação ----------------
+    // 16 Modo foco
     // 0 Home, 1 Treinos, 2 Calendário, 3 Histórico, 10 Editor de ficha, 11 Biblioteca,
     // 12 Sessão, 13 Cronômetro, 14 Detalhe da sessão, 15 Evolução, 20 Configurações, 21 Prévia de importação
     in-out property <int> page: 0;
@@ -179,6 +180,46 @@ export global Bridge {
     callback session-discard();
     callback session-edit-notes();
     pure callback adjust-load(string, int) -> string;
+    // Preenchimento com um toque (3.3): devolve o valor para o campo, sem registrar.
+    pure callback fill-load(int, string) -> string;
+    pure callback fill-reps(int, string) -> string;
+    callback session-focus();
+
+    // ---------------- Modo foco (3.1) ----------------
+    in-out property <string> focus-exercise;
+    in-out property <string> focus-meta;
+    in-out property <string> focus-set-label;
+    in-out property <string> focus-planned;
+    in-out property <string> focus-load;
+    in-out property <string> focus-reps;
+    in-out property <string> focus-field: "load";
+    in-out property <bool> focus-done;
+    in-out property <string> focus-done-text;
+    in-out property <string> focus-hint;
+    in-out property <string> focus-record;
+    in-out property <string> focus-step-label;
+    in-out property <bool> focus-has-previous;
+    in-out property <bool> focus-has-last;
+    in-out property <bool> focus-can-prev-set;
+    in-out property <bool> focus-can-next-set;
+    in-out property <bool> focus-can-prev-ex;
+    in-out property <bool> focus-can-next-ex;
+    in-out property <bool> use-app-keypad: true;
+    in-out property <bool> gestures-enabled;
+    callback focus-exit();
+    callback focus-key(string);
+    callback focus-step(int);
+    callback focus-field-select(string);
+    callback focus-typed(string, string);
+    callback focus-fill(string);
+    callback focus-confirm();
+    callback focus-nav(string);
+    callback focus-select-exercise(int);
+    callback focus-undo-set();
+
+    // Aviso com ação "Desfazer" (3.6)
+    in-out property <string> toast-action;
+    callback toast-action-clicked();
     pure callback adjust-reps(string, int) -> string;
 
     // Substituição
@@ -196,6 +237,7 @@ export global Bridge {
 
     // ---------------- Cronômetro ----------------
     in-out property <string> timer-display: "1:30";
+    in-out property <string> timer-ring;
     in-out property <string> timer-status: "idle"; // idle | running | paused | finished
     in-out property <float> timer-progress;
     in-out property <string> timer-context;
@@ -264,6 +306,8 @@ export global Bridge {
     in-out property <string> set-tone-start;
     in-out property <string> set-tone-pre;
     in-out property <bool> set-vibrate;
+    in-out property <bool> set-haptics;
+    in-out property <bool> set-app-keypad;
     in-out property <bool> set-pre-alert;
     in-out property <string> set-pre-alert-s;
     in-out property <bool> set-background;

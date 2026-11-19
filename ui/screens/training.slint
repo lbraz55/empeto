@@ -1,5 +1,7 @@
 import { Theme, Icons } from "../theme.slint";
 import { Bridge, SetRow, SessionExRow } from "../bridge.slint";
+import { RestTimerIndicator } from "../components/rest_timer_indicator.slint";
+import { SessionProgress } from "../components/session_progress.slint";
 import { Btn, IconBtn, Card, Label, Title, SectionTitle, Body, Scroll, Segmented, Badge, Field, ToggleRow, Chip, Icon, Divider } from "../components/widgets.slint";
 import { EmptyState } from "../components/empty_state.slint";
 
@@ -309,6 +311,31 @@ component SetLine inherits Rectangle {
                 clicked => { Bridge.session-record(root.s.id, root.load, root.reps); }
             }
         }
+        if !root.s.done: HorizontalLayout {
+            spacing: 6px;
+            alignment: start;
+            Btn {
+                text: "Repetir anterior";
+                icon: Icons.repeat;
+                compact: true;
+                horizontal-stretch: 0;
+                font-size: Theme.fs-s;
+                clicked => {
+                    root.load = Bridge.fill-load(root.s.id, "previous");
+                    root.reps = Bridge.fill-reps(root.s.id, "previous");
+                }
+            }
+            Btn {
+                text: "Planejado";
+                compact: true;
+                horizontal-stretch: 0;
+                font-size: Theme.fs-s;
+                clicked => {
+                    root.load = Bridge.fill-load(root.s.id, "planned");
+                    root.reps = Bridge.fill-reps(root.s.id, "planned");
+                }
+            }
+        }
         if root.s.hint != "": Text {
             text: root.s.hint;
             color: Theme.faint;
@@ -323,7 +350,7 @@ export component SessionScreen inherits Rectangle {
     property <int> count: Bridge.session-exercises.length;
     VerticalLayout {
         Rectangle {
-            height: 40px;
+            height: 48px;
             background: Theme.surface;
             HorizontalLayout {
                 padding-left: Theme.pad;
@@ -340,6 +367,27 @@ export component SessionScreen inherits Rectangle {
                     font-size: Theme.fs-s;
                     horizontal-alignment: right;
                     vertical-alignment: center;
+                }
+                Btn {
+                    text: "Foco";
+                    icon: Icons.focus;
+                    compact: true;
+                    horizontal-stretch: 0;
+                    accessible-label: "Abrir modo foco";
+                    clicked => { Bridge.session-focus(); }
+                }
+            }
+        }
+        Rectangle {
+            height: 38px;
+            background: Theme.surface;
+            HorizontalLayout {
+                padding-left: Theme.pad;
+                padding-right: Theme.pad;
+                SessionProgress {
+                    exercises: Bridge.session-exercises;
+                    current: Bridge.session-index;
+                    select(i) => { Bridge.session-select(i); }
                 }
             }
         }
@@ -451,9 +499,18 @@ export component SessionScreen inherits Rectangle {
                     enabled: Bridge.session-index > 0;
                     clicked => { Bridge.session-select(Bridge.session-index - 1); }
                 }
-                Btn {
+                if Bridge.timer-status == "idle": Btn {
                     icon: Icons.timer;
                     text: "Cronômetro";
+                    clicked => { Bridge.open-timer(); }
+                }
+                if Bridge.timer-status != "idle": RestTimerIndicator {
+                    compact: true;
+                    horizontal-stretch: 1;
+                    display: Bridge.timer-display;
+                    status: Bridge.timer-status;
+                    ring: Bridge.timer-ring;
+                    context: Bridge.timer-context;
                     clicked => { Bridge.open-timer(); }
                 }
                 Btn {

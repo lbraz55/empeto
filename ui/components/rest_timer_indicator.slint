@@ -1,0 +1,75 @@
+import { Theme } from "../theme.slint";
+
+// Indicador de descanso (3.2): anel de progresso + tempo restante + estado. Consome o cronômetro
+// existente (não conta tempo sozinho). Tocar abre o cronômetro completo.
+export component RestTimerIndicator inherits Rectangle {
+    in property <string> display;
+    in property <string> status; // idle | running | paused | finished
+    in property <string> ring;   // arco do tempo restante (viewbox 100x100), calculado no Rust
+    in property <string> context;
+    in property <bool> compact: false;
+    callback clicked();
+    height: compact ? 48px : 56px;
+    border-radius: 28px;
+    background: ta.pressed ? Theme.surface3 : (status == "finished" ? Theme.accent : Theme.surface2);
+    accessible-role: button;
+    accessible-label: "Cronômetro de descanso, " + (status == "running" ? "em contagem, " : status == "paused" ? "pausado, " : status == "finished" ? "encerrado, " : "") + display + ". Abrir cronômetro.";
+    accessible-action-default => { clicked(); }
+    ta := TouchArea {
+        clicked => { root.clicked(); }
+    }
+    HorizontalLayout {
+        padding-left: 6px;
+        padding-right: 14px;
+        spacing: 8px;
+        Rectangle {
+            width: root.height - 12px;
+            height: root.height - 12px;
+            y: 6px;
+            Path {
+                width: parent.width;
+                height: parent.height;
+                viewbox-width: 100;
+                viewbox-height: 100;
+                commands: "M 50 8 A 42 42 0 1 1 49.99 8";
+                stroke: root.status == "finished" ? Theme.on-accent.with-alpha(0.3) : Theme.border;
+                stroke-width: 3px;
+                fill: transparent;
+            }
+            Path {
+                width: parent.width;
+                height: parent.height;
+                viewbox-width: 100;
+                viewbox-height: 100;
+                commands: root.ring;
+                stroke: root.status == "finished" ? Theme.on-accent : Theme.text;
+                stroke-width: 3.5px;
+                stroke-line-cap: round;
+                fill: transparent;
+            }
+            Text {
+                text: root.status == "paused" ? "II" : root.status == "finished" ? "✓" : "";
+                color: root.status == "finished" ? Theme.on-accent : Theme.text;
+                font-size: Theme.fs-xs;
+                font-weight: 700;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        VerticalLayout {
+            alignment: center;
+            Text {
+                text: root.display;
+                color: root.status == "finished" ? Theme.on-accent : Theme.text;
+                font-size: Theme.fs-l;
+                font-weight: 700;
+            }
+            if !root.compact && root.context != "": Text {
+                text: root.status == "finished" ? "Descanso encerrado" : root.status == "paused" ? "Pausado" : root.context;
+                color: root.status == "finished" ? Theme.on-accent : Theme.muted;
+                font-size: Theme.fs-xs;
+                overflow: elide;
+            }
+        }
+    }
+}

@@ -14,7 +14,9 @@ use crate::import_export::xlsx_import::{
     Mapping, Workbook,
 };
 use crate::persistence::{schema_version, Db};
-use crate::platform::{FileResult, Platform, ALARM_END, ALARM_PRE};
+use crate::application::undo::{UndoKind, UndoOp};
+use crate::domain::input::{self, FieldKind};
+use crate::platform::{FileResult, HapticEvent, Platform, ALARM_END, ALARM_PRE};
 use crate::training::ExerciseFilter;
 use crate::ui::*;
 use chrono::{Datelike, Duration, NaiveDate};
@@ -37,6 +39,7 @@ const P_DETAIL: i32 = 14;
 const P_EVO: i32 = 15;
 const P_SETTINGS: i32 = 20;
 const P_IMPORT: i32 = 21;
+const P_FOCUS: i32 = 16;
 
 const XLSX_MIMES: &[&str] = &[
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -152,6 +155,13 @@ pub struct Controller {
     awaiting_permission: bool,
     toast_ticks: i32,
     in_background: bool,
+    /// Modo foco: índice da série no exercício atual e rascunhos não salvos por série.
+    focus_set: usize,
+    drafts: HashMap<Id, (String, String)>,
+    /// Última operação reversível (aviso "Desfazer").
+    undo: Option<UndoOp>,
+    /// Próxima tecla substitui o valor (campo recém-selecionado/preenchido).
+    focus_fresh: bool,
 }
 
 thread_local! {
@@ -188,8 +198,56 @@ impl Controller {
 
     fn toast(&mut self, msg: impl AsRef<str>) {
         let m = msg.as_ref().to_string();
-        self.with_bridge(|b| b.set_toast(ss(&m)));
+        self.with_bridge(|b| {
+            b.set_toast(ss(&m));
+            b.set_toast_action(ss(""));
+        });
         self.toast_ticks = 14; // ~3.5 s
+    }
+
+    /// Aviso com a ação "Desfazer" por 5 segundos (3.6).
+    fn toast_undo(&mut self, msg: impl AsRef<str>, op: UndoOp) {
+        let m = msg.as_ref().to_string();
+        self.undo = Some(op);
+        self.with_bridge(|b| {
+            b.set_toast(ss(&m));
+            b.set_toast_action(ss("Desfazer"));
+        });
+        self.toast_ticks = 20; // 5 s
+    }
+
+    fn haptic(&self, e: HapticEvent) {
+        if self.prefs.haptics {
+            self.platform.haptic(e);
+        }
+    }
+
+    fn undo_last(&mut self) {
+        let Some(op) = self.undo.take() else { return };
+        self.with_bridge(|b| {
+            b.set_toast(ss(""));
+            b.set_toast_action(ss(""));
+        });
+        if op.expired(now_ms()) {
+            self.toast("Não é mais possível desfazer.");
+            return;
+        }
+        match op.revert(&mut self.db) {
+            Ok(()) => {
+                self.haptic(HapticEvent::Undo);
+                if let UndoKind::RecordSet { set_id, .. } | UndoKind::ClearSet { set_id, .. } = &op.kind {
+                    self.drafts.remove(set_id);
+                }
+                let p = self.page();
+                self.refresh_page(p);
+                if p == P_FOCUS {
+                    let r = self.refresh_session();
+                    self.report(r);
+                }
+                self.toast(format!("Desfeito: {}", op.label.to_lowercase()));
+            }
+            Err(e) => self.toast(format!("Não foi possível desfazer: {e}")),
+        }
     }
 
     fn report(&mut self, r: AppResult<()>) {
@@ -313,6 +371,10 @@ impl Controller {
             P_SETTINGS => self.refresh_settings(),
             P_IMPORT => {
                 self.refresh_import();
+                Ok(())
+            }
+            P_FOCUS => {
+                self.refresh_focus();
                 Ok(())
             }
             _ => Ok(()),
@@ -1089,14 +1151,18 @@ impl Controller {
     }
 
     fn session_record(&mut self, set_id: Id, load: &str, reps: &str) {
-        let unit = self.prefs.unit;
+        match input::to_values(load, reps, self.prefs.unit) {
+            Ok((load_g, reps_n)) => {
+                self.record_set_values(set_id, load_g, reps_n);
+            }
+            Err(e) => self.toast(e),
+        }
+    }
+
+    /// Registra a série (usado pela sessão e pelo modo foco). Devolve true se gravou.
+    fn record_set_values(&mut self, set_id: Id, load_g: i64, reps_n: i64) -> bool {
+        let before = self.db.get_session_set(set_id).ok();
         let r = (|| -> AppResult<(String, i64)> {
-            let load_g = parse_load(load, unit)?;
-            let reps_n: i64 = if reps.trim().is_empty() {
-                return validation("Informe as repetições realizadas.");
-            } else {
-                reps.trim().parse().map_err(|_| AppError::Validation("Repetições inválidas.".into()))?
-            };
             self.db.record_set(set_id, reps_n, load_g)?;
             let sid = self.session_id.unwrap_or(0);
             let f = self.db.get_session_full(sid)?;
@@ -1109,17 +1175,24 @@ impl Controller {
         })();
         match r {
             Ok((context, rest)) => {
+                self.drafts.remove(&set_id);
+                self.haptic(HapticEvent::SetRegistered);
+                let was_done = before.as_ref().map(|b| b.completed_at.is_some()).unwrap_or(false);
                 // O descanso anterior termina quando a série seguinte é registrada.
-                self.finalize_rest();
+                if !was_done {
+                    self.finalize_rest();
+                }
                 let r = self.refresh_session();
                 self.report(r);
-                if self.prefs.auto_start_rest {
+                let record = self.check_record(set_id);
+                let mut msg = if was_done { "Série atualizada.".to_string() } else { "Série registrada.".to_string() };
+                if !was_done && self.prefs.auto_start_rest {
                     let secs = if rest > 0 { rest } else { self.prefs.timer_default_seconds };
                     self.start_rest(secs, &context);
                     self.timer.linked_set = Some(set_id);
                     self.save_timer();
-                    self.toast(format!("Série registrada. Descanso de {} iniciado.", format_duration_s(secs)));
-                } else {
+                    msg = format!("Série registrada. Descanso de {} iniciado.", format_duration_s(secs));
+                } else if !was_done {
                     if !self.timer.is_running() {
                         self.timer.status = TimerStatus::Idle;
                     }
@@ -1129,8 +1202,214 @@ impl Controller {
                     self.save_timer();
                     self.refresh_timer();
                 }
+                if let Some(rec) = record {
+                    msg = format!("★ Novo recorde: {rec}. {msg}");
+                }
+                if let Some(b) = before {
+                    self.toast_undo(msg, UndoOp::new(UndoKind::RecordSet { set_id, before: b }, "Registro da série"));
+                } else {
+                    self.toast(msg);
+                }
+                true
             }
-            Err(e) => self.toast(e.to_string()),
+            Err(e) => {
+                self.toast(e.to_string());
+                false
+            }
+        }
+    }
+
+    /// Verificação de recorde pessoal após registrar (implementada no grupo C).
+    fn check_record(&mut self, _set_id: Id) -> Option<String> {
+        None
+    }
+
+    /// Valor para preenchimento rápido (3.3). Não registra nada.
+    fn fill_values(&self, set_id: Id, source: &str) -> Option<(i64, i64)> {
+        match source {
+            "previous" => self.db.previous_set_values(set_id).ok().flatten(),
+            "planned" => self.db.planned_set_values(set_id).ok(),
+            "last" => self.db.last_execution_values(set_id).ok().flatten(),
+            _ => None,
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Modo foco (3.1)
+    // ------------------------------------------------------------------
+
+    fn current_session_exercise(&self) -> Option<SessionExercise> {
+        let sid = self.session_id?;
+        let f = self.db.get_session_full(sid).ok()?;
+        let i = self.with_bridge(|b| b.get_session_index()).max(0) as usize;
+        f.exercises.get(i.min(f.exercises.len().saturating_sub(1))).cloned()
+    }
+
+    fn first_open_set(e: &SessionExercise) -> usize {
+        e.sets.iter().position(|s| s.completed_at.is_none()).unwrap_or(e.sets.len().saturating_sub(1))
+    }
+
+    fn open_focus(&mut self) {
+        let Some(e) = self.current_session_exercise() else {
+            self.toast("Nenhuma sessão em andamento.");
+            return;
+        };
+        self.focus_set = Self::first_open_set(&e);
+        self.with_bridge(|b| b.set_focus_field(ss("load")));
+        self.navigate(P_FOCUS);
+    }
+
+    /// Rascunho da série: o que o usuário digitou, senão o realizado, senão a sugestão.
+    fn focus_draft(&self, set: &SessionSet) -> (String, String) {
+        match self.drafts.get(&set.id) {
+            Some(d) => d.clone(),
+            None => self.focus_base(set),
+        }
+    }
+
+    /// Valor inicial sem rascunho: realizado (se registrada) ou sugestão (última vez / planejado).
+    fn focus_base(&self, set: &SessionSet) -> (String, String) {
+        let unit = self.prefs.unit;
+        if set.completed_at.is_some() {
+            return (
+                set.actual_load_g.map(|g| format_load(g, unit)).unwrap_or_default(),
+                set.actual_reps.map(|r| r.to_string()).unwrap_or_default(),
+            );
+        }
+        let base = if self.prefs.prefill_last { self.db.last_execution_values(set.id).ok().flatten() } else { None };
+        let (l, r) = base.unwrap_or((set.planned_load_g, set.planned_reps_max));
+        (if l > 0 { format_load(l, unit) } else { String::new() }, r.to_string())
+    }
+
+    fn refresh_focus(&mut self) {
+        self.focus_fresh = true;
+        let Some(e) = self.current_session_exercise() else { return };
+        if e.sets.is_empty() {
+            self.with_bridge(|b| {
+                b.set_focus_exercise(ss(&e.performed_name));
+                b.set_focus_set_label(ss("Sem séries — adicione na tela da sessão"));
+            });
+            return;
+        }
+        let n = e.sets.len();
+        self.focus_set = self.focus_set.min(n - 1);
+        let set = e.sets[self.focus_set].clone();
+        let unit = self.prefs.unit;
+        let (load, reps) = self.focus_draft(&set);
+        let idx = self.with_bridge(|b| b.get_session_index());
+        let count = self.with_bridge(|b| b.get_session_exercises().row_count()) as i32;
+        let planned = format!(
+            "Planejado: {}{} reps",
+            if set.planned_load_g > 0 { format!("{} × ", format_load_unit(set.planned_load_g, unit)) } else { String::new() },
+            format_reps(set.planned_reps_min, set.planned_reps_max)
+        );
+        let hint = match self.db.last_execution_values(set.id).ok().flatten() {
+            Some((l, r)) => format!("Última vez: {} × {}", format_load_unit(l, unit), r),
+            None => String::new(),
+        };
+        let meta = [e.muscle_focus.as_str(), e.exercise_type.as_str(), e.equipment.as_str()]
+            .iter()
+            .filter(|x| !x.is_empty())
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(" · ");
+        let done_text = match (set.actual_load_g, set.actual_reps) {
+            (Some(l), Some(r)) => format!("{} × {}", format_load_unit(l, unit), r),
+            _ => String::new(),
+        };
+        let has_prev = self.db.previous_set_values(set.id).ok().flatten().is_some();
+        let has_last = !hint.is_empty();
+        let step = format_load(self.prefs.load_step_g, unit);
+        let fs = self.focus_set;
+        self.with_bridge(|b| {
+            b.set_focus_exercise(ss(&e.performed_name));
+            b.set_focus_meta(ss(meta));
+            b.set_focus_set_label(ss(format!("Série {} de {}", set.set_number, n)));
+            b.set_focus_planned(ss(planned));
+            b.set_focus_load(ss(&load));
+            b.set_focus_reps(ss(&reps));
+            b.set_focus_done(set.completed_at.is_some());
+            b.set_focus_done_text(ss(done_text));
+            b.set_focus_hint(ss(hint));
+            b.set_focus_step_label(ss(step));
+            b.set_focus_has_previous(has_prev);
+            b.set_focus_has_last(has_last);
+            b.set_focus_can_prev_set(fs > 0);
+            b.set_focus_can_next_set(fs + 1 < n);
+            b.set_focus_can_prev_ex(idx > 0);
+            b.set_focus_can_next_ex(idx + 1 < count);
+            b.set_session_unit(ss(unit.as_str()));
+        });
+    }
+
+    fn focus_set_id(&self) -> Option<Id> {
+        let e = self.current_session_exercise()?;
+        e.sets.get(self.focus_set).map(|s| s.id)
+    }
+
+    /// Guarda o rascunho atual (antes de navegar) — a navegação nunca descarta dados.
+    fn focus_store_draft(&mut self) {
+        if let Some(id) = self.focus_set_id() {
+            let (l, r) = self.with_bridge(|b| (b.get_focus_load().to_string(), b.get_focus_reps().to_string()));
+            let set = self.db.get_session_set(id).ok();
+            let unchanged = set.as_ref().map(|s| self.focus_base(s) == (l.clone(), r.clone())).unwrap_or(false);
+            if !unchanged {
+                self.drafts.insert(id, (l, r));
+            }
+        }
+    }
+
+    fn focus_edit(&mut self, f: impl FnOnce(&str, FieldKind) -> String) {
+        let field = self.with_bridge(|b| b.get_focus_field().to_string());
+        let kind = if field == "reps" { FieldKind::Reps } else { FieldKind::Load };
+        let cur = self.with_bridge(|b| if field == "reps" { b.get_focus_reps() } else { b.get_focus_load() }).to_string();
+        let next = f(&cur, kind);
+        self.with_bridge(|b| if field == "reps" { b.set_focus_reps(ss(&next)) } else { b.set_focus_load(ss(&next)) });
+        if let Some(id) = self.focus_set_id() {
+            let (l, r) = self.with_bridge(|b| (b.get_focus_load().to_string(), b.get_focus_reps().to_string()));
+            self.drafts.insert(id, (l, r));
+        }
+    }
+
+    fn focus_nav(&mut self, what: &str) {
+        let idx = self.with_bridge(|b| b.get_session_index());
+        let count = self.with_bridge(|b| b.get_session_exercises().row_count()) as i32;
+        match what {
+            "prev-set" => self.focus_set = self.focus_set.saturating_sub(1),
+            "next-set" => self.focus_set += 1,
+            "prev-ex" | "next-ex" => {
+                let ni = if what == "prev-ex" { idx - 1 } else { idx + 1 };
+                if ni < 0 || ni >= count {
+                    return;
+                }
+                self.with_bridge(|b| b.set_session_index(ni));
+                if let Some(e) = self.current_session_exercise() {
+                    self.focus_set = Self::first_open_set(&e);
+                }
+                self.with_bridge(|b| b.set_nav_dir(if what == "prev-ex" { -1 } else { 1 }));
+            }
+            _ => {}
+        }
+        self.refresh_focus();
+    }
+
+    fn focus_confirm(&mut self) {
+        let Some(id) = self.focus_set_id() else { return };
+        let (l, r) = self.with_bridge(|b| (b.get_focus_load().to_string(), b.get_focus_reps().to_string()));
+        match input::to_values(&l, &r, self.prefs.unit) {
+            Ok((load_g, reps)) => {
+                let was_done = self.db.get_session_set(id).map(|s| s.completed_at.is_some()).unwrap_or(false);
+                if self.record_set_values(id, load_g, reps) && !was_done {
+                    // Avança para a próxima série não registrada do exercício (sem registrar nada).
+                    if let Some(e) = self.current_session_exercise() {
+                        if let Some(next) = e.sets.iter().position(|s| s.completed_at.is_none()) {
+                            self.focus_set = next;
+                        }
+                    }
+                }
+                self.refresh_focus();
+            }
+            Err(e) => self.toast(e),
         }
     }
 
@@ -1378,6 +1657,7 @@ impl Controller {
         };
         let display = t.display(now);
         let progress = t.progress(now);
+        let ring = ring_path(if t.status == TimerStatus::Idle { 1.0 } else { 1.0 - progress });
         let ctx = t.context.clone();
         let duration = format_duration_s(t.duration_ms / 1000);
         let step = format!("{} s", self.prefs.timer_adjust_step);
@@ -1385,6 +1665,7 @@ impl Controller {
             b.set_timer_display(ss(&display));
             b.set_timer_status(ss(status));
             b.set_timer_progress(progress);
+            b.set_timer_ring(ss(&ring));
             b.set_timer_context(ss(&ctx));
             b.set_timer_phase(ss(phase));
             b.set_timer_duration(ss(&duration));
@@ -1868,6 +2149,9 @@ impl Controller {
             b.set_set_tone_start(ss(TONE_NAMES[p.tone_set_start as usize]));
             b.set_set_tone_pre(ss(TONE_NAMES[p.tone_pre_alert as usize]));
             b.set_set_vibrate(p.vibrate);
+            b.set_set_haptics(p.haptics);
+            b.set_set_app_keypad(p.app_keypad);
+            b.set_use_app_keypad(p.app_keypad);
             b.set_set_pre_alert(p.pre_alert);
             b.set_set_pre_alert_s(ss(format!("{} s", p.pre_alert_seconds)));
             b.set_set_background(p.background_alert);
@@ -1946,6 +2230,8 @@ impl Controller {
         match key {
             "sound" => p.sound_enabled = !p.sound_enabled,
             "vibrate" => p.vibrate = !p.vibrate,
+            "haptics" => p.haptics = !p.haptics,
+            "app-keypad" => p.app_keypad = !p.app_keypad,
             "pre-alert" => p.pre_alert = !p.pre_alert,
             "background" => {
                 if !p.background_alert && self.platform.is_android() && !self.platform.notifications_allowed() {
@@ -2489,7 +2775,27 @@ impl Controller {
                 self.report_refresh_editor();
             }
             ConfirmAction::DeletePlanEx(id) => {
+                let before = self.db.get_plan_exercise(id).ok().map(|pe| {
+                    let pos = self.db.list_plan_exercises(pe.schedule_id).map(|l| l.iter().position(|x| x.id == id).unwrap_or(0)).unwrap_or(0);
+                    (pe, pos)
+                });
                 let r = self.db.delete_plan_exercise(id);
+                if let (Ok(()), Some((pe, pos))) = (&r, before) {
+                    self.toast_undo(
+                        format!("{} removido da ficha.", pe.exercise.name),
+                        UndoOp::new(
+                            UndoKind::DeletePlanExercise {
+                                day_id: pe.schedule_id,
+                                exercise_id: pe.exercise.id,
+                                target: pe.target,
+                                rest_seconds: pe.rest_seconds,
+                                notes: pe.notes.clone(),
+                                position: pos,
+                            },
+                            "Remoção do exercício",
+                        ),
+                    );
+                }
                 self.report(r);
                 self.pe = None;
                 self.report_refresh_editor();
@@ -2513,7 +2819,13 @@ impl Controller {
             ConfirmAction::ArchiveExercise(id, archive) => {
                 let r = self.db.set_exercise_archived(id, archive);
                 match r {
-                    Ok(()) => self.toast(if archive { "Exercício arquivado." } else { "Exercício reativado." }),
+                    Ok(()) => self.toast_undo(
+                        if archive { "Exercício arquivado." } else { "Exercício reativado." },
+                        UndoOp::new(
+                            UndoKind::ArchiveExercise { exercise_id: id, was_archived: !archive },
+                            if archive { "Arquivamento" } else { "Reativação" },
+                        ),
+                    ),
                     Err(e) => self.toast(e.to_string()),
                 }
                 let r = self.refresh_library();
@@ -2632,7 +2944,11 @@ impl Controller {
         if self.toast_ticks > 0 {
             self.toast_ticks -= 1;
             if self.toast_ticks == 0 {
-                self.with_bridge(|b| b.set_toast(ss("")));
+                self.with_bridge(|b| {
+                    b.set_toast(ss(""));
+                    b.set_toast_action(ss(""));
+                });
+                self.undo = None;
             }
         }
     }
@@ -2651,6 +2967,20 @@ fn anim_index(m: AnimMode) -> usize {
         AnimMode::Reduced => 2,
         AnimMode::Off => 3,
     }
+}
+
+/// Arco (viewbox 100x100, raio 42) da fração restante, a partir do topo no sentido horário.
+fn ring_path(remaining: f32) -> String {
+    let f = remaining.clamp(0.0, 1.0) as f64;
+    if f <= 0.001 {
+        return String::new();
+    }
+    if f >= 0.999 {
+        return "M 50 8 A 42 42 0 1 1 49.99 8".into();
+    }
+    let a = std::f64::consts::TAU * f;
+    let (x, y) = (50.0 + 42.0 * a.sin(), 50.0 - 42.0 * a.cos());
+    format!("M 50 8 A 42 42 0 {} 1 {:.2} {:.2}", if f > 0.5 { 1 } else { 0 }, x, y)
 }
 
 fn ex_row(e: &Exercise, note: &str) -> ExRow {
@@ -2729,6 +3059,10 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         awaiting_permission: false,
         toast_ticks: 0,
         in_background: false,
+        focus_set: 0,
+        drafts: HashMap::new(),
+        undo: None,
+        focus_fresh: true,
     }));
 
     {
@@ -2741,6 +3075,8 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         b.set_cal_week_view(week_view);
         b.set_lib_mode(ss("browse"));
         b.set_timer_presets(model(vec![30, 45, 60, 90, 120, 180]));
+        b.set_use_app_keypad(c.prefs.app_keypad);
+        b.set_gestures_enabled(true);
         c.refresh_timer();
         c.navigate(P_HOME);
         if let Some(err) = open_error {
@@ -2959,8 +3295,15 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         c.session_record(id as Id, &load, &reps);
     });
     cb!(b, ctrl, on_session_undo, |c, id: i32| {
-        let r = c.db.clear_set(id as Id);
-        c.report(r);
+        let before = c.db.get_session_set(id as Id).ok();
+        match c.db.clear_set(id as Id) {
+            Ok(()) => {
+                if let Some(bf) = before {
+                    c.toast_undo("Registro da série desfeito.", UndoOp::new(UndoKind::ClearSet { set_id: id as Id, before: bf }, "Desfazer registro"));
+                }
+            }
+            Err(e) => c.toast(e.to_string()),
+        }
         let r = c.refresh_session();
         c.report(r);
     });
@@ -2972,6 +3315,9 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     });
     cb!(b, ctrl, on_session_remove_set, |c, id: i32| {
         let r = c.db.remove_last_session_set(id as Id);
+        if r.is_ok() {
+            c.toast_undo("Série removida.", UndoOp::new(UndoKind::RemoveSet { session_exercise_id: id as Id }, "Remoção da série"));
+        }
         c.report(r);
         let r = c.refresh_session();
         c.report(r);
@@ -3042,6 +3388,90 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
             Err(_) => text,
         });
     }
+    {
+        let ctrl = ctrl.clone();
+        b.on_fill_load(move |set_id, source| match ctrl.try_borrow() {
+            Ok(c) => match c.fill_values(set_id as Id, &source) {
+                Some((l, _)) => ss(if l > 0 { format_load(l, c.prefs.unit) } else { String::new() }),
+                None => ss(""),
+            },
+            Err(_) => ss(""),
+        });
+    }
+    {
+        let ctrl = ctrl.clone();
+        b.on_fill_reps(move |set_id, source| match ctrl.try_borrow() {
+            Ok(c) => c.fill_values(set_id as Id, &source).map(|(_, r)| ss(r.to_string())).unwrap_or_default(),
+            Err(_) => ss(""),
+        });
+    }
+    cb!(b, ctrl, on_toast_action_clicked, |c| { c.undo_last(); });
+    cb!(b, ctrl, on_session_focus, |c| { c.open_focus(); });
+    cb!(b, ctrl, on_focus_exit, |c| { c.focus_store_draft(); c.back(); });
+    cb!(b, ctrl, on_focus_key, |c, k: SharedString| {
+        let unit = c.prefs.unit;
+        let fresh = std::mem::replace(&mut c.focus_fresh, false);
+        let replaces = fresh && k.as_str() != "back";
+        c.focus_edit(|cur, kind| input::apply_key(if replaces { "" } else { cur }, &k, kind, unit));
+    });
+    cb!(b, ctrl, on_focus_step, |c, d: i32| {
+        let (unit, step) = (c.prefs.unit, c.prefs.load_step_g);
+        c.focus_edit(|cur, kind| input::step(cur, d, kind, unit, step));
+    });
+    cb!(b, ctrl, on_focus_field_select, |c, f: SharedString| {
+        c.focus_fresh = true;
+        c.with_bridge(|b| b.set_focus_field(f.clone()));
+    });
+    cb!(b, ctrl, on_focus_typed, |c, f: SharedString, t: SharedString| {
+        c.with_bridge(|b| if f == "reps" { b.set_focus_reps(t.clone()) } else { b.set_focus_load(t.clone()) });
+        if let Some(id) = c.focus_set_id() {
+            let v = c.with_bridge(|b| (b.get_focus_load().to_string(), b.get_focus_reps().to_string()));
+            c.drafts.insert(id, v);
+        }
+    });
+    cb!(b, ctrl, on_focus_fill, |c, src: SharedString| {
+        let Some(id) = c.focus_set_id() else { return };
+        match c.fill_values(id, &src) {
+            Some((l, r)) => {
+                let unit = c.prefs.unit;
+                c.with_bridge(|b| {
+                    b.set_focus_load(ss(if l > 0 { format_load(l, unit) } else { String::new() }));
+                    b.set_focus_reps(ss(r.to_string()));
+                });
+                let v = c.with_bridge(|b| (b.get_focus_load().to_string(), b.get_focus_reps().to_string()));
+                c.drafts.insert(id, v);
+            }
+            None => c.toast("Sem valores para preencher."),
+        }
+    });
+    cb!(b, ctrl, on_focus_confirm, |c| { c.focus_confirm(); });
+    cb!(b, ctrl, on_focus_nav, |c, w: SharedString| {
+        c.focus_store_draft();
+        c.focus_nav(&w);
+    });
+    cb!(b, ctrl, on_focus_select_exercise, |c, i: i32| {
+        c.focus_store_draft();
+        c.with_bridge(|b| b.set_session_index(i));
+        if let Some(e) = c.current_session_exercise() {
+            c.focus_set = Controller::first_open_set(&e);
+        }
+        c.refresh_focus();
+    });
+    cb!(b, ctrl, on_focus_undo_set, |c| {
+        let Some(id) = c.focus_set_id() else { return };
+        let before = c.db.get_session_set(id).ok();
+        match c.db.clear_set(id) {
+            Ok(()) => {
+                if let Some(bf) = before {
+                    c.toast_undo("Registro da série desfeito.", UndoOp::new(UndoKind::ClearSet { set_id: id, before: bf }, "Desfazer registro"));
+                }
+                let r = c.refresh_session();
+                c.report(r);
+                c.refresh_focus();
+            }
+            Err(e) => c.toast(e.to_string()),
+        }
+    });
     b.on_adjust_reps(|text, dir| {
         let v: i64 = text.trim().parse().unwrap_or(0);
         ss((v + dir as i64).clamp(0, 1000).to_string())

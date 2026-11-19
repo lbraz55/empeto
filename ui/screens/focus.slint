@@ -1,0 +1,251 @@
+import { Theme, Icons } from "../theme.slint";
+import { Bridge } from "../bridge.slint";
+import { Btn, IconBtn, Icon, Badge, Field } from "../components/widgets.slint";
+import { NumericKeypad } from "../components/numeric_keypad.slint";
+import { RestTimerIndicator } from "../components/rest_timer_indicator.slint";
+import { SessionProgress } from "../components/session_progress.slint";
+
+component ValueBox inherits Rectangle {
+    in property <string> label;
+    in property <string> value;
+    in property <string> unit;
+    in property <bool> active;
+    in property <bool> editable: false;
+    callback clicked();
+    callback edited(string);
+    horizontal-stretch: 1;
+    min-height: 92px;
+    border-radius: 16px;
+    background: Theme.surface;
+    border-width: active ? 2.5px : 1px;
+    border-color: active ? Theme.text : Theme.border;
+    accessible-role: button;
+    accessible-label: label + ": " + (value == "" ? "vazio" : value + " " + unit) + (active ? ", selecionado" : "");
+    accessible-action-default => { clicked(); }
+    TouchArea {
+        clicked => { root.clicked(); }
+    }
+    VerticalLayout {
+        padding: 10px;
+        spacing: 2px;
+        Text {
+            text: root.label;
+            color: Theme.muted;
+            font-size: Theme.fs-s;
+            horizontal-alignment: center;
+        }
+        if !root.editable: Text {
+            text: root.value == "" ? "—" : root.value;
+            color: Theme.text;
+            font-size: Theme.fs-xxl * 1.25;
+            font-weight: 700;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+        if root.editable: Field {
+            text: root.value;
+            align: center;
+            font-size: Theme.fs-xl;
+            input-type: root.unit == "reps" ? InputType.number : InputType.decimal;
+            edited(t) => { root.edited(t); }
+        }
+        Text {
+            text: root.unit;
+            color: Theme.faint;
+            font-size: Theme.fs-xs;
+            horizontal-alignment: center;
+        }
+    }
+}
+
+// Modo foco (3.1): uma série por vez, botão principal na zona do polegar.
+// Sair do modo foco não encerra a sessão; rascunhos não salvos são preservados ao navegar.
+export component FocusScreen inherits Rectangle {
+    background: Theme.bg;
+    swipe := SwipeGestureHandler {
+        enabled: Bridge.gestures-enabled;
+        handle-swipe-left: true;
+        handle-swipe-right: true;
+        swiped => {
+            if (self.current-position.x - self.pressed-position.x < -60px) {
+                Bridge.focus-nav("next-set");
+            } else if (self.current-position.x - self.pressed-position.x > 60px) {
+                Bridge.focus-nav("prev-set");
+            }
+        }
+        VerticalLayout {
+            padding: Theme.pad;
+            padding-top: 4px;
+            spacing: Theme.gap;
+            SessionProgress {
+                exercises: Bridge.session-exercises;
+                current: Bridge.session-index;
+                select(i) => { Bridge.focus-select-exercise(i); }
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                VerticalLayout {
+                    alignment: center;
+                    Text {
+                        text: Bridge.focus-exercise;
+                        color: Theme.text;
+                        font-size: Theme.fs-xl;
+                        font-weight: 800;
+                        wrap: word-wrap;
+                    }
+                    Text {
+                        text: Bridge.focus-meta;
+                        color: Theme.muted;
+                        font-size: Theme.fs-s;
+                        wrap: word-wrap;
+                    }
+                }
+                RestTimerIndicator {
+                    compact: true;
+                    width: 116px;
+                    y: (parent.height - self.height) / 2;
+                    display: Bridge.timer-display;
+                    status: Bridge.timer-status;
+                    ring: Bridge.timer-ring;
+                    clicked => { Bridge.open-timer(); }
+                }
+            }
+            HorizontalLayout {
+                spacing: 6px;
+                IconBtn {
+                    icon: Icons.back;
+                    label: "Série anterior";
+                    enabled: Bridge.focus-can-prev-set;
+                    clicked => { Bridge.focus-nav("prev-set"); }
+                }
+                VerticalLayout {
+                    alignment: center;
+                    Text {
+                        text: Bridge.focus-set-label;
+                        color: Theme.text;
+                        font-size: Theme.fs-l;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                    }
+                    Text {
+                        text: Bridge.focus-planned;
+                        color: Theme.muted;
+                        font-size: Theme.fs-s;
+                        horizontal-alignment: center;
+                        wrap: word-wrap;
+                    }
+                }
+                IconBtn {
+                    icon: Icons.forward;
+                    label: "Próxima série";
+                    enabled: Bridge.focus-can-next-set;
+                    clicked => { Bridge.focus-nav("next-set"); }
+                }
+            }
+            if Bridge.focus-done: HorizontalLayout {
+                alignment: center;
+                spacing: 8px;
+                Badge { text: "✓ Registrada: " + Bridge.focus-done-text; }
+                Btn {
+                    text: "Desfazer";
+                    compact: true;
+                    horizontal-stretch: 0;
+                    clicked => { Bridge.focus-undo-set(); }
+                }
+            }
+            if Bridge.focus-record != "": HorizontalLayout {
+                alignment: center;
+                Badge { text: "★ " + Bridge.focus-record; }
+            }
+            HorizontalLayout {
+                spacing: 10px;
+                ValueBox {
+                    label: "Carga";
+                    value: Bridge.focus-load;
+                    unit: Bridge.session-unit;
+                    active: Bridge.focus-field == "load";
+                    editable: !Bridge.use-app-keypad;
+                    clicked => { Bridge.focus-field-select("load"); }
+                    edited(t) => { Bridge.focus-typed("load", t); }
+                }
+                ValueBox {
+                    label: "Repetições";
+                    value: Bridge.focus-reps;
+                    unit: "reps";
+                    active: Bridge.focus-field == "reps";
+                    editable: !Bridge.use-app-keypad;
+                    clicked => { Bridge.focus-field-select("reps"); }
+                    edited(t) => { Bridge.focus-typed("reps", t); }
+                }
+            }
+            if Bridge.focus-hint != "": Text {
+                text: Bridge.focus-hint;
+                color: Theme.faint;
+                font-size: Theme.fs-xs;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+            }
+            HorizontalLayout {
+                spacing: 6px;
+                Btn {
+                    text: "Repetir anterior";
+                    icon: Icons.repeat;
+                    compact: true;
+                    enabled: Bridge.focus-has-previous;
+                    clicked => { Bridge.focus-fill("previous"); }
+                }
+                Btn {
+                    text: "Planejado";
+                    compact: true;
+                    clicked => { Bridge.focus-fill("planned"); }
+                }
+                if Bridge.focus-has-last: Btn {
+                    text: "Última vez";
+                    compact: true;
+                    clicked => { Bridge.focus-fill("last"); }
+                }
+            }
+            Rectangle { vertical-stretch: 1; }
+            if Bridge.use-app-keypad: NumericKeypad {
+                allow-decimal: Bridge.focus-field == "load";
+                step-label: Bridge.focus-field == "load" ? Bridge.focus-step-label : "1";
+                confirm-text: "Registrar série";
+                key(k) => { Bridge.focus-key(k); }
+                step(d) => { Bridge.focus-step(d); }
+                confirm => { Bridge.focus-confirm(); }
+            }
+            if !Bridge.use-app-keypad: Btn {
+                min-height: 64px;
+                text: Bridge.focus-done ? "Atualizar série" : "Registrar série";
+                icon: Icons.check;
+                kind: "primary";
+                font-size: Theme.fs-l;
+                clicked => { Bridge.focus-confirm(); }
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                Btn {
+                    icon: Icons.back;
+                    text: "Exercício";
+                    compact: true;
+                    enabled: Bridge.focus-can-prev-ex;
+                    accessible-label: "Exercício anterior";
+                    clicked => { Bridge.focus-nav("prev-ex"); }
+                }
+                Btn {
+                    text: "Sair do foco";
+                    compact: true;
+                    clicked => { Bridge.focus-exit(); }
+                }
+                Btn {
+                    icon: Icons.forward;
+                    text: "Exercício";
+                    compact: true;
+                    enabled: Bridge.focus-can-next-ex;
+                    accessible-label: "Próximo exercício";
+                    clicked => { Bridge.focus-nav("next-ex"); }
+                }
+            }
+        }
+    }
+}

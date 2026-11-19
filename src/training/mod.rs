@@ -586,17 +586,40 @@ impl Db {
 
     pub fn move_plan_exercise(&mut self, id: Id, delta: i64) -> AppResult<()> {
         let pe = self.get_plan_exercise(id)?;
-        let mut list = self.list_plan_exercises(pe.schedule_id)?;
+        let list = self.list_plan_exercises(pe.schedule_id)?;
         let idx = list.iter().position(|x| x.id == id).unwrap_or(0) as i64;
-        let target = (idx + delta).clamp(0, list.len() as i64 - 1);
-        let item = list.remove(idx as usize);
-        list.insert(target as usize, item);
+        self.move_plan_exercise_to(id, (idx + delta).max(0) as usize)
+    }
+
+    /// Move o exercício da ficha para a posição `index` (0 = primeiro), em uma transação (4.4).
+    /// Não altera sessões históricas: a ordem delas fica em `session_exercise.position`.
+    pub fn move_plan_exercise_to(&mut self, id: Id, index: usize) -> AppResult<()> {
+        let pe = self.get_plan_exercise(id)?;
+        let mut list: Vec<Id> = self.list_plan_exercises(pe.schedule_id)?.iter().map(|x| x.id).collect();
+        let from = list.iter().position(|x| *x == id).ok_or_else(|| AppError::NotFound("Exercício não encontrado.".into()))?;
+        let item = list.remove(from);
+        list.insert(index.min(list.len()), item);
         let tx = self.conn.transaction()?;
         for (i, x) in list.iter().enumerate() {
-            tx.execute("UPDATE plan_exercise SET position=?2 WHERE id=?1", params![x.id, i as i64])?;
+            tx.execute("UPDATE plan_exercise SET position=?2 WHERE id=?1", params![x, i as i64])?;
         }
         tx.commit()?;
         self.touch_plan(pe.plan_id)
+    }
+
+    /// Move o dia da ficha para a posição `index` na sequência, em uma transação (4.4).
+    pub fn move_day_to(&mut self, day_id: Id, index: usize) -> AppResult<()> {
+        let d = self.get_day(day_id)?;
+        let mut list: Vec<Id> = self.list_days(d.plan_id)?.iter().map(|x| x.id).collect();
+        let from = list.iter().position(|x| *x == day_id).unwrap_or(0);
+        let item = list.remove(from);
+        list.insert(index.min(list.len()), item);
+        let tx = self.conn.transaction()?;
+        for (i, x) in list.iter().enumerate() {
+            tx.execute("UPDATE plan_schedule SET sequence_order=?2 WHERE id=?1", params![x, i as i64])?;
+        }
+        tx.commit()?;
+        self.touch_plan(d.plan_id)
     }
 }
 
@@ -611,6 +634,28 @@ mod tests {
         let r = db.list_exercises(&f).unwrap();
         assert_eq!(r.len(), 1);
         assert_eq!(r[0].name, "Supino na máquina");
+    }
+
+    #[test]
+    fn move_to_position() {
+        let mut db = Db::open_in_memory().unwrap();
+        let plan = db.create_plan("P", "", ScheduleType::Sequence).unwrap();
+        let day = db.add_day(plan, "A", 0).unwrap();
+        let t = Target { sets: 1, reps_min: 1, reps_max: 1, load_g: 0 };
+        let names = ["Prancha", "Esteira", "Mesa flexora", "Cadeira extensora"];
+        let ids: Vec<Id> = names
+            .iter()
+            .map(|n| db.add_plan_exercise(day, db.find_exercise_by_name(n).unwrap().unwrap().id, t, 0, "").unwrap())
+            .collect();
+        db.move_plan_exercise_to(ids[3], 0).unwrap();
+        db.move_plan_exercise_to(ids[0], 99).unwrap(); // além do fim = último
+        let order: Vec<Id> = db.list_plan_exercises(day).unwrap().iter().map(|x| x.id).collect();
+        assert_eq!(order, vec![ids[3], ids[1], ids[2], ids[0]]);
+        let b = db.add_day(plan, "B", 0).unwrap();
+        let c = db.add_day(plan, "C", 0).unwrap();
+        db.move_day_to(c, 0).unwrap();
+        let days: Vec<Id> = db.list_days(plan).unwrap().iter().map(|d| d.id).collect();
+        assert_eq!(days, vec![c, day, b]);
     }
 
     #[test]

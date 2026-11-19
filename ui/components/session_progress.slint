@@ -1,0 +1,38 @@
+import { Theme } from "../theme.slint";
+import { SessionExRow } from "../bridge.slint";
+
+// Barra segmentada de progresso da sessão (3.7). Estado por forma e texto, não só por cor:
+// vazio = não iniciado, meio preenchido = parcial, cheio = concluído. Toque navega até o exercício.
+export component SessionProgress inherits HorizontalLayout {
+    in property <[SessionExRow]> exercises;
+    in property <int> current;
+    callback select(int);
+    spacing: 4px;
+    height: 34px;
+    for e[i] in root.exercises: seg := Rectangle {
+        property <float> frac: e.sets.length == 0 ? 0 : e.done-sets / e.sets.length;
+        property <string> state: e.done-sets == 0 ? "não iniciado" : e.done-sets >= e.sets.length ? "concluído" : "parcial";
+        horizontal-stretch: 1;
+        accessible-role: button;
+        accessible-label: "Exercício " + (i + 1) + ", " + e.name + ": " + self.state + ", " + e.done-sets + " de " + e.sets.length + " séries";
+        accessible-action-default => { root.select(i); }
+        TouchArea {
+            clicked => { root.select(i); }
+        }
+        Rectangle {
+            y: (parent.height - self.height) / 2;
+            height: i == root.current ? 14px : 10px;
+            border-radius: self.height / 2;
+            border-width: 1.5px;
+            border-color: i == root.current ? Theme.text : Theme.border-strong;
+            background: transparent;
+            clip: true;
+            Rectangle {
+                x: 0;
+                width: parent.width * seg.frac;
+                height: parent.height;
+                background: Theme.text;
+            }
+        }
+    }
+}

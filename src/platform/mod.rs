@@ -19,6 +19,24 @@ pub enum FileResult {
     Error(String),
 }
 
+/// Eventos de feedback tátil (3.5). A camada Android traduz para intensidade/duração.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HapticEvent {
+    SetRegistered,
+    RestFinished,
+    Undo,
+}
+
+impl HapticEvent {
+    pub fn code(self) -> i32 {
+        match self {
+            HapticEvent::SetRegistered => 1,
+            HapticEvent::RestFinished => 2,
+            HapticEvent::Undo => 3,
+        }
+    }
+}
+
 /// IDs de alarmes do cronômetro.
 pub const ALARM_END: i32 = 2001;
 pub const ALARM_PRE: i32 = 2002;
@@ -54,6 +72,10 @@ pub trait Platform {
 
     fn play_tone(&self, tone: i32, duration_ms: i32);
     fn vibrate(&self, ms: i64);
+    /// Feedback tátil curto. Sem vibrador, não faz nada (nunca impede a operação).
+    fn haptic(&self, event: HapticEvent) {
+        let _ = event;
+    }
     fn keep_screen_on(&self, on: bool);
     /// O sistema está em modo escuro? (para o tema "seguir sistema").
     fn system_dark_mode(&self) -> bool {

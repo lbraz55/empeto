@@ -409,6 +409,24 @@ public class MainActivity extends NativeActivity {
         }
     }
 
+    /** Feedback tátil: 1 = série registrada, 2 = fim do descanso, 3 = desfazer. */
+    public void haptic(int kind) {
+        try {
+            Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+            if (v == null || !v.hasVibrator()) return;
+            VibrationEffect e;
+            if (Build.VERSION.SDK_INT >= 29) {
+                e = VibrationEffect.createPredefined(kind == 2 ? VibrationEffect.EFFECT_HEAVY_CLICK
+                        : kind == 3 ? VibrationEffect.EFFECT_DOUBLE_CLICK : VibrationEffect.EFFECT_CLICK);
+            } else {
+                e = kind == 3 ? VibrationEffect.createWaveform(new long[]{0, 20, 60, 20}, -1)
+                        : VibrationEffect.createOneShot(kind == 2 ? 60 : 25, VibrationEffect.DEFAULT_AMPLITUDE);
+            }
+            v.vibrate(e);
+        } catch (Exception ignored) {
+        }
+    }
+
     public void vibrate(long ms) {
         vibrateCtx(this, ms);
     }
