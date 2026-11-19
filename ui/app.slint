@@ -1,6 +1,8 @@
 import { Theme, Icons } from "theme.slint";
 import { Bridge } from "bridge.slint";
 import { Icon, IconBtn, PageTransition } from "components/widgets.slint";
+import { BrandMark } from "components/brand.slint";
+import { Branding } from "themes/branding.slint";
 import { HomeScreen, PlansScreen, CalendarScreen, HistoryScreen } from "screens/main.slint";
 import { PlanEditorScreen, LibraryScreen, SessionScreen, TimerScreen } from "screens/training.slint";
 import { SessionDetailScreen, EvolutionScreen, SettingsScreen, ImportScreen } from "screens/more.slint";
@@ -51,7 +53,7 @@ component NavItem inherits Rectangle {
 }
 
 export component AppWindow inherits Window {
-    title: "Workout";
+    title: "EMPETO";
     background: Theme.bg;
     preferred-width: 400px;
     preferred-height: 820px;
@@ -68,7 +70,7 @@ export component AppWindow inherits Window {
     changed pg => { fs.focus(); }
     property <bool> main-page: Bridge.page < 10;
     property <string> page-title:
-        Bridge.page == 0 ? "Workout"
+        Bridge.page == 0 ? Branding.name
         : Bridge.page == 1 ? "Treinos"
         : Bridge.page == 2 ? "Calendário"
         : Bridge.page == 3 ? "Histórico"
@@ -120,6 +122,11 @@ export component AppWindow inherits Window {
                         clicked => { Bridge.back(); }
                     }
                     if root.main-page: Rectangle { width: 12px; }
+                    if Bridge.page == 0: BrandMark {
+                        size: 30px;
+                        y: (parent.height - self.height) / 2;
+                    }
+                    if Bridge.page == 0: Rectangle { width: 6px; }
                     Text {
                         text: root.page-title;
                         color: Theme.text;
@@ -243,7 +250,7 @@ export component AppWindow inherits Window {
             toast-box.t = 1;
         }
     }
-            animate t { duration: 200ms; easing: ease-out; }
+            animate t { duration: Theme.anim-dialog; easing: ease-out; }
             opacity: self.t;
             x: 16px;
             width: parent.width - 32px;
@@ -266,7 +273,7 @@ export component AppWindow inherits Window {
         }
 
         if Bridge.busy: Rectangle {
-            background: #000000a0;
+            background: Theme.scrim.with-alpha(0.6);
             TouchArea { }
             Text {
                 text: "Processando…";

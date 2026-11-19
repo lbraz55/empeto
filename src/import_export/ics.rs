@@ -19,13 +19,13 @@ fn utc_stamp(ms: i64) -> String {
 /// Gera ICS com sessões realizadas e treinos planejados (dias da semana) para as próximas `weeks` semanas.
 pub fn build_ics(db: &Db, weeks: i64) -> AppResult<String> {
     let mut out = String::from(
-        "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//WORKOUT//Treinos//PT-BR\r\nCALSCALE:GREGORIAN\r\n",
+        "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//EMPETO//Treinos//PT-BR\r\nCALSCALE:GREGORIAN\r\n",
     );
     let stamp = utc_stamp(now_ms());
     for s in db.list_session_summaries(None, None)? {
         let end = s.ended_at.unwrap_or(s.started_at + 3_600_000);
         out.push_str(&format!(
-            "BEGIN:VEVENT\r\nUID:session-{}@workout.local\r\nDTSTAMP:{stamp}\r\nDTSTART:{}\r\nDTEND:{}\r\nSUMMARY:{}\r\nDESCRIPTION:{}\r\nEND:VEVENT\r\n",
+            "BEGIN:VEVENT\r\nUID:session-{}@empeto.local\r\nDTSTAMP:{stamp}\r\nDTSTART:{}\r\nDTEND:{}\r\nSUMMARY:{}\r\nDESCRIPTION:{}\r\nEND:VEVENT\r\n",
             s.id,
             utc_stamp(s.started_at),
             utc_stamp(end),
@@ -39,7 +39,7 @@ pub fn build_ics(db: &Db, weeks: i64) -> AppResult<String> {
         let d = t + Duration::days(i);
         for p in planned_on(d, t, &plans, &HashMap::new(), &[]) {
             out.push_str(&format!(
-                "BEGIN:VEVENT\r\nUID:plan-{}-{}-{}@workout.local\r\nDTSTAMP:{stamp}\r\nDTSTART;VALUE=DATE:{}\r\nDTEND;VALUE=DATE:{}\r\nSUMMARY:{}\r\nEND:VEVENT\r\n",
+                "BEGIN:VEVENT\r\nUID:plan-{}-{}-{}@empeto.local\r\nDTSTAMP:{stamp}\r\nDTSTART;VALUE=DATE:{}\r\nDTEND;VALUE=DATE:{}\r\nSUMMARY:{}\r\nEND:VEVENT\r\n",
                 p.plan_id,
                 p.day_id,
                 d.format("%Y%m%d"),

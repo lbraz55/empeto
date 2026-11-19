@@ -1,0 +1,58 @@
+// Tokens centralizados de aparência (EMPETO). Os componentes consomem somente estes tokens.
+// O tema efetivo (claro/escuro, já resolvido o "seguir sistema") é definido pelo Rust.
+import { LightPalette } from "light.slint";
+import { DarkPalette } from "dark.slint";
+
+export global Theme {
+    // ---- Tema (6.2) ----
+    in-out property <bool> dark: true;
+    out property <color> bg: dark ? DarkPalette.background : LightPalette.background;
+    out property <color> surface: dark ? DarkPalette.surface : LightPalette.surface;
+    out property <color> surface2: dark ? DarkPalette.elevated : LightPalette.elevated;
+    out property <color> surface3: dark ? DarkPalette.elevated2 : LightPalette.elevated2;
+    out property <color> border: dark ? DarkPalette.border : LightPalette.border;
+    out property <color> border-strong: dark ? DarkPalette.border-strong : LightPalette.border-strong;
+    out property <color> text: dark ? DarkPalette.text-primary : LightPalette.text-primary;
+    out property <color> muted: dark ? DarkPalette.text-secondary : LightPalette.text-secondary;
+    out property <color> faint: dark ? DarkPalette.text-faint : LightPalette.text-faint;
+    out property <color> accent: text;
+    out property <color> on-accent: bg;
+    out property <color> accent-pressed: dark ? #CFCFCF : #3A3A3A;
+    out property <color> pressed: surface3;
+    out property <color> selection: dark ? #555555 : #C8C8C8;
+    out property <color> scrim: #000000;
+
+    // ---- Tipografia (6.4): 0 normal, 1 grande, 2 extragrande ----
+    in-out property <int> text-size: 0;
+    out property <float> k: text-size == 2 ? 1.4 : text-size == 1 ? 1.2 : 1.0;
+    out property <length> fs-xs: 12px * k;
+    out property <length> fs-s: 14px * k;
+    out property <length> fs-m: 16px * k;
+    out property <length> fs-l: 19px * k;
+    out property <length> fs-xl: 24px * k;
+    out property <length> fs-xxl: 30px * k;
+    out property <length> fs-timer: 84px * k;
+
+    // ---- Densidade (6.3): 0 compacta, 1 padrão, 2 espaçosa ----
+    in-out property <int> density: 1;
+    out property <length> spacing-small: density == 0 ? 4px : density == 2 ? 8px : 6px;
+    out property <length> spacing-medium: density == 0 ? 6px : density == 2 ? 14px : 10px;
+    out property <length> spacing-large: density == 0 ? 12px : density == 2 ? 20px : 16px;
+    out property <length> pad: spacing-large;
+    out property <length> gap: spacing-medium;
+    out property <length> card-pad: density == 0 ? 10px : density == 2 ? 18px : 14px;
+    // Alvo de toque mínimo seguro: não muda com a densidade (RNF-06).
+    out property <length> touch: 48px;
+    out property <length> radius: 14px;
+
+    // ---- Animações (6.5 / 6.6) ----
+    // anim-enabled = false quando o usuário (ou o sistema) desativa animações.
+    in-out property <bool> anim-enabled: true;
+    // 0,5 = rápida, 1 = normal, 1,6 = lenta; animações "reduzidas" usam 0,5 e menos deslocamento.
+    in-out property <float> anim-scale: 1.0;
+    in-out property <bool> anim-reduced: false;
+    out property <duration> anim-page: anim-enabled ? 220ms * anim-scale : 0ms;
+    out property <duration> anim-dialog: anim-enabled ? 180ms * anim-scale : 0ms;
+    out property <duration> anim-fast: anim-enabled ? 120ms * anim-scale : 0ms;
+    out property <length> anim-shift: anim-reduced ? 0px : 36px;
+}

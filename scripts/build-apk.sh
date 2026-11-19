@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Gera o APK do Workout (Rust + Slint + SQLite) sem Gradle, usando apenas SDK/NDK.
+# Gera o APK do EMPETO (Rust + Slint + SQLite) sem Gradle, usando apenas SDK/NDK.
 #
 # Requisitos (seção 5.2):
 #   - Rust (stable) com alvos Android:  rustup target add aarch64-linux-android x86_64-linux-android
@@ -110,10 +110,10 @@ else
   SUFFIX="$PROFILE-debugsigned"
   if [ ! -f "$KS" ]; then
     keytool -genkeypair -keystore "$KS" -storepass android -keypass android -alias androiddebugkey \
-      -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Workout Debug,O=Workout,C=BR" >/dev/null 2>&1
+      -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=EMPETO Debug,O=EMPETO,C=BR" >/dev/null 2>&1
   fi
 fi
-APK="$ROOT/dist/workout-$VERSION_NAME-$SUFFIX.apk"
+APK="$ROOT/dist/empeto-$VERSION_NAME-$SUFFIX.apk"
 "$BT/apksigner" sign --ks "$KS" --ks-pass "pass:$KS_PASS" --ks-key-alias "$ALIAS" --key-pass "pass:$KEY_PASS" \
   --out "$APK" "$OUT/aligned.apk"
 "$BT/apksigner" verify --print-certs "$APK" | head -3

@@ -1,6 +1,8 @@
 import { Theme, Icons } from "../theme.slint";
 import { Bridge } from "../bridge.slint";
-import { Btn, IconBtn, Card, Label, Title, SectionTitle, Body, Scroll, EmptyState, Segmented, Badge, ToggleRow, ValueRow, StepperRow, Divider, Icon } from "../components/widgets.slint";
+import { Btn, IconBtn, Card, Label, Title, SectionTitle, Body, Scroll, Segmented, Badge, ToggleRow, ValueRow, StepperRow, Divider, Icon } from "../components/widgets.slint";
+import { EmptyState } from "../components/empty_state.slint";
+import { BrandLogoVertical } from "../components/brand.slint";
 
 // 6.6: detalhe da sessão (data, treino, exercícios, cargas, séries, repetições, descansos,
 // substituições e observações).
@@ -56,8 +58,9 @@ export component EvolutionScreen inherits Scroll {
         select(i) => { Bridge.evo-set-metric(i); }
     }
     if !Bridge.evo-has-data: EmptyState {
+        icon: Icons.chart;
         title: "Sem registros no período";
-        text: "Escolha um período maior.";
+        text: "Não há séries deste exercício no período escolhido. Selecione um período maior.";
     }
     if Bridge.evo-has-data: Card {
         HorizontalLayout {
@@ -217,7 +220,7 @@ export component SettingsScreen inherits Scroll {
         CategoryRow {
             icon: Icons.eye;
             text: "Interface";
-            description: "Tamanho do texto, tela ligada durante o treino";
+            description: "Tema, texto, densidade, animações";
             clicked => { Bridge.settings-open(5); }
         }
         CategoryRow {
@@ -374,10 +377,30 @@ export component SettingsScreen inherits Scroll {
     }
     if Bridge.settings-section == 5: VerticalLayout {
         spacing: 2px;
-        ToggleRow {
-            text: "Texto grande";
-            checked: Bridge.set-large-text;
-            toggled => { Bridge.pref-toggle("large-text"); }
+        ValueRow {
+            text: "Tema";
+            value: Bridge.set-theme;
+            clicked => { Bridge.pref-choose("theme"); }
+        }
+        ValueRow {
+            text: "Tamanho do texto";
+            value: Bridge.set-text-size;
+            clicked => { Bridge.pref-choose("text-size"); }
+        }
+        ValueRow {
+            text: "Densidade";
+            value: Bridge.set-density;
+            clicked => { Bridge.pref-choose("density"); }
+        }
+        ValueRow {
+            text: "Animações";
+            value: Bridge.set-anim;
+            clicked => { Bridge.pref-choose("anim"); }
+        }
+        ValueRow {
+            text: "Velocidade das animações";
+            value: Bridge.set-anim-speed;
+            clicked => { Bridge.pref-choose("anim-speed"); }
         }
         ToggleRow {
             text: "Manter tela ligada durante a sessão";
@@ -430,7 +453,13 @@ export component SettingsScreen inherits Scroll {
     }
     if Bridge.settings-section == 7: VerticalLayout {
         spacing: 10px;
-        Title { text: "Workout " + Bridge.app-version; }
+        BrandLogoVertical { }
+        Text {
+            text: "Versão " + Bridge.app-version;
+            color: Theme.muted;
+            font-size: Theme.fs-s;
+            horizontal-alignment: center;
+        }
         Body { text: Bridge.about-text; }
         Btn {
             text: "Diagnóstico técnico";

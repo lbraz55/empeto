@@ -55,6 +55,14 @@ pub trait Platform {
     fn play_tone(&self, tone: i32, duration_ms: i32);
     fn vibrate(&self, ms: i64);
     fn keep_screen_on(&self, on: bool);
+    /// O sistema está em modo escuro? (para o tema "seguir sistema").
+    fn system_dark_mode(&self) -> bool {
+        true
+    }
+    /// O sistema permite animações? ("remover animações" da acessibilidade do Android).
+    fn system_animations_enabled(&self) -> bool {
+        true
+    }
     /// Abre a agenda do sistema com um evento preenchido (Intent ACTION_INSERT; sem permissão).
     /// Devolve false se não houver app de agenda.
     fn add_calendar_event(&self, title: &str, description: &str, begin_ms: i64, end_ms: i64, all_day: bool) -> bool;

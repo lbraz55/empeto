@@ -211,6 +211,14 @@ impl Platform for AndroidPlatform {
         .unwrap_or(false)
     }
 
+    fn system_dark_mode(&self) -> bool {
+        self.with_env(|env, act| env.call_method(act, "isNightMode", "()Z", &[])?.z()).unwrap_or(true)
+    }
+
+    fn system_animations_enabled(&self) -> bool {
+        self.with_env(|env, act| env.call_method(act, "animatorsEnabled", "()Z", &[])?.z()).unwrap_or(true)
+    }
+
     fn move_to_back(&self) {
         self.call_void("moveToBack", "()V", |_| Ok(vec![]));
     }

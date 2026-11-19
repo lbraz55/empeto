@@ -153,7 +153,7 @@ fn write_readme(ws: &mut Worksheet, bold: &Format) -> Result<(), XlsxError> {
     ws.set_name("Leia-me")?;
     ws.set_column_width(0, 110)?;
     let lines = [
-        "WORKOUT — exportação de dados",
+        "EMPETO — exportação de dados",
         "",
         "Aba \"Fichas\": uma linha por exercício planejado. Este mesmo formato pode ser importado pelo app",
         "(Configurações > Dados e armazenamento > Importar planilha).",

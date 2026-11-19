@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Halter minimalista, monocromático (108dp, área segura central de 66dp). -->
+<!-- Marca EMPETO (assets/branding): dois braços lado a lado. Área segura central de 66dp. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
-    android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#FFFFFF" android:pathData="M30,42h6v24h-6z M37,38h7v32h-7z M64,38h7v32h-7z M72,42h6v24h-6z M44,51h20v6h-20z" />
+    android:viewportWidth="100" android:viewportHeight="100">
+    <group android:scaleX="0.56" android:scaleY="0.56" android:translateX="22" android:translateY="20">
+        <path android:fillColor="#FFFFFF" android:pathData="M 53 76 C 56 73 60 72 62 71 C 62.5 50 77 41 83 57 L 82.5 38 C 77 37 76 23 84 19 C 91 15 99 20 97 29 C 96.5 33 95 35 95 38 L 95.5 74 C 95.5 82 91 86 84 86 L 53 86 Z" />
+        <path android:fillColor="#FFFFFF" android:pathData="M 47 76 C 44 73 40 72 38 71 C 37.5 50 23 41 17 57 L 17.5 38 C 23 37 24 23 16 19 C 9 15 1 20 3 29 C 3.5 33 5 35 5 38 L 4.5 74 C 4.5 82 9 86 16 86 L 47 86 Z" />
+    </group>
 </vector>

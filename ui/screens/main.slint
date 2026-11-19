@@ -1,6 +1,7 @@
 import { Theme, Icons } from "../theme.slint";
 import { Bridge } from "../bridge.slint";
-import { Btn, IconBtn, Card, Label, Title, SectionTitle, Body, Scroll, EmptyState, Segmented, Badge, Icon } from "../components/widgets.slint";
+import { Btn, IconBtn, Card, Label, Title, SectionTitle, Body, Scroll, Segmented, Badge, Icon } from "../components/widgets.slint";
+import { EmptyState } from "../components/empty_state.slint";
 
 // RF-19 / 6.2: cartões informativos clicáveis.
 export component HomeScreen inherits Scroll {
@@ -51,8 +52,11 @@ export component PlansScreen inherits Scroll {
         }
     }
     if Bridge.plans.length == 0: EmptyState {
-        title: "Nenhuma ficha ainda";
-        text: "Crie uma ficha com seus dias de treino ou importe uma planilha em Configurações › Dados e armazenamento.";
+        icon: Icons.dumbbell;
+        title: "Crie sua primeira ficha";
+        text: "Você ainda não tem fichas de treino. Monte uma do zero, comece por um modelo pronto ou importe uma planilha em Configurações › Dados.";
+        action: "Criar ficha";
+        action-clicked => { Bridge.new-plan(); }
     }
     for p in Bridge.plans: Card {
         clickable: true;
@@ -256,8 +260,11 @@ export component HistoryScreen inherits Scroll {
     }
     if Bridge.hist-tab == 0 && Bridge.hist-summary != "": Label { text: Bridge.hist-summary; }
     if Bridge.hist-tab == 0 && Bridge.hist-rows.length == 0: EmptyState {
-        title: "Nenhuma sessão concluída";
-        text: "Inicie um treino em Treinos ou na Home. Ao finalizar, ele aparece aqui.";
+        icon: Icons.history;
+        title: "Seu histórico aparecerá após o primeiro treino";
+        text: "Nenhuma sessão foi concluída ainda. Inicie um treino e finalize-o para vê-lo aqui.";
+        action: "Ver fichas";
+        action-clicked => { Bridge.navigate(1); }
     }
     if Bridge.hist-tab == 0: VerticalLayout {
         spacing: Theme.gap;
@@ -275,6 +282,7 @@ export component HistoryScreen inherits Scroll {
         }
     }
     if Bridge.hist-tab == 1 && Bridge.evo-exercises.length == 0: EmptyState {
+        icon: Icons.chart;
         title: "Sem dados de evolução";
         text: "A evolução aparece depois que você registrar séries em sessões concluídas.";
     }

@@ -2,7 +2,7 @@
 
 mod format;
 
-use crate::application::prefs::{Prefs, RestEndAction, TONE_NAMES};
+use crate::application::prefs::{AnimMode, Prefs, RestEndAction, ThemeMode, TONE_NAMES};
 use crate::calendar::{self as cal, date_key, local_date_of, local_time_of, parse_date_key};
 use crate::domain::timer::{Clock, TimerEvent, TimerPhase, TimerState, TimerStatus};
 use crate::domain::*;
@@ -68,6 +68,7 @@ enum ConfirmAction {
 #[derive(Debug, Clone)]
 enum ChoiceCtx {
     Tone(&'static str),
+    Appearance(&'static str),
     Unit,
     LoadStep,
     LibFilter(&'static str, Vec<String>),
@@ -1290,7 +1291,7 @@ impl Controller {
             self.show_info(
                 InfoCtx::NotifPermission { then_enable: true },
                 "Alerta com a tela bloqueada",
-                "Para avisar o fim do descanso quando o app estiver em segundo plano ou com a tela bloqueada, o Workout precisa enviar notificações. Sem essa permissão, o cronômetro continua funcionando normalmente na tela (e a vibração, se ativada).",
+                "Para avisar o fim do descanso quando o app estiver em segundo plano ou com a tela bloqueada, o EMPETO precisa enviar notificações. Sem essa permissão, o cronômetro continua funcionando normalmente na tela (e a vibração, se ativada).",
                 "Permitir",
                 "Agora não",
             );
@@ -1403,7 +1404,7 @@ impl Controller {
                 TimerPhase::Rest => "Descanso encerrado",
                 TimerPhase::Prepare => "Hora de iniciar a série",
             };
-            let text = if self.timer.context.is_empty() { "Toque para abrir o Workout".to_string() } else { self.timer.context.clone() };
+            let text = if self.timer.context.is_empty() { "Toque para abrir o EMPETO".to_string() } else { self.timer.context.clone() };
             self.platform.schedule_alarm(ALARM_END, end_boot, title, &text, self.prefs.sound_enabled, self.prefs.vibrate);
             if self.timer.pre_alert_ms > 0 && rem > self.timer.pre_alert_ms + 1000 {
                 self.platform.schedule_alarm(
@@ -1420,6 +1421,7 @@ impl Controller {
     }
 
     fn on_resume(&mut self) {
+        self.apply_appearance();
         let was_bg = self.in_background;
         self.in_background = false;
         self.platform.cancel_alarm(ALARM_END);
@@ -1852,7 +1854,7 @@ impl Controller {
             "Versão do app: {version}\nVersão do banco de dados (schema): {schema}\n\n\
              Aplicativo pessoal e offline: não usa internet, não tem conta, anúncios nem sincronização. \
              Os dados ficam somente neste aparelho — faça backups periódicos.\n\n\
-             O Workout é um organizador de treinos. Não é ferramenta de diagnóstico, prescrição ou recomendação médica \
+             O EMPETO é um organizador de treinos. Não é ferramenta de diagnóstico, prescrição ou recomendação médica \
              e não substitui orientação de profissional de educação física ou saúde.\n\n\
              Alternativas de exercícios são sugestões organizacionais e não indicam equivalência biomecânica.\n\n\
              A precisão dos alertas em segundo plano depende das políticas e permissões do Android.\n\n\
@@ -1881,7 +1883,15 @@ impl Controller {
             b.set_set_default_reps(ss(p.default_reps.to_string()));
             b.set_set_week_monday(p.week_starts_monday);
             b.set_set_week_view(p.calendar_week_view);
-            b.set_set_large_text(p.large_text);
+            b.set_set_theme(ss(match p.theme_mode {
+                ThemeMode::System => "Seguir sistema",
+                ThemeMode::Light => "Claro",
+                ThemeMode::Dark => "Escuro",
+            }));
+            b.set_set_text_size(ss(TEXT_SIZES[p.text_size as usize]));
+            b.set_set_density(ss(DENSITIES[p.density as usize]));
+            b.set_set_anim(ss(ANIM_MODES[anim_index(p.anim_mode)]));
+            b.set_set_anim_speed(ss(ANIM_SPEEDS[p.anim_speed as usize]));
             b.set_set_keep_screen(p.keep_screen_on);
             b.set_set_confirm_finish(p.confirm_finish);
             b.set_notif_status(ss(notif));
@@ -1892,11 +1902,41 @@ impl Controller {
         Ok(())
     }
 
+    /// Resolve tema, tipografia, densidade e animações e entrega os tokens já resolvidos à UI.
+    fn apply_appearance(&mut self) {
+        let p = &self.prefs;
+        let dark = match p.theme_mode {
+            ThemeMode::Dark => true,
+            ThemeMode::Light => false,
+            ThemeMode::System => self.platform.system_dark_mode(),
+        };
+        let (enabled, reduced) = match p.anim_mode {
+            AnimMode::Off => (false, false),
+            AnimMode::Reduced => (true, true),
+            AnimMode::Normal => (true, false),
+            AnimMode::System => (self.platform.system_animations_enabled(), false),
+        };
+        let scale = match p.anim_speed {
+            0 => 0.5,
+            2 => 1.6,
+            _ => 1.0,
+        } * if reduced { 0.6 } else { 1.0 };
+        let (ts, dn) = (p.text_size, p.density);
+        let ui = self.ui();
+        let t = ui.global::<Theme>();
+        t.set_dark(dark);
+        t.set_text_size(ts);
+        t.set_density(dn);
+        t.set_anim_enabled(enabled);
+        t.set_anim_reduced(reduced);
+        t.set_anim_scale(scale);
+    }
+
     fn save_prefs(&mut self) {
         let r = self.prefs.save(&self.db);
         self.report(r);
         self.apply_timer_prefs();
-        self.ui().global::<Theme>().set_large(self.prefs.large_text);
+        self.apply_appearance();
         let r = self.refresh_settings();
         self.report(r);
     }
@@ -1931,7 +1971,6 @@ impl Controller {
             "prefill-last" => p.prefill_last = !p.prefill_last,
             "week-monday" => p.week_starts_monday = !p.week_starts_monday,
             "week-view" => p.calendar_week_view = !p.calendar_week_view,
-            "large-text" => p.large_text = !p.large_text,
             "keep-screen" => p.keep_screen_on = !p.keep_screen_on,
             "confirm-finish" => p.confirm_finish = !p.confirm_finish,
             _ => return,
@@ -1967,6 +2006,45 @@ impl Controller {
                 vec!["Quilogramas (kg)".into(), "Libras (lb)".into()],
                 if self.prefs.unit == LoadUnit::Kg { 0 } else { 1 },
             ),
+            "theme" => self.ask_choice(
+                ChoiceCtx::Appearance("theme"),
+                "Tema",
+                "\"Seguir sistema\" acompanha o modo claro/escuro do Android.",
+                vec!["Seguir sistema".into(), "Claro".into(), "Escuro".into()],
+                match self.prefs.theme_mode {
+                    ThemeMode::System => 0,
+                    ThemeMode::Light => 1,
+                    ThemeMode::Dark => 2,
+                },
+            ),
+            "text-size" => self.ask_choice(
+                ChoiceCtx::Appearance("text-size"),
+                "Tamanho do texto",
+                "",
+                TEXT_SIZES.iter().map(|s| s.to_string()).collect(),
+                self.prefs.text_size,
+            ),
+            "density" => self.ask_choice(
+                ChoiceCtx::Appearance("density"),
+                "Densidade da interface",
+                "A densidade compacta não reduz o tamanho mínimo dos botões.",
+                DENSITIES.iter().map(|s| s.to_string()).collect(),
+                self.prefs.density,
+            ),
+            "anim" => self.ask_choice(
+                ChoiceCtx::Appearance("anim"),
+                "Animações",
+                "\"Seguir sistema\" respeita a opção \"Remover animações\" do Android.",
+                ANIM_MODES.iter().map(|s| s.to_string()).collect(),
+                anim_index(self.prefs.anim_mode) as i32,
+            ),
+            "anim-speed" => self.ask_choice(
+                ChoiceCtx::Appearance("anim-speed"),
+                "Velocidade das animações",
+                "",
+                ANIM_SPEEDS.iter().map(|s| s.to_string()).collect(),
+                self.prefs.anim_speed,
+            ),
             "load-step" => {
                 let opts: Vec<String> = LOAD_STEPS.iter().map(|g| format_load_unit(*g, self.prefs.unit)).collect();
                 let sel = LOAD_STEPS.iter().position(|g| *g == self.prefs.load_step_g).map(|i| i as i32).unwrap_or(-1);
@@ -1988,6 +2066,19 @@ impl Controller {
                     _ => self.prefs.tone_pre_alert = i,
                 }
                 self.platform.play_tone(i, 300);
+                self.save_prefs();
+            }
+            ChoiceCtx::Appearance(which) => {
+                let p = &mut self.prefs;
+                match which {
+                    "theme" => p.theme_mode = [ThemeMode::System, ThemeMode::Light, ThemeMode::Dark][(i as usize).min(2)],
+                    "text-size" => p.text_size = i.min(2),
+                    "density" => p.density = i.min(2),
+                    "anim" => {
+                        p.anim_mode = [AnimMode::System, AnimMode::Normal, AnimMode::Reduced, AnimMode::Off][(i as usize).min(3)]
+                    }
+                    _ => p.anim_speed = i.min(2),
+                }
                 self.save_prefs();
             }
             ChoiceCtx::Unit => {
@@ -2058,9 +2149,9 @@ impl Controller {
 
     fn do_export(&mut self, kind: ExportKind) {
         let name = match kind {
-            ExportKind::Plans => format!("workout-fichas-{}.xlsx", Self::today_tag()),
-            ExportKind::History => format!("workout-historico-{}.xlsx", Self::today_tag()),
-            ExportKind::All => format!("workout-dados-{}.xlsx", Self::today_tag()),
+            ExportKind::Plans => format!("empeto-fichas-{}.xlsx", Self::today_tag()),
+            ExportKind::History => format!("empeto-historico-{}.xlsx", Self::today_tag()),
+            ExportKind::All => format!("empeto-dados-{}.xlsx", Self::today_tag()),
         };
         let path = self.tmp_file(&format!("export-{}.xlsx", now_ms()));
         match export_xlsx(&self.db, kind, &path) {
@@ -2072,7 +2163,7 @@ impl Controller {
     fn data_template(&mut self) {
         let path = self.tmp_file(&format!("modelo-{}.xlsx", now_ms()));
         match export_template(&path) {
-            Ok(()) => self.save_via_picker(path, "modelo-importacao-workout.xlsx", XLSX_MIME, "Modelo salvo"),
+            Ok(()) => self.save_via_picker(path, "modelo-importacao-empeto.xlsx", XLSX_MIME, "Modelo salvo"),
             Err(e) => self.toast(e.to_string()),
         }
     }
@@ -2095,7 +2186,7 @@ impl Controller {
         let version = self.platform.app_version();
         match create_backup(&self.db, &path, &work, &version, password) {
             Ok(_) => {
-                let name = format!("workout-backup-{}.zip", Self::today_tag());
+                let name = format!("empeto-backup-{}.zip", Self::today_tag());
                 self.save_via_picker(path, &name, "application/zip", "Backup criado");
             }
             Err(e) => self.toast(e.to_string()),
@@ -2110,7 +2201,7 @@ impl Controller {
                     self.toast(e.to_string());
                     return;
                 }
-                self.save_via_picker(path, "workout-calendario.ics", "text/calendar", "Calendário exportado");
+                self.save_via_picker(path, "empeto-calendario.ics", "text/calendar", "Calendário exportado");
             }
             Err(e) => self.toast(e.to_string()),
         }
@@ -2354,7 +2445,7 @@ impl Controller {
                 self.prefs = Prefs::load(&self.db).unwrap_or_default();
                 self.session_id = self.db.active_session_id().ok().flatten();
                 self.load_timer();
-                self.ui().global::<Theme>().set_large(self.prefs.large_text);
+                self.apply_appearance();
                 self.navigate(P_HOME);
                 self.show_info(InfoCtx::Plain, "Backup restaurado", "Fichas, sessões, exercícios e preferências foram restaurados.", "OK", "");
             }
@@ -2548,6 +2639,19 @@ impl Controller {
 }
 
 const LOAD_STEPS: [i64; 6] = [500, 1_000, 1_250, 2_000, 2_500, 5_000];
+const TEXT_SIZES: [&str; 3] = ["Normal", "Grande", "Extragrande"];
+const DENSITIES: [&str; 3] = ["Compacta", "Padrão", "Espaçosa"];
+const ANIM_MODES: [&str; 4] = ["Seguir sistema", "Normais", "Reduzidas", "Desativadas"];
+const ANIM_SPEEDS: [&str; 3] = ["Rápida", "Normal", "Lenta"];
+
+fn anim_index(m: AnimMode) -> usize {
+    match m {
+        AnimMode::System => 0,
+        AnimMode::Normal => 1,
+        AnimMode::Reduced => 2,
+        AnimMode::Off => 3,
+    }
+}
 
 fn ex_row(e: &Exercise, note: &str) -> ExRow {
     let detail = [e.muscle_focus.as_str(), e.exercise_type.as_str(), e.equipment.as_str(), e.movement_pattern.as_str()]
@@ -2631,9 +2735,8 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         let mut c = ctrl.borrow_mut();
         c.load_timer();
         c.session_id = c.db.active_session_id().ok().flatten();
-        let large = c.prefs.large_text;
         let week_view = c.prefs.calendar_week_view;
-        ui.global::<Theme>().set_large(large);
+        c.apply_appearance();
         let b = ui.global::<Bridge>();
         b.set_cal_week_view(week_view);
         b.set_lib_mode(ss("browse"));

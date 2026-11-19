@@ -3,6 +3,59 @@
 use crate::domain::{AppResult, LoadUnit};
 use crate::persistence::Db;
 
+/// Tema: seguir o sistema, claro ou escuro (6.2).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ThemeMode {
+    System,
+    Light,
+    Dark,
+}
+
+impl ThemeMode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ThemeMode::System => "system",
+            ThemeMode::Light => "light",
+            ThemeMode::Dark => "dark",
+        }
+    }
+    pub fn parse(s: &str) -> ThemeMode {
+        match s {
+            "light" => ThemeMode::Light,
+            "dark" => ThemeMode::Dark,
+            _ => ThemeMode::System,
+        }
+    }
+}
+
+/// Animações: seguir o sistema, normais, reduzidas ou desativadas (6.5).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AnimMode {
+    System,
+    Normal,
+    Reduced,
+    Off,
+}
+
+impl AnimMode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            AnimMode::System => "system",
+            AnimMode::Normal => "normal",
+            AnimMode::Reduced => "reduced",
+            AnimMode::Off => "off",
+        }
+    }
+    pub fn parse(s: &str) -> AnimMode {
+        match s {
+            "normal" => AnimMode::Normal,
+            "reduced" => AnimMode::Reduced,
+            "off" => AnimMode::Off,
+            _ => AnimMode::System,
+        }
+    }
+}
+
 /// Ação ao fim do descanso (RN-06: nada acontece sem ação configurada).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RestEndAction {
@@ -41,7 +94,14 @@ pub struct Prefs {
     pub week_starts_monday: bool,
     pub calendar_week_view: bool,
     // Interface
-    pub large_text: bool,
+    /// 0 normal, 1 grande, 2 extragrande (6.4).
+    pub text_size: i32,
+    pub theme_mode: ThemeMode,
+    /// 0 compacta, 1 padrão, 2 espaçosa (6.3).
+    pub density: i32,
+    pub anim_mode: AnimMode,
+    /// 0 rápida, 1 normal, 2 lenta (6.6).
+    pub anim_speed: i32,
     pub keep_screen_on: bool,
     pub confirm_finish: bool,
 }
@@ -70,7 +130,11 @@ impl Default for Prefs {
             default_reps: 10,
             week_starts_monday: true,
             calendar_week_view: false,
-            large_text: false,
+            text_size: 0,
+            theme_mode: ThemeMode::System,
+            density: 1,
+            anim_mode: AnimMode::System,
+            anim_speed: 1,
             keep_screen_on: true,
             confirm_finish: true,
         }
@@ -86,6 +150,8 @@ fn b(v: bool) -> String {
 impl Prefs {
     pub fn load(db: &Db) -> AppResult<Prefs> {
         let mut p = Prefs::default();
+        let mut legacy_large = false;
+        let mut has_text_size = false;
         for (k, v) in db.all_prefs()? {
             let bv = v == "1";
             let iv = v.parse::<i64>().ok();
@@ -113,11 +179,23 @@ impl Prefs {
                 "training.default_reps" => p.default_reps = iv.unwrap_or(10).clamp(1, 100),
                 "calendar.week_starts_monday" => p.week_starts_monday = bv,
                 "calendar.week_view" => p.calendar_week_view = bv,
-                "ui.large_text" => p.large_text = bv,
+                // Compatibilidade com versões até 0.1.4 (liga/desliga "texto grande").
+                "ui.large_text" => legacy_large = bv,
+                "ui.text_size" => {
+                    has_text_size = true;
+                    p.text_size = iv.unwrap_or(0).clamp(0, 2) as i32
+                }
+                "ui.theme" => p.theme_mode = ThemeMode::parse(&v),
+                "ui.density" => p.density = iv.unwrap_or(1).clamp(0, 2) as i32,
+                "ui.anim_mode" => p.anim_mode = AnimMode::parse(&v),
+                "ui.anim_speed" => p.anim_speed = iv.unwrap_or(1).clamp(0, 2) as i32,
                 "ui.keep_screen_on" => p.keep_screen_on = bv,
                 "ui.confirm_finish" => p.confirm_finish = bv,
                 _ => {}
             }
+        }
+        if !has_text_size && legacy_large {
+            p.text_size = 1;
         }
         Ok(p)
     }
@@ -151,7 +229,11 @@ impl Prefs {
             ("training.default_reps", self.default_reps.to_string()),
             ("calendar.week_starts_monday", b(self.week_starts_monday)),
             ("calendar.week_view", b(self.calendar_week_view)),
-            ("ui.large_text", b(self.large_text)),
+            ("ui.text_size", self.text_size.to_string()),
+            ("ui.theme", self.theme_mode.as_str().into()),
+            ("ui.density", self.density.to_string()),
+            ("ui.anim_mode", self.anim_mode.as_str().into()),
+            ("ui.anim_speed", self.anim_speed.to_string()),
             ("ui.keep_screen_on", b(self.keep_screen_on)),
             ("ui.confirm_finish", b(self.confirm_finish)),
         ];
@@ -175,7 +257,20 @@ mod tests {
         p.unit = LoadUnit::Lb;
         p.rest_end_action = RestEndAction::PrepareCountdown;
         p.pre_alert_seconds = 7;
+        p.theme_mode = ThemeMode::Light;
+        p.density = 0;
+        p.text_size = 2;
+        p.anim_mode = AnimMode::Reduced;
         p.save(&db).unwrap();
         assert_eq!(Prefs::load(&db).unwrap(), p);
+    }
+
+    #[test]
+    fn legacy_large_text_maps_to_grande() {
+        let db = Db::open_in_memory().unwrap();
+        db.set_pref("ui.large_text", "1").unwrap();
+        assert_eq!(Prefs::load(&db).unwrap().text_size, 1);
+        db.set_pref("ui.text_size", "2").unwrap();
+        assert_eq!(Prefs::load(&db).unwrap().text_size, 2);
     }
 }

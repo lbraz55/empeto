@@ -35,7 +35,7 @@ export component Btn inherits Rectangle {
     horizontal-stretch: 1;
     border-radius: Theme.radius;
     background: !enabled ? Theme.surface2
-        : ta.pressed ? (kind == "primary" ? #cfcfcf : Theme.pressed)
+        : ta.pressed ? (kind == "primary" ? Theme.accent-pressed : Theme.pressed)
         : kind == "primary" ? Theme.accent
         : kind == "ghost" ? transparent
         : Theme.surface2;
@@ -110,8 +110,8 @@ export component Card inherits Rectangle {
         clicked => { root.clicked(); }
     }
     VerticalLayout {
-        padding: 14px;
-        spacing: 6px;
+        padding: Theme.card-pad;
+        spacing: Theme.spacing-small;
         @children
     }
 }
@@ -193,7 +193,7 @@ export component Field inherits VerticalLayout {
             wrap: root.multiline ? word-wrap : no-wrap;
             input-type: root.input-type;
             horizontal-alignment: root.align;
-            selection-background-color: #555555;
+            selection-background-color: Theme.selection;
             selection-foreground-color: Theme.text;
             edited => { root.edited(self.text); }
             accepted => { root.accepted(self.text); }
@@ -253,7 +253,7 @@ export component ToggleRow inherits Rectangle {
                 y: 4px;
                 x: root.checked ? parent.width - self.width - 4px : 4px;
                 background: root.checked ? Theme.on-accent : Theme.muted;
-                animate x { duration: 120ms; }
+                animate x { duration: Theme.anim-fast; }
             }
             Text {
                 // marca textual para quem não distingue tons
@@ -463,29 +463,6 @@ export component Scroll inherits Flickable {
     }
 }
 
-export component EmptyState inherits VerticalLayout {
-    in property <string> title;
-    in property <string> text;
-    padding: 24px;
-    spacing: 8px;
-    alignment: center;
-    Text {
-        text: root.title;
-        color: Theme.text;
-        font-size: Theme.fs-l;
-        font-weight: 600;
-        horizontal-alignment: center;
-        wrap: word-wrap;
-    }
-    Text {
-        text: root.text;
-        color: Theme.muted;
-        font-size: Theme.fs-m;
-        horizontal-alignment: center;
-        wrap: word-wrap;
-    }
-}
-
 // Moldura de diálogo modal (o conteúdo vai em @children).
 export component DialogFrame inherits Rectangle {
     in property <string> title;
@@ -500,8 +477,8 @@ export component DialogFrame inherits Rectangle {
             root.t = 1;
         }
     }
-    animate t { duration: 180ms; easing: ease-out; }
-    background: Colors.rgba(0, 0, 0, 0.75 * self.t);
+    animate t { duration: Theme.anim-dialog; easing: ease-out; }
+    background: Theme.scrim.with-alpha(0.7 * self.t);
     TouchArea {
         clicked => { root.dismiss(); }
     }
@@ -555,10 +532,10 @@ export component PageTransition inherits Rectangle {
             root.t = 1;
         }
     }
-    animate t { duration: 220ms; easing: ease-out; }
+    animate t { duration: Theme.anim-page; easing: ease-out; }
     clip: true;
     content := Rectangle {
-        x: (1 - root.t) * root.dir * 36px;
+        x: (1 - root.t) * root.dir * Theme.anim-shift;
         y: 0;
         width: root.width;
         height: root.height;

@@ -110,6 +110,9 @@ impl Platform for DesktopPlatform {
         log::info!("[desktop] vibrar {ms} ms");
     }
     fn keep_screen_on(&self, _on: bool) {}
+    fn system_dark_mode(&self) -> bool {
+        std::env::var("WORKOUT_SYSTEM_THEME").map(|v| v != "light").unwrap_or(true)
+    }
     fn add_calendar_event(&self, title: &str, _d: &str, begin_ms: i64, _e: i64, _a: bool) -> bool {
         log::info!("[desktop] agenda: {title} em {begin_ms}");
         false

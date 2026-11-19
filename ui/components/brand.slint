@@ -1,0 +1,72 @@
+import { Theme } from "../theme.slint";
+import { Branding } from "../themes/branding.slint";
+
+// Marca EMPETO desenhada em vetor (monocromática; cor do tema).
+export component BrandMark inherits Rectangle {
+    in property <length> size: 28px;
+    in property <brush> tint: Theme.text;
+    width: size;
+    height: size;
+    accessible-role: image;
+    accessible-label: "Logotipo " + Branding.name;
+    Path {
+        width: parent.width;
+        height: parent.height;
+        viewbox-width: 100;
+        viewbox-height: 100;
+        commands: Branding.arm-right;
+        fill: root.tint;
+    }
+    Path {
+        width: parent.width;
+        height: parent.height;
+        viewbox-width: 100;
+        viewbox-height: 100;
+        commands: Branding.arm-left;
+        fill: root.tint;
+    }
+}
+
+// Logo horizontal: marca + nome.
+export component BrandLogo inherits HorizontalLayout {
+    in property <length> mark-size: 30px;
+    spacing: 8px;
+    alignment: start;
+    BrandMark {
+        size: root.mark-size;
+        y: (parent.height - self.height) / 2;
+    }
+    Text {
+        text: Branding.name;
+        color: Theme.text;
+        font-size: Theme.fs-xl;
+        font-weight: 800;
+        letter-spacing: 2px;
+        vertical-alignment: center;
+    }
+}
+
+// Logo vertical: marca, nome e slogan (tela Sobre / apresentação).
+export component BrandLogoVertical inherits VerticalLayout {
+    spacing: 6px;
+    alignment: center;
+    HorizontalLayout {
+        alignment: center;
+        BrandMark { size: 96px; }
+    }
+    Text {
+        text: Branding.name;
+        color: Theme.text;
+        font-size: Theme.fs-xxl;
+        font-weight: 800;
+        letter-spacing: 4px;
+        horizontal-alignment: center;
+    }
+    Text {
+        text: Branding.slogan;
+        color: Theme.muted;
+        font-size: Theme.fs-xs;
+        letter-spacing: 2px;
+        horizontal-alignment: center;
+    }
+}

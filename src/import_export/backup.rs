@@ -122,7 +122,7 @@ pub struct ValidatedBackup {
 pub fn read_manifest(zip_path: &Path) -> AppResult<BackupManifest> {
     let file = std::fs::File::open(zip_path)?;
     let mut za = zip::ZipArchive::new(file)
-        .map_err(|_| AppError::File("O arquivo selecionado não é um backup do WORKOUT (.zip).".into()))?;
+        .map_err(|_| AppError::File("O arquivo selecionado não é um backup do EMPETO (.zip).".into()))?;
     let mut m = za.by_name("manifest.json").map_err(|_| AppError::File("Backup sem manifesto (manifest.json).".into()))?;
     if m.size() > 64 * 1024 {
         return Err(AppError::File("Manifesto do backup inválido.".into()));
@@ -135,11 +135,11 @@ pub fn read_manifest(zip_path: &Path) -> AppResult<BackupManifest> {
 pub fn validate_backup(zip_path: &Path, work_dir: &Path, password: Option<&str>) -> AppResult<ValidatedBackup> {
     let meta = std::fs::metadata(zip_path).map_err(|_| AppError::File("Não foi possível ler o arquivo.".into()))?;
     if meta.len() > MAX_BACKUP_BYTES {
-        return Err(AppError::File("Arquivo grande demais para ser um backup do WORKOUT.".into()));
+        return Err(AppError::File("Arquivo grande demais para ser um backup do EMPETO.".into()));
     }
     let file = std::fs::File::open(zip_path)?;
     let mut za = zip::ZipArchive::new(file)
-        .map_err(|_| AppError::File("O arquivo selecionado não é um backup do WORKOUT (.zip).".into()))?;
+        .map_err(|_| AppError::File("O arquivo selecionado não é um backup do EMPETO (.zip).".into()))?;
     if za.len() > 10 {
         return Err(AppError::File("Backup com conteúdo inesperado.".into()));
     }
@@ -155,7 +155,7 @@ pub fn validate_backup(zip_path: &Path, work_dir: &Path, password: Option<&str>)
         serde_json::from_str(&s).map_err(|_| AppError::File("Manifesto do backup inválido.".into()))?
     };
     if manifest.format != BACKUP_FORMAT {
-        return Err(AppError::File("O arquivo não é um backup do WORKOUT.".into()));
+        return Err(AppError::File("O arquivo não é um backup do EMPETO.".into()));
     }
     if manifest.format_version > BACKUP_FORMAT_VERSION || manifest.schema_version > SCHEMA_VERSION {
         return Err(AppError::File(

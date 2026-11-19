@@ -90,7 +90,7 @@ public class LauncherActivity extends Activity {
             version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception ignored) {
         }
-        final String report = "Workout " + version + " — relatório de falha na abertura\n"
+        final String report = "EMPETO " + version + " — relatório de falha na abertura\n"
                 + "Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + "), "
                 + Build.MANUFACTURER + " " + Build.MODEL + ", ABI " + Build.SUPPORTED_ABIS[0] + "\n\n"
                 + "== Erro registrado ==\n" + (crash.exists() ? readFile(crash) : "(nenhum: o app pode ter travado)\n")
@@ -105,7 +105,7 @@ public class LauncherActivity extends Activity {
         root.setPadding(pad, pad * 2, pad, pad);
 
         TextView title = new TextView(this);
-        title.setText("O Workout não abriu corretamente da última vez");
+        title.setText("O EMPETO não abriu corretamente da última vez");
         title.setTextColor(Color.WHITE);
         title.setTextSize(20);
         title.setTypeface(Typeface.DEFAULT_BOLD);
@@ -125,7 +125,7 @@ public class LauncherActivity extends Activity {
             public void onClick(View v) {
                 Intent s = new Intent(Intent.ACTION_SEND);
                 s.setType("text/plain");
-                s.putExtra(Intent.EXTRA_SUBJECT, "Relatório de falha — Workout");
+                s.putExtra(Intent.EXTRA_SUBJECT, "Relatório de falha — EMPETO");
                 s.putExtra(Intent.EXTRA_TEXT, report);
                 startActivity(Intent.createChooser(s, "Compartilhar relatório"));
             }
@@ -135,7 +135,7 @@ public class LauncherActivity extends Activity {
         copy.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("Relatório Workout", report));
+                if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("Relatório EMPETO", report));
             }
         });
         Button retry = new Button(this);

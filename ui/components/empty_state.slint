@@ -1,0 +1,57 @@
+import { Theme, Icons } from "../theme.slint";
+import { Icon, Btn } from "widgets.slint";
+
+// Estado vazio ilustrado (8.1): ilustração monocromática, explicação, motivo e ação principal.
+export component EmptyState inherits VerticalLayout {
+    in property <string> icon: Icons.info;
+    in property <string> title;
+    in property <string> text;
+    in property <string> action;
+    callback action-clicked();
+    padding: 24px;
+    spacing: 10px;
+    alignment: center;
+    HorizontalLayout {
+        alignment: center;
+        Rectangle {
+            width: 88px;
+            height: 88px;
+            border-radius: 44px;
+            background: Theme.surface2;
+            border-width: 1px;
+            border-color: Theme.border;
+            Icon {
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2;
+                cmd: root.icon;
+                size: 40px;
+                stroke: 1.6px;
+                tint: Theme.muted;
+            }
+        }
+    }
+    Text {
+        text: root.title;
+        color: Theme.text;
+        font-size: Theme.fs-l;
+        font-weight: 700;
+        horizontal-alignment: center;
+        wrap: word-wrap;
+    }
+    Text {
+        text: root.text;
+        color: Theme.muted;
+        font-size: Theme.fs-m;
+        horizontal-alignment: center;
+        wrap: word-wrap;
+    }
+    if root.action != "": HorizontalLayout {
+        alignment: center;
+        Btn {
+            horizontal-stretch: 0;
+            text: root.action;
+            kind: "primary";
+            clicked => { root.action-clicked(); }
+        }
+    }
+}

@@ -456,6 +456,15 @@ public class MainActivity extends NativeActivity {
         }
     }
 
+    public boolean isNightMode() {
+        int m = getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+        return m != android.content.res.Configuration.UI_MODE_NIGHT_NO;
+    }
+
+    public boolean animatorsEnabled() {
+        return android.animation.ValueAnimator.areAnimatorsEnabled();
+    }
+
     public void moveToBack() {
         handler.post(new Runnable() { public void run() { moveTaskToBack(true); } });
     }
