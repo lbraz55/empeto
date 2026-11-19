@@ -1,5 +1,6 @@
 import { Theme, Icons } from "../theme.slint";
 import { Bridge } from "../bridge.slint";
+import { ToggleRow } from "../components/widgets.slint";
 import { Btn, IconBtn, Card, Label, Title, SectionTitle, Body, Scroll, Segmented, Badge, Icon } from "../components/widgets.slint";
 import { EmptyState } from "../components/empty_state.slint";
 import { StarBtn } from "../components/widgets.slint";
@@ -138,6 +139,12 @@ export component CalendarScreen inherits Scroll {
             clicked => { Bridge.cal-today(); }
         }
     }
+    if Bridge.cal-heatmap-available: ToggleRow {
+        text: "Mapa de intensidade";
+        description: "Dias mais escuros tiveram maior volume (carga × repetições). Volume não indica qualidade do treino.";
+        checked: Bridge.cal-heatmap;
+        toggled => { Bridge.cal-toggle-heatmap(); }
+    }
     HorizontalLayout {
         for w in Bridge.cal-weekday-labels: Text {
             text: w;
@@ -156,7 +163,7 @@ export component CalendarScreen inherits Scroll {
             width: parent.width / 7;
             height: grid.cell-h;
             accessible-role: button;
-            accessible-label: c.day + (c.planned ? ", treino planejado" : "") + (c.done ? ", treino realizado" : "") + (c.today ? ", hoje" : "");
+            accessible-label: c.day + (c.planned ? ", treino planejado" : "") + (c.done ? ", treino realizado" : "") + (Bridge.cal-heatmap && c.heat-text != "" ? ", " + c.heat-text : "") + (c.today ? ", hoje" : "");
             accessible-action-default => { Bridge.cal-select(c.key); }
             TouchArea {
                 clicked => { Bridge.cal-select(c.key); }
@@ -166,8 +173,8 @@ export component CalendarScreen inherits Scroll {
                 height: 40px;
                 x: (parent.width - self.width) / 2;
                 y: 2px;
-                border-radius: 20px;
-                background: c.selected ? Theme.accent : transparent;
+                border-radius: Bridge.cal-heatmap && c.done && !c.selected ? 8px : 20px;
+                background: c.selected ? Theme.accent : (Bridge.cal-heatmap && c.done ? Theme.text.with-alpha(0.12 + 0.6 * c.heat) : transparent);
                 border-width: c.today && !c.selected ? 2px : 0px;
                 border-color: Theme.text;
                 Text {
@@ -177,7 +184,7 @@ export component CalendarScreen inherits Scroll {
                     horizontal-alignment: center;
                     font-size: Theme.fs-s;
                     font-weight: c.today ? 700 : 400;
-                    color: c.selected ? Theme.on-accent : (c.in-month ? Theme.text : Theme.faint);
+                    color: c.selected ? Theme.on-accent : (Bridge.cal-heatmap && c.done && c.heat > 0.55 ? Theme.bg : (c.in-month ? Theme.text : Theme.faint));
                 }
                 // marcadores: cheio = realizado, vazado = planejado (forma, não só cor)
                 HorizontalLayout {

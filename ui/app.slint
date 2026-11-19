@@ -7,6 +7,7 @@ import { HomeScreen, PlansScreen, CalendarScreen, HistoryScreen } from "screens/
 import { PlanEditorScreen, LibraryScreen, SessionScreen, TimerScreen } from "screens/training.slint";
 import { SessionDetailScreen, EvolutionScreen, SettingsScreen, ImportScreen } from "screens/more.slint";
 import { FocusScreen } from "screens/focus.slint";
+import { SearchScreen } from "screens/search.slint";
 import { ConfirmDialog, InfoDialog, ChoiceDialog, TextDialog, DayDialog, PlanExDialog, ExerciseDialog, SubstituteDialog } from "dialogs.slint";
 
 export { Bridge, Theme }
@@ -80,6 +81,7 @@ export component AppWindow inherits Window {
         : Bridge.page == 12 ? Bridge.session-title
         : Bridge.page == 13 ? "Cronômetro"
         : Bridge.page == 16 ? "Modo foco"
+        : Bridge.page == 17 ? "Buscar"
         : Bridge.page == 14 ? "Sessão realizada"
         : Bridge.page == 15 ? "Evolução"
         : Bridge.page == 20 ? (
@@ -168,6 +170,11 @@ export component AppWindow inherits Window {
                             }
                         }
                     }
+                    if root.main-page: IconBtn {
+                        icon: Icons.search;
+                        label: "Buscar";
+                        clicked => { Bridge.open-search(); }
+                    }
                     if Bridge.page != 20: IconBtn {
                         icon: Icons.gear;
                         label: "Configurações";
@@ -190,6 +197,7 @@ export component AppWindow inherits Window {
                 if Bridge.page == 14: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; SessionDetailScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 15: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; EvolutionScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 16: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; FocusScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 17: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; SearchScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 20: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; SettingsScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 21: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; ImportScreen { width: parent.width; height: parent.height; } }
             }

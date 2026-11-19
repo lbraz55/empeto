@@ -1,6 +1,7 @@
 //! Treinos: biblioteca de exercícios, fichas, dias e exercícios da ficha (RF-01..RF-03, RF-09).
 
 pub mod session;
+pub mod progression;
 pub mod templates;
 
 use crate::domain::*;

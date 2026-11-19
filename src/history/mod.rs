@@ -1,5 +1,7 @@
 //! Histórico: sessões concluídas e evolução por exercício (RF-14, RF-15).
 
+pub mod records;
+
 use crate::domain::*;
 use crate::persistence::Db;
 use rusqlite::params;

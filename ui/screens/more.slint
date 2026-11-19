@@ -63,42 +63,95 @@ export component EvolutionScreen inherits Scroll {
         text: "Não há séries deste exercício no período escolhido. Selecione um período maior.";
     }
     if Bridge.evo-has-data: Card {
-        HorizontalLayout {
-            Label { text: Bridge.evo-max; }
+
+        if Bridge.evo-selected-label != "": Text {
+            text: Bridge.evo-selected-label;
+            color: Theme.text;
+            font-size: Theme.fs-s;
+            font-weight: 700;
+            wrap: word-wrap;
         }
         chart := Rectangle {
-            height: 180px;
+            height: 200px;
             border-width: 1px;
             border-color: Theme.border;
             border-radius: 8px;
-            Path {
-                x: 8px;
-                y: 8px;
-                width: parent.width - 16px;
-                height: parent.height - 16px;
-                viewbox-width: 1000;
-                viewbox-height: 1000;
-                commands: Bridge.evo-path;
-                stroke: Theme.text;
-                stroke-width: 2px;
-                fill: transparent;
+            Text {
+                x: 6px;
+                y: 4px;
+                text: Bridge.evo-axis-max;
+                color: Theme.faint;
+                font-size: Theme.fs-xs;
             }
-            Path {
-                x: 8px;
-                y: 8px;
-                width: parent.width - 16px;
-                height: parent.height - 16px;
-                viewbox-width: 1000;
-                viewbox-height: 1000;
-                commands: Bridge.evo-dots;
-                stroke: Theme.text;
-                stroke-width: 6px;
-                stroke-line-cap: round;
-                fill: transparent;
+            Text {
+                x: 6px;
+                y: parent.height - self.height - 4px;
+                text: "0";
+                color: Theme.faint;
+                font-size: Theme.fs-xs;
+            }
+            plot := Rectangle {
+                x: 34px;
+                y: 18px;
+                width: parent.width - 48px;
+                height: parent.height - 36px;
+                init => { Bridge.evo-chart-resized(self.width / 1px, self.height / 1px); }
+                changed width => { Bridge.evo-chart-resized(self.width / 1px, self.height / 1px); }
+                changed height => { Bridge.evo-chart-resized(self.width / 1px, self.height / 1px); }
+                Rectangle {
+                    y: parent.height;
+                    height: 1px;
+                    background: Theme.border;
+                }
+                Path {
+                    width: parent.width;
+                    height: parent.height;
+                    viewbox-width: parent.width / 1px;
+                    viewbox-height: parent.height / 1px;
+                    commands: Bridge.evo-trend;
+                    stroke: Theme.faint;
+                    stroke-width: 1.5px;
+                    fill: transparent;
+                }
+                Path {
+                    width: parent.width;
+                    height: parent.height;
+                    viewbox-width: parent.width / 1px;
+                    viewbox-height: parent.height / 1px;
+                    commands: Bridge.evo-path;
+                    stroke: Theme.text;
+                    stroke-width: 2px;
+                    fill: transparent;
+                }
+                for p[i] in Bridge.evo-points: Rectangle {
+                    x: p.x * parent.width - 22px;
+                    y: p.y * parent.height - 22px;
+                    width: 44px;
+                    height: 44px;
+                    accessible-role: button;
+                    accessible-label: p.label;
+                    accessible-action-default => { Bridge.evo-select-point(i); }
+                    TouchArea {
+                        clicked => { Bridge.evo-select-point(i); }
+                    }
+                    Rectangle {
+                        x: (parent.width - self.width) / 2;
+                        y: (parent.height - self.height) / 2;
+                        width: i == Bridge.evo-selected ? 14px : 9px;
+                        height: self.width;
+                        border-radius: self.width / 2;
+                        background: i == Bridge.evo-selected ? Theme.bg : Theme.text;
+                        border-width: 2.5px;
+                        border-color: Theme.text;
+                    }
+                }
             }
         }
-        HorizontalLayout {
-            Label { text: Bridge.evo-min; }
+        Text {
+            text: "Toque em um ponto para ver data e valor. Linha clara: tendência (com 3 sessões ou mais). Eixo vertical começa em 0 para não exagerar pequenas variações.";
+            color: Theme.faint;
+            font-size: Theme.fs-xs;
+            wrap: word-wrap;
         }
         HorizontalLayout {
             Label { text: Bridge.evo-first-date; }
@@ -109,6 +162,11 @@ export component EvolutionScreen inherits Scroll {
         }
     }
     if Bridge.evo-summary != "": Body { text: Bridge.evo-summary; }
+    if Bridge.evo-bests != "": Card {
+        SectionTitle { text: "MELHORES MARCAS"; }
+        Body { text: Bridge.evo-bests; }
+        for r in Bridge.evo-records: Label { text: "★ " + r; }
+    }
     if Bridge.evo-metric == 2: Label {
         text: "1RM estimada pela fórmula de Epley — apenas indicativa, não é recomendação de treino.";
         color: Theme.faint;

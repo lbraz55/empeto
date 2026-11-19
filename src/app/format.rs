@@ -73,37 +73,6 @@ pub fn fmt_volume(g_reps: i64, unit: LoadUnit) -> String {
     }
 }
 
-/// Caminhos SVG (viewbox 1000×1000) para o gráfico de linha e os pontos.
-pub fn chart_paths(values: &[i64]) -> (String, String) {
-    if values.is_empty() {
-        return (String::new(), String::new());
-    }
-    let mn = *values.iter().min().unwrap() as f64;
-    let mx = *values.iter().max().unwrap() as f64;
-    let span = if mx > mn { mx - mn } else { 1.0 };
-    let n = values.len();
-    let pts: Vec<(f64, f64)> = values
-        .iter()
-        .enumerate()
-        .map(|(i, v)| {
-            let x = if n == 1 { 500.0 } else { 20.0 + i as f64 * 960.0 / (n - 1) as f64 };
-            let y = if mx > mn { 950.0 - (*v as f64 - mn) / span * 900.0 } else { 500.0 };
-            (x, y)
-        })
-        .collect();
-    let line = if n >= 2 {
-        let mut s = format!("M {:.1} {:.1}", pts[0].0, pts[0].1);
-        for p in &pts[1..] {
-            s.push_str(&format!(" L {:.1} {:.1}", p.0, p.1));
-        }
-        s
-    } else {
-        String::new()
-    };
-    let dots = pts.iter().map(|p| format!("M {:.1} {:.1} L {:.1} {:.1}", p.0, p.1, p.0 + 0.5, p.1)).collect::<Vec<_>>().join(" ");
-    (line, dots)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -112,9 +81,6 @@ mod tests {
     fn ints_and_paths() {
         assert_eq!(fmt_int(1234567), "1.234.567");
         assert_eq!(fmt_int(999), "999");
-        let (l, d) = chart_paths(&[1, 2, 3]);
-        assert!(l.starts_with("M 20.0 950.0"));
-        assert_eq!(d.matches('M').count(), 3);
         assert_eq!(fmt_minutes(75 * 60_000), "1h15");
     }
 }

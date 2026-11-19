@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0 — 2026-11-19 (schema do banco: 4) — EMPETO
+Implementação das Fases 0 a 4 do documento "EMPETO — Documentação Técnica de Implementação v1.0".
+- Fase 1: nova identidade EMPETO (nome, slogan, logo dos braços antes/depois, ícone), paleta monocromática,
+  tema claro/escuro/sistema por tokens, tamanho de texto, densidade e estados vazios ilustrados.
+- Fase 2: modo foco, cronômetro flutuante com anel, registrar com um toque (anterior/planejado),
+  teclado numérico próprio com validação em Rust, feedback háptico, desfazer (5 s), barra de progresso da sessão.
+- Fase 3: biblioteca com descrição/notas/favoritos/personalizados (migração 0004), filtros SQL e paginação,
+  fichas favoritas na Home, reordenar por arrastar (setas mantidas), modelos ABC / Full Body / PPL.
+- Fase 4: recordes pessoais calculados do histórico, gráfico de evolução interativo (tendência, seleção de ponto,
+  eixo a partir de zero), mapa de intensidade no calendário (opcional), sugestão de progressão (nunca altera a ficha
+  sozinha) e busca global centralizada.
+
 ## 0.1.4 — 2026-11-18 (schema do banco: 3)
 - Transições animadas entre telas (direção conforme a navegação), diálogos e avisos.
 - Cadastro manual de alternativas de exercício (RF-09).

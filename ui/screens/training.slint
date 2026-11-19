@@ -111,6 +111,43 @@ export component PlanEditorScreen inherits Scroll {
                         text: "Obs.: " + e.notes;
                         color: Theme.faint;
                     }
+                    if e.suggestion != "": Rectangle {
+                        border-radius: 10px;
+                        border-width: 1px;
+                        border-color: Theme.border-strong;
+                        background: Theme.surface2;
+                        VerticalLayout {
+                            padding: 8px;
+                            spacing: 4px;
+                            Text {
+                                text: "↑ " + e.suggestion;
+                                color: Theme.text;
+                                font-size: Theme.fs-s;
+                                font-weight: 700;
+                                wrap: word-wrap;
+                            }
+                            Text {
+                                text: e.suggestion-detail + " É só uma sugestão, não uma prescrição.";
+                                color: Theme.muted;
+                                font-size: Theme.fs-xs;
+                                wrap: word-wrap;
+                            }
+                            HorizontalLayout {
+                                spacing: 6px;
+                                Btn {
+                                    text: "Aceitar";
+                                    compact: true;
+                                    kind: "primary";
+                                    clicked => { Bridge.progression-accept(e.id); }
+                                }
+                                Btn {
+                                    text: "Ignorar";
+                                    compact: true;
+                                    clicked => { Bridge.progression-dismiss(e.id); }
+                                }
+                            }
+                        }
+                    }
                 }
                 IconBtn {
                     icon: Icons.up;

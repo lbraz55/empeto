@@ -40,6 +40,7 @@ const P_EVO: i32 = 15;
 const P_SETTINGS: i32 = 20;
 const P_IMPORT: i32 = 21;
 const P_FOCUS: i32 = 16;
+const P_SEARCH: i32 = 17;
 
 const XLSX_MIMES: &[&str] = &[
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -166,6 +167,10 @@ pub struct Controller {
     undo: Option<UndoOp>,
     /// Próxima tecla substitui o valor (campo recém-selecionado/preenchido).
     focus_fresh: bool,
+    /// Área do gráfico de evolução em px (para o caminho em escala real).
+    evo_chart: (f32, f32),
+    evo_selected: i32,
+    search_hits: Vec<crate::application::search::SearchHit>,
 }
 
 thread_local! {
@@ -381,6 +386,10 @@ impl Controller {
                 self.refresh_focus();
                 Ok(())
             }
+            P_SEARCH => {
+                self.refresh_search();
+                Ok(())
+            }
             _ => Ok(()),
         };
         self.report(r);
@@ -580,6 +589,26 @@ impl Controller {
             ));
         }
 
+        if self.prefs.module_records {
+            let recs = self.db.recent_records(now_ms() - 30 * 86_400_000, None)?;
+            if let Some(r) = recs.first() {
+                cards.push(card(
+                    "records",
+                    "RECORDES RECENTES",
+                    format!("★ {} — {}", r.exercise_name, r.kinds[0].label()),
+                    format!(
+                        "{} × {} em {}{}",
+                        format_load_unit(r.load_g, self.prefs.unit),
+                        r.reps,
+                        fmt_date_short(r.at_ms),
+                        if recs.len() > 1 { format!(" · {} recorde(s) em 30 dias", recs.len()) } else { String::new() }
+                    ),
+                    "Evolução",
+                    0,
+                ));
+            }
+        }
+
         let ws = cal::week_start(today, self.prefs.week_starts_monday);
         let (a, _) = cal::day_bounds_ms(ws);
         let (_, b) = cal::day_bounds_ms(ws + Duration::days(6));
@@ -620,6 +649,10 @@ impl Controller {
             "last" => self.open_detail(id),
             "week" => self.navigate(P_HIST),
             "favorite" => self.open_plan(id),
+            "records" => {
+                self.with_bridge(|b| b.set_hist_tab(1));
+                self.navigate(P_HIST);
+            }
             _ => {}
         }
     }
@@ -697,6 +730,19 @@ impl Controller {
         let Some(id) = self.plan_id else { return Ok(()) };
         let p = self.db.get_plan_full(id)?;
         let unit = self.prefs.unit;
+        let mut sugg: HashMap<Id, crate::training::progression::ProgressionSuggestion> = HashMap::new();
+        if self.prefs.module_progression {
+            for d in &p.days {
+                for e in &d.exercises {
+                    if let Ok(Some(s)) = self.db.progression_for(e.id, self.prefs.load_step_g, unit) {
+                        let dismissed = self.db.get_pref(&format!("progression.dismissed.{}", e.id)).ok().flatten();
+                        if dismissed.as_deref() != Some(&s.based_on_session.to_string()) {
+                            sugg.insert(e.id, s);
+                        }
+                    }
+                }
+            }
+        }
         let days: Vec<DayRow> = p
             .days
             .iter()
@@ -723,6 +769,12 @@ impl Controller {
                                 name: ss(&e.exercise.name),
                                 detail: ss(target_text(&e.target, e.rest_seconds, unit)),
                                 notes: ss(&e.notes),
+                                suggestion: ss(sugg.get(&e.id).map(|s| format!(
+                                    "Sugestão: aumentar de {} para {}",
+                                    format_load_unit(s.current_load_g, unit),
+                                    format_load_unit(s.suggested_load_g, unit)
+                                )).unwrap_or_default()),
+                                suggestion_detail: ss(sugg.get(&e.id).map(|s| s.justification.clone()).unwrap_or_default()),
                             })
                             .collect(),
                     ),
@@ -1269,8 +1321,14 @@ impl Controller {
     }
 
     /// Verificação de recorde pessoal após registrar (implementada no grupo C).
-    fn check_record(&mut self, _set_id: Id) -> Option<String> {
-        None
+    fn check_record(&mut self, set_id: Id) -> Option<String> {
+        if !self.prefs.module_records {
+            return None;
+        }
+        let kinds = self.db.records_for_set(set_id).ok()?;
+        let text = kinds.iter().map(|k| k.label()).collect::<Vec<_>>().join(", ");
+        self.with_bridge(|b| b.set_focus_record(ss(if text.is_empty() { String::new() } else { format!("Novo recorde: {text}") })));
+        if text.is_empty() { None } else { Some(text) }
     }
 
     /// Valor para preenchimento rápido (3.3). Não registra nada.
@@ -1795,6 +1853,12 @@ impl Controller {
         let (a, _) = cal::day_bounds_ms(dates[0]);
         let (_, b) = cal::day_bounds_ms(*dates.last().unwrap());
         let sessions = self.db.list_session_summaries(Some(a), Some(b))?;
+        let mut vol: HashMap<NaiveDate, i64> = HashMap::new();
+        for s in &sessions {
+            *vol.entry(local_date_of(s.started_at)).or_default() += s.volume_g;
+        }
+        let max_vol = vol.values().copied().max().unwrap_or(0).max(1);
+        let unit = self.prefs.unit;
         let mut by_date: HashMap<NaiveDate, Vec<crate::history::SessionSummary>> = HashMap::new();
         for s in sessions {
             by_date.entry(local_date_of(s.started_at)).or_default().push(s);
@@ -1816,6 +1880,11 @@ impl Controller {
                 selected: *d == self.cal_selected,
                 planned: !planned.is_empty(),
                 done: !done.is_empty(),
+                heat: vol.get(d).map(|v| *v as f32 / max_vol as f32).unwrap_or(0.0),
+                heat_text: ss(match vol.get(d) {
+                    Some(v) => format!("{} sessão(ões), volume {}", done.len(), fmt_volume(*v, unit)),
+                    None => String::new(),
+                }),
             });
             self.cal_cache.push((*d, planned, done));
         }
@@ -1907,6 +1976,17 @@ impl Controller {
         if !self.platform.add_calendar_event(&title, &e.subtitle, begin, end, all_day) {
             self.toast("Nenhum app de agenda encontrado no aparelho.");
         }
+    }
+
+    fn refresh_search(&mut self) {
+        let q = self.with_bridge(|b| b.get_search_query().to_string());
+        self.search_hits = crate::application::search::search(&self.db, &q).unwrap_or_default();
+        let rows: Vec<SearchRow> = self
+            .search_hits
+            .iter()
+            .map(|h| SearchRow { kind: ss(h.kind.label()), id: h.id as i32, title: ss(&h.title), subtitle: ss(&h.subtitle) })
+            .collect();
+        self.with_bridge(|b| b.set_search_results(model(rows)));
     }
 
     fn show_diagnostics(&mut self) {
@@ -2104,8 +2184,82 @@ impl Controller {
             }
         };
         let values: Vec<i64> = pts.iter().map(|p| p.value(metric)).collect();
-        let (path, dots) = chart_paths(&values);
         let (mn, mx) = (values.iter().copied().min().unwrap_or(0), values.iter().copied().max().unwrap_or(0));
+        // Eixo vertical a partir de 0 (não distorce pequenas variações); x pela ordem das sessões.
+        let top = (mx as f64 * 1.1).max(1.0);
+        let n = values.len();
+        let norm: Vec<(f64, f64)> = values
+            .iter()
+            .enumerate()
+            .map(|(i, v)| {
+                let x = if n <= 1 { 0.5 } else { 0.04 + 0.92 * i as f64 / (n - 1) as f64 };
+                (x, 1.0 - *v as f64 / top)
+            })
+            .collect();
+        let (w, h) = (self.evo_chart.0 as f64, self.evo_chart.1 as f64);
+        let path = if n >= 2 {
+            norm.iter()
+                .enumerate()
+                .map(|(i, (x, y))| format!("{} {:.1} {:.1}", if i == 0 { "M" } else { "L" }, x * w, y * h))
+                .collect::<Vec<_>>()
+                .join(" ")
+        } else {
+            String::new()
+        };
+        // Tendência (regressão linear) só com dados suficientes.
+        let trend = if n >= 3 {
+            let xs: Vec<f64> = (0..n).map(|i| i as f64).collect();
+            let ys: Vec<f64> = values.iter().map(|v| *v as f64).collect();
+            let (mx_, my) = (xs.iter().sum::<f64>() / n as f64, ys.iter().sum::<f64>() / n as f64);
+            let num: f64 = xs.iter().zip(&ys).map(|(x, y)| (x - mx_) * (y - my)).sum();
+            let den: f64 = xs.iter().map(|x| (x - mx_).powi(2)).sum();
+            let slope = if den > 0.0 { num / den } else { 0.0 };
+            let at = |i: f64| (my + slope * (i - mx_)).clamp(0.0, top);
+            let (y0, y1) = (1.0 - at(0.0) / top, 1.0 - at((n - 1) as f64) / top);
+            format!("M {:.1} {:.1} L {:.1} {:.1}", 0.04 * w, y0 * h, 0.96 * w, y1 * h)
+        } else {
+            String::new()
+        };
+        let metric_name = ["Carga máxima", "Volume", "1RM estimada", "Repetições"][self.evo_metric.clamp(0, 3) as usize];
+        let points: Vec<EvoPt> = norm
+            .iter()
+            .zip(&pts)
+            .map(|((x, y), p)| EvoPt {
+                x: *x as f32,
+                y: *y as f32,
+                label: ss(format!("{} · {} · {} · {}", fmt_date_short(p.started_at), fmt_v(p.value(metric)), name, metric_name)),
+            })
+            .collect();
+        let sel = if self.evo_selected >= 0 && (self.evo_selected as usize) < points.len() { self.evo_selected } else { -1 };
+        let sel_label = if sel >= 0 { points[sel as usize].label.to_string() } else { String::new() };
+        let bests = self.db.current_bests(&self.evo_key)?;
+        let bests_text = if bests.count > 0 {
+            format!(
+                "Maior carga: {} · Mais repetições: {} · Maior volume em uma série: {} · 1RM estimada: {}",
+                format_load_unit(bests.load_g, unit),
+                bests.reps,
+                fmt_volume(bests.set_volume, unit),
+                format_load_unit(bests.e1rm_g, unit)
+            )
+        } else {
+            String::new()
+        };
+        let records: Vec<SharedString> = self
+            .db
+            .recent_records(0, Some(&self.evo_key))?
+            .iter()
+            .take(8)
+            .map(|r| {
+                ss(format!(
+                    "{} — {} ({} × {})",
+                    fmt_date_short(r.at_ms),
+                    r.kinds.iter().map(|k| k.label()).collect::<Vec<_>>().join(", "),
+                    format_load_unit(r.load_g, unit),
+                    r.reps
+                ))
+            })
+            .collect();
+        let axis_max = fmt_v(top as i64);
         let summary = if values.len() >= 2 {
             let first = values[0];
             let last = *values.last().unwrap();
@@ -2137,8 +2291,14 @@ impl Controller {
             b.set_evo_period(self.evo_period);
             b.set_evo_metric(self.evo_metric);
             b.set_evo_has_data(!values.is_empty());
-            b.set_evo_path(ss(path));
-            b.set_evo_dots(ss(dots));
+            b.set_evo_path(ss(&path));
+            b.set_evo_trend(ss(&trend));
+            b.set_evo_points(model(points));
+            b.set_evo_selected(sel);
+            b.set_evo_selected_label(ss(&sel_label));
+            b.set_evo_bests(ss(&bests_text));
+            b.set_evo_records(model(records));
+            b.set_evo_axis_max(ss(&axis_max));
             b.set_evo_min(ss(format!("mín. {}", fmt_v(mn))));
             b.set_evo_max(ss(format!("máx. {}", fmt_v(mx))));
             b.set_evo_first_date(ss(pts.first().map(|p| fmt_date_short(p.started_at)).unwrap_or_default()));
@@ -3150,6 +3310,9 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         drafts: HashMap::new(),
         undo: None,
         focus_fresh: true,
+        evo_chart: (300.0, 160.0),
+        evo_selected: -1,
+        search_hits: Vec::new(),
     }));
 
     {
@@ -3163,6 +3326,7 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         b.set_lib_mode(ss("browse"));
         b.set_timer_presets(model(vec![30, 45, 60, 90, 120, 180]));
         b.set_use_app_keypad(c.prefs.app_keypad);
+        b.set_cal_heatmap(c.prefs.calendar_heatmap);
         b.set_gestures_enabled(true);
         c.refresh_timer();
         c.navigate(P_HOME);
@@ -3718,6 +3882,60 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         }
     });
     cb!(b, ctrl, on_cal_entry, |c, i: i32| { c.cal_entry(i as usize); });
+    cb!(b, ctrl, on_cal_toggle_heatmap, |c| {
+        c.prefs.calendar_heatmap = !c.prefs.calendar_heatmap;
+        let on = c.prefs.calendar_heatmap;
+        let _ = c.prefs.save(&c.db);
+        c.with_bridge(|b| b.set_cal_heatmap(on));
+    });
+    cb!(b, ctrl, on_evo_chart_resized, |c, w: f32, h: f32| {
+        if (c.evo_chart.0 - w).abs() > 0.5 || (c.evo_chart.1 - h).abs() > 0.5 {
+            c.evo_chart = (w.max(10.0), h.max(10.0));
+            if c.page() == P_EVO {
+                let r = c.refresh_evolution();
+                c.report(r);
+            }
+        }
+    });
+    cb!(b, ctrl, on_evo_select_point, |c, i: i32| {
+        c.evo_selected = if c.evo_selected == i { -1 } else { i };
+        let r = c.refresh_evolution();
+        c.report(r);
+    });
+    cb!(b, ctrl, on_progression_accept, |c, id: i32| {
+        let r = (|| -> AppResult<()> {
+            let s = c.db.progression_for(id as Id, c.prefs.load_step_g, c.prefs.unit)?.ok_or_else(|| AppError::Validation("Sugestão indisponível.".into()))?;
+            let pe = c.db.get_plan_exercise(id as Id)?;
+            let mut t = pe.target;
+            t.load_g = s.suggested_load_g;
+            c.db.update_plan_exercise(pe.id, pe.exercise.id, t, pe.rest_seconds, &pe.notes)
+        })();
+        match r {
+            Ok(()) => c.toast("Carga-alvo atualizada na ficha."),
+            Err(e) => c.toast(e.to_string()),
+        }
+        c.report_refresh_editor();
+    });
+    cb!(b, ctrl, on_progression_dismiss, |c, id: i32| {
+        if let Ok(Some(s)) = c.db.progression_for(id as Id, c.prefs.load_step_g, c.prefs.unit) {
+            let _ = c.db.set_pref(&format!("progression.dismissed.{id}"), &s.based_on_session.to_string());
+        }
+        c.report_refresh_editor();
+    });
+    cb!(b, ctrl, on_open_search, |c| { c.navigate(P_SEARCH); });
+    cb!(b, ctrl, on_search_changed, |c, _t: SharedString| { c.refresh_search(); });
+    cb!(b, ctrl, on_search_open, |c, i: i32| {
+        use crate::application::search::HitKind;
+        let Some(h) = c.search_hits.get(i as usize).cloned() else { return };
+        match h.kind {
+            HitKind::Plan => c.open_plan(h.id),
+            HitKind::Session => c.open_detail(h.id),
+            HitKind::Exercise => {
+                c.open_library(false);
+                c.open_exercise_form(Some(h.id));
+            }
+        }
+    });
     cb!(b, ctrl, on_cal_add_to_agenda, |c, i: i32| { c.cal_add_to_agenda(i as usize); });
     cb!(b, ctrl, on_show_diagnostics, |c| { c.show_diagnostics(); });
     cb!(b, ctrl, on_exf_add_alt, |c| {

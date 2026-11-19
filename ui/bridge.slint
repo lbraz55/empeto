@@ -1,7 +1,7 @@
 // Ponte entre a interface e a lógica em Rust. O Rust preenche propriedades e trata callbacks.
 
 export struct PlanRow { id: int, name: string, subtitle: string, active: bool, favorite: bool }
-export struct PlanExRow { id: int, name: string, detail: string, notes: string }
+export struct PlanExRow { id: int, name: string, detail: string, notes: string, suggestion: string, suggestion-detail: string }
 export struct DayRow { id: int, name: string, subtitle: string, exercises: [PlanExRow] }
 export struct ExRow { id: int, name: string, detail: string, note: string, archived: bool, favorite: bool, custom: bool }
 export struct SetRow { id: int, number: int, planned: string, load: string, reps: string, done: bool, hint: string }
@@ -22,11 +22,13 @@ export struct SessionExRow {
     sets: [SetRow],
 }
 export struct CardRow { kind: string, title: string, line1: string, line2: string, action: string, ref-id: int }
-export struct CalCell { key: string, day: int, in-month: bool, today: bool, selected: bool, planned: bool, done: bool }
+export struct CalCell { key: string, day: int, in-month: bool, today: bool, selected: bool, planned: bool, done: bool, heat: float, heat-text: string }
 export struct CalEntry { kind: string, title: string, subtitle: string, session-id: int, day-id: int, can-start: bool }
 export struct HistRow { id: int, date: string, title: string, subtitle: string }
 export struct DetailEx { title: string, subtitle: string, badge: string, lines: [string], notes: string }
 export struct EvoRow { date: string, value: string, detail: string }
+export struct EvoPt { x: float, y: float, label: string }
+export struct SearchRow { kind: string, id: int, title: string, subtitle: string }
 export struct HistExRow { key: string, name: string, detail: string }
 export struct MapCol { index: int, header: string, sample: string, field: string }
 export struct PlanPreview { name: string, detail: string, conflict: bool }
@@ -81,6 +83,16 @@ export global Bridge {
     callback edit-plan-ex(int);
     callback move-plan-ex(int, int);
     callback start-day(int);
+    // Sugestão de progressão (5.4): aceitar atualiza a carga-alvo; ignorar até a próxima sessão.
+    callback progression-accept(int);
+    callback progression-dismiss(int);
+
+    // ---------------- Busca global (8.2) ----------------
+    in-out property <string> search-query;
+    in-out property <[SearchRow]> search-results;
+    callback search-changed(string);
+    callback search-open(int);
+    callback open-search();
 
     // Formulário do dia
     in-out property <string> day-title;
@@ -286,6 +298,9 @@ export global Bridge {
     callback cal-set-week-view(bool);
     callback cal-select(string);
     callback cal-entry(int);
+    in-out property <bool> cal-heatmap;
+    in-out property <bool> cal-heatmap-available: true;
+    callback cal-toggle-heatmap();
     callback cal-add-to-agenda(int);
 
     // ---------------- Histórico ----------------
@@ -315,6 +330,15 @@ export global Bridge {
     in-out property <string> evo-first-date;
     in-out property <string> evo-last-date;
     in-out property <bool> evo-has-data;
+    in-out property <[EvoPt]> evo-points;
+    in-out property <string> evo-trend;
+    in-out property <int> evo-selected: -1;
+    in-out property <string> evo-selected-label;
+    in-out property <string> evo-bests;
+    in-out property <[string]> evo-records;
+    in-out property <string> evo-axis-max;
+    callback evo-chart-resized(float, float);
+    callback evo-select-point(int);
     callback evo-set-period(int);
     callback evo-set-metric(int);
 
