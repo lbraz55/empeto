@@ -25,6 +25,24 @@
 | RF-19 Home com cartões clicáveis | `Controller::refresh_home`, `HomeScreen` | manual |
 | RF-20 preferências | `application/prefs.rs`, `SettingsScreen` | `prefs::tests::round_trip` |
 
+## Documento EMPETO (Fases 1–6)
+
+| Item | Implementação | Teste |
+|---|---|---|
+| 4.x Identidade, temas, tipografia, densidade | `ui/themes/*`, `assets/branding`, `Controller::apply_appearance` | `prefs::tests::*` + visual |
+| 5.x Modo foco, teclado, desfazer, háptico | `ui/screens/focus.slint`, `domain/input.rs`, `application/undo.rs` | `input::tests`, `undo::tests` |
+| Biblioteca, favoritos, filtros, modelos | migração 0004, `training/mod.rs`, `training/templates.rs` | `templates::tests`, integração |
+| 5.1 Recordes pessoais | `history/records.rs` | `records::tests` |
+| 5.4 Sugestão de progressão | `training/progression.rs` | `progression::tests` |
+| 8.2 Busca global | `application/search.rs` | `search::tests` |
+| 7.1 Gestos (`GestureEvent`) | `application/gestures.rs`, `SwipeGestureHandler` em foco/calendário | `gestures::tests` |
+| 7.4 Atalhos personalizáveis | `application/shortcuts.rs`, Configurações › Atalhos da Home | `shortcuts::tests` |
+| 7.5 Módulos opcionais | `Prefs::module_*`, Configurações › Recursos opcionais | `prefs::tests::round_trip` |
+| 9.1 Painel de armazenamento | `storage::storage_report`, `clear_temp` | `storage::tests` |
+| 9.2 Gerenciamento de backups | `storage::list/create/delete_local_backup`, Configurações › Backups | `storage::tests` |
+| 9.3 Backup automático semanal | `storage::run_auto_backup`, `prune_automatic` | `auto_backup_weekly_keeps_four_and_spares_manual`, `due_rules_and_empty_db` |
+| 9.4 Widget Android | `application/widget.rs`, `EmpetoWidget.java` | `widget::tests` + manual |
+
 ## Regras de negócio
 
 | ID | Garantia |

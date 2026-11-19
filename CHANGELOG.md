@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.0 — 2026-11-19 (schema do banco: 4) — EMPETO Fases 5 e 6
+- Fase 5 — Personalização:
+  - Atalhos personalizáveis na Home (até 4, códigos estáveis, sem duplicados, restaurar padrão).
+  - Recursos opcionais em Configurações: recordes, mapa de intensidade, sugestão de progressão, gestos,
+    animações decorativas e lembrete de backup (desligar não apaga dados).
+  - Gestos centralizados (`GestureEvent`): deslizar no modo foco (séries) e no calendário (período).
+  - Controle de efeitos: animações decorativas (pulso do recorde, entrada dos estados vazios) desligáveis.
+- Fase 6 — Armazenamento e backup:
+  - Painel de espaço usado (banco, backups locais, temporários, total) e limpeza de temporários.
+  - Tela Backups: lista com data e tamanho, criar agora, restaurar (mesma validação), excluir com confirmação,
+    salvar cópia fora do aparelho.
+  - Backup automático semanal ao abrir o app, mantendo os 4 mais recentes; lembrete de cópia externa.
+  - Widget Android com o próximo treino / sessão em andamento (sem permissões novas).
+- Documentação atualizada para EMPETO.
+
 ## 0.2.0 — 2026-11-19 (schema do banco: 4) — EMPETO
 Implementação das Fases 0 a 4 do documento "EMPETO — Documentação Técnica de Implementação v1.0".
 - Fase 1: nova identidade EMPETO (nome, slogan, logo dos braços antes/depois, ícone), paleta monocromática,

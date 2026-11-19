@@ -1,4 +1,4 @@
-# Manual do usuário — Workout
+# Manual do usuário — EMPETO
 
 ## Primeira utilização
 
@@ -70,6 +70,28 @@ Sons e alertas · Cronômetro · Treinamento · Calendário · Interface · Dado
 - **Exportar planilha**: escolha fichas, histórico ou tudo e onde salvar.
 - **Backup** é diferente de planilha: guarda o estado completo para restaurar o app. **Restaurar**
   valida o arquivo antes de substituir os dados atuais.
+
+## Personalização
+
+- **Atalhos da Home**: Configurações › Atalhos da Home. Até 4 posições; escolher um atalho que já está
+  em outra posição troca os dois. "Restaurar atalhos padrão" volta ao início.
+- **Recursos opcionais**: liga/desliga recordes, mapa de intensidade, sugestão de progressão, gestos,
+  animações decorativas e lembrete de backup. Desligar não apaga nada.
+- **Gestos**: no modo foco, deslize para a esquerda/direita para ir à próxima/anterior série; no
+  calendário, para trocar de mês/semana. Os botões continuam disponíveis.
+
+## Backups e espaço
+
+- **Dados e armazenamento** mostra o espaço usado (banco, backups, temporários, total) e permite limpar temporários.
+- **Backups**: o app cria um backup automático por semana ao ser aberto (guarda os 4 mais recentes). Você
+  pode criar um backup manual, restaurar, excluir (com confirmação) ou "Salvar cópia" fora do aparelho.
+- Backups no aparelho **não** protegem contra perda ou desinstalação. Salve uma cópia fora dele; se faz
+  mais de 30 dias, a Home mostra um lembrete.
+
+## Widget
+
+Na tela inicial do Android, mantenha pressionado › Widgets › EMPETO. Mostra a sessão em andamento ou o
+treino de hoje e é atualizado sempre que você abre o app. Tocar no widget abre o EMPETO.
 
 ## Limitações e cuidados
 

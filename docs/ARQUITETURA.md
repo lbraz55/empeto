@@ -29,7 +29,33 @@
 | `src/import_export` | Leitura/prévia/mapeamento XLSX, exportação XLSX, backup/restauração, ICS |
 | `src/persistence` | Conexão, PRAGMAs, migrações versionadas e transacionais, preferências |
 | `src/platform` | `AndroidAdapter`: notificações, vibração, alarmes, seletor de arquivos, ciclo de vida |
-| `android/java` | `MainActivity` (NativeActivity + ponte) e `TimerAlarmReceiver` |
+| `src/application` | Casos de uso transversais: preferências, busca global, desfazer, `GestureEvent`, atalhos da Home, armazenamento e backups locais, resumo do widget |
+| `android/java` | `MainActivity` (NativeActivity + ponte), `LauncherActivity` (diagnóstico de abertura), `TimerAlarmReceiver` e `EmpetoWidget` |
+
+## Personalização (EMPETO, Fase 5)
+
+- **Gestos**: a UI só emite `Bridge.gesture(contexto, gesto)`; `application::gestures::resolve` decide a
+  ação (modo foco: série anterior/próxima; calendário: período anterior/próximo). Todo gesto tem botão
+  equivalente; com o módulo desligado `resolve` devolve `None` e a UI desativa o `SwipeGestureHandler`.
+- **Atalhos da Home**: códigos estáveis em `application::shortcuts` (preferência `home.shortcuts`);
+  `normalize` descarta desconhecidos e duplicados e limita a 4; `set_slot` troca posições em vez de duplicar.
+- **Módulos opcionais** (`module.*` nas preferências): só controlam a exibição; nenhum dado é apagado.
+- **Animações**: tokens em `ui/themes/tokens.slint` (`anim-*`, `decorative`) resolvidos pelo Rust a partir
+  de tema, velocidade, modo do sistema e do módulo de animações decorativas.
+
+## Armazenamento e backups (EMPETO, Fase 6)
+
+- `application::storage`: relatório de espaço (banco + WAL/SHM, `backups/`, `tmp/`, total) e limpeza de
+  temporários (nunca toca no banco nem nos backups).
+- Backups locais em `files/backups/` usam o mesmo formato e a mesma validação do backup em arquivo
+  (`import_export::backup`). Restaurar um backup local copia o arquivo para `tmp/` e segue o fluxo normal.
+- Backup automático semanal ao abrir o app (`run_auto_backup`): só com dados, desligável
+  (`backup.auto`), mantém os 4 automáticos mais recentes; os manuais nunca são removidos sozinhos.
+- Lembrete de cópia externa: `backup.last_external` só é gravado quando o usuário salva um backup
+  pelo seletor do sistema — o app nunca afirma que existe uma cópia externa.
+- **Widget**: o Rust grava `files/widget.txt` (resumo derivado do cartão principal da Home) e chama
+  `MainActivity.updateWidget()`; `EmpetoWidget` (Java) só lê esse texto. Não há segunda fonte de dados
+  nem permissões novas.
 
 ## Integridade e histórico (3.4)
 

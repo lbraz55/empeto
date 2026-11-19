@@ -1,6 +1,11 @@
-# Workout — Documentação técnica do estado atual e propostas de UX/UI
+# EMPETO (antigo Workout) — Documentação técnica do estado atual e propostas de UX/UI
 
-Versão do app: **0.1.4** · Schema do banco: **3** · Data: 18/11/2026
+Versão do app: **0.3.0** · Schema do banco: **4** · Atualizado em: 19/11/2026
+
+> Este documento descreve o estado da versão 0.1.4. As versões 0.2.0 e 0.3.0 implementaram todas as
+> fases do documento "EMPETO — Documentação Técnica de Implementação v1.0" (identidade, execução,
+> organização, evolução, personalização, armazenamento e backup). Veja o [CHANGELOG](../CHANGELOG.md),
+> a [Arquitetura](ARQUITETURA.md) e a [Rastreabilidade](RASTREABILIDADE.md) para o estado atual.
 Plataforma: Android 8.0+ (API 26), arm64-v8a e x86_64 · Validado em aparelho: Xiaomi 23122PCD1G, Android 16.
 
 ---

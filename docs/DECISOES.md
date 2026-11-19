@@ -37,8 +37,12 @@ implementação seguiu exatamente essas recomendações; todas podem ser revista
 - **Exercícios** do catálogo são arquivados, não apagados.
 - **Importação** nunca sobrescreve sem escolha explícita: padrão cria cópia "(importada)"; substituir
   exige ligar a opção na prévia. Avisos exigem confirmação "Conferi os avisos".
-- **Backup** não é criptografado nesta versão (documento: "avaliar"); o arquivo fica onde o usuário
-  escolher. Recomenda-se guardar em local seguro.
+- **Backup em arquivo** pode ter senha (AES-256 no banco dentro do zip); o arquivo fica onde o usuário escolher.
+- **Backups locais** ficam na área privada do app, sem senha (só o app acessa), e são apagados se o app
+  for desinstalado — por isso o lembrete de cópia externa. O backup automático roda ao abrir o app (não
+  há tarefa em segundo plano, que exigiria `RECEIVE_BOOT_COMPLETED`/agendamentos).
+- **Widget** atualiza quando o app atualiza a Home (`updatePeriodMillis=0`): sem serviço em segundo plano.
+- **Gestos** são atalhos: nunca a única forma de fazer algo.
 - **Sem backup em nuvem do Android** (`allowBackup=false`, regras de extração vazias).
 
 ## ABIs do APK
