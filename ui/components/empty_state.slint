@@ -11,12 +11,23 @@ export component EmptyState inherits VerticalLayout {
     padding: 24px;
     spacing: 10px;
     alignment: center;
+    // Entrada decorativa (módulo "animações decorativas"): o círculo cresce suavemente.
+    property <bool> shown: false;
+    Timer {
+        interval: 1ms;
+        running: !root.shown;
+        triggered => { root.shown = true; }
+    }
     HorizontalLayout {
         alignment: center;
+        height: 88px;
         Rectangle {
-            width: 88px;
-            height: 88px;
-            border-radius: 44px;
+            property <length> d: root.shown || !Theme.decorative ? 88px : 52px;
+            animate d { duration: Theme.decorative ? 420ms : 0ms; easing: ease-out-back; }
+            width: self.d;
+            height: self.d;
+            y: (88px - self.d) / 2;
+            border-radius: self.d / 2;
             background: Theme.surface2;
             border-width: 1px;
             border-color: Theme.border;

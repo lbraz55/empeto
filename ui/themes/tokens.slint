@@ -54,5 +54,9 @@ export global Theme {
     out property <duration> anim-page: anim-enabled ? 220ms * anim-scale : 0ms;
     out property <duration> anim-dialog: anim-enabled ? 180ms * anim-scale : 0ms;
     out property <duration> anim-fast: anim-enabled ? 120ms * anim-scale : 0ms;
+    // Animações decorativas (módulo opcional 7.5): efeitos que não informam nada (pulsar do
+    // recorde, entrada dos estados vazios). Desligadas também quando as animações estão desligadas.
+    in-out property <bool> decorative-enabled: true;
+    out property <bool> decorative: anim-enabled && !anim-reduced && decorative-enabled;
     out property <length> anim-shift: anim-reduced ? 0px : 36px;
 }

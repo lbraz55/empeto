@@ -223,6 +223,10 @@ impl Platform for AndroidPlatform {
         self.with_env(|env, act| env.call_method(act, "animatorsEnabled", "()Z", &[])?.z()).unwrap_or(true)
     }
 
+    fn update_widget(&self) {
+        self.call_void("updateWidget", "()V", |_| Ok(vec![]));
+    }
+
     fn move_to_back(&self) {
         self.call_void("moveToBack", "()V", |_| Ok(vec![]));
     }

@@ -5,12 +5,68 @@ import { Btn, IconBtn, Card, Label, Title, SectionTitle, Body, Scroll, Segmented
 import { EmptyState } from "../components/empty_state.slint";
 import { StarBtn } from "../components/widgets.slint";
 
+// Atalho personalizável da Home (7.4): o código vem do Rust; aqui só se escolhe o ícone.
+component ShortcutTile inherits Rectangle {
+    in property <string> code;
+    in property <string> label;
+    in property <string> icon-name;
+    callback clicked();
+    min-height: 72px;
+    border-radius: 14px;
+    background: ta.pressed ? Theme.surface2 : Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-action-default => { root.clicked(); }
+    ta := TouchArea { clicked => { root.clicked(); } }
+    VerticalLayout {
+        padding: 8px;
+        spacing: 6px;
+        alignment: center;
+        HorizontalLayout {
+            alignment: center;
+            Icon {
+                size: 22px;
+                cmd: root.icon-name == "play" ? Icons.play
+                    : root.icon-name == "timer" ? Icons.timer
+                    : root.icon-name == "dumbbell" ? Icons.dumbbell
+                    : root.icon-name == "search" ? Icons.search
+                    : root.icon-name == "chart" ? Icons.chart
+                    : root.icon-name == "calendar" ? Icons.calendar
+                    : root.icon-name == "history" ? Icons.history
+                    : root.icon-name == "plus" ? Icons.plus
+                    : root.icon-name == "template" ? Icons.template
+                    : root.icon-name == "database" ? Icons.database
+                    : Icons.info;
+            }
+        }
+        Text {
+            text: root.label;
+            color: Theme.text;
+            font-size: Theme.fs-xs;
+            horizontal-alignment: center;
+            wrap: word-wrap;
+        }
+    }
+}
+
 // RF-19 / 6.2: cartões informativos clicáveis.
 export component HomeScreen inherits Scroll {
     Text {
         text: Bridge.home-date;
         color: Theme.muted;
         font-size: Theme.fs-s;
+    }
+    if Bridge.home-shortcuts.length > 0: HorizontalLayout {
+        spacing: 8px;
+        for sc in Bridge.home-shortcuts: ShortcutTile {
+            horizontal-stretch: 1;
+            code: sc.code;
+            label: sc.label;
+            icon-name: sc.icon;
+            clicked => { Bridge.home-shortcut(sc.code); }
+        }
     }
     for c in Bridge.home-cards: Card {
         clickable: true;
@@ -154,56 +210,70 @@ export component CalendarScreen inherits Scroll {
             horizontal-stretch: 1;
         }
     }
-    grid := Rectangle {
-        property <length> cell-h: 50px;
-        height: Math.ceil(Bridge.cal-cells.length / 7) * self.cell-h;
-        for c[i] in Bridge.cal-cells: Rectangle {
-            x: Math.mod(i, 7) * (parent.width / 7);
-            y: Math.floor(i / 7) * grid.cell-h;
-            width: parent.width / 7;
-            height: grid.cell-h;
-            accessible-role: button;
-            accessible-label: c.day + (c.planned ? ", treino planejado" : "") + (c.done ? ", treino realizado" : "") + (Bridge.cal-heatmap && c.heat-text != "" ? ", " + c.heat-text : "") + (c.today ? ", hoje" : "");
-            accessible-action-default => { Bridge.cal-select(c.key); }
-            TouchArea {
-                clicked => { Bridge.cal-select(c.key); }
+    // Gesto opcional: deslizar troca o período (os botões ‹ › continuam disponíveis).
+    SwipeGestureHandler {
+        enabled: Bridge.gestures-enabled;
+        handle-swipe-left: true;
+        handle-swipe-right: true;
+        height: grid.height;
+        swiped => {
+            if (self.current-position.x - self.pressed-position.x < -60px) {
+                Bridge.gesture("calendar", "swipe-left");
+            } else if (self.current-position.x - self.pressed-position.x > 60px) {
+                Bridge.gesture("calendar", "swipe-right");
             }
-            Rectangle {
-                width: 40px;
-                height: 40px;
-                x: (parent.width - self.width) / 2;
-                y: 2px;
-                border-radius: Bridge.cal-heatmap && c.done && !c.selected ? 8px : 20px;
-                background: c.selected ? Theme.accent : (Bridge.cal-heatmap && c.done ? Theme.text.with-alpha(0.12 + 0.6 * c.heat) : transparent);
-                border-width: c.today && !c.selected ? 2px : 0px;
-                border-color: Theme.text;
-                Text {
-                    y: 6px;
-                    width: parent.width;
-                    text: c.day;
-                    horizontal-alignment: center;
-                    font-size: Theme.fs-s;
-                    font-weight: c.today ? 700 : 400;
-                    color: c.selected ? Theme.on-accent : (Bridge.cal-heatmap && c.done && c.heat > 0.55 ? Theme.bg : (c.in-month ? Theme.text : Theme.faint));
+        }
+        grid := Rectangle {
+            property <length> cell-h: 50px;
+            height: Math.ceil(Bridge.cal-cells.length / 7) * self.cell-h;
+            for c[i] in Bridge.cal-cells: Rectangle {
+                x: Math.mod(i, 7) * (parent.width / 7);
+                y: Math.floor(i / 7) * grid.cell-h;
+                width: parent.width / 7;
+                height: grid.cell-h;
+                accessible-role: button;
+                accessible-label: c.day + (c.planned ? ", treino planejado" : "") + (c.done ? ", treino realizado" : "") + (Bridge.cal-heatmap && c.heat-text != "" ? ", " + c.heat-text : "") + (c.today ? ", hoje" : "");
+                accessible-action-default => { Bridge.cal-select(c.key); }
+                TouchArea {
+                    clicked => { Bridge.cal-select(c.key); }
                 }
-                // marcadores: cheio = realizado, vazado = planejado (forma, não só cor)
-                HorizontalLayout {
-                    y: 27px;
-                    height: 7px;
-                    alignment: center;
-                    spacing: 3px;
-                    if c.done: Rectangle {
-                        width: 7px;
-                        height: 7px;
-                        border-radius: 3.5px;
-                        background: c.selected ? Theme.on-accent : Theme.text;
+                Rectangle {
+                    width: 40px;
+                    height: 40px;
+                    x: (parent.width - self.width) / 2;
+                    y: 2px;
+                    border-radius: Bridge.cal-heatmap && c.done && !c.selected ? 8px : 20px;
+                    background: c.selected ? Theme.accent : (Bridge.cal-heatmap && c.done ? Theme.text.with-alpha(0.12 + 0.6 * c.heat) : transparent);
+                    border-width: c.today && !c.selected ? 2px : 0px;
+                    border-color: Theme.text;
+                    Text {
+                        y: 6px;
+                        width: parent.width;
+                        text: c.day;
+                        horizontal-alignment: center;
+                        font-size: Theme.fs-s;
+                        font-weight: c.today ? 700 : 400;
+                        color: c.selected ? Theme.on-accent : (Bridge.cal-heatmap && c.done && c.heat > 0.55 ? Theme.bg : (c.in-month ? Theme.text : Theme.faint));
                     }
-                    if c.planned: Rectangle {
-                        width: 7px;
+                    // marcadores: cheio = realizado, vazado = planejado (forma, não só cor)
+                    HorizontalLayout {
+                        y: 27px;
                         height: 7px;
-                        border-radius: 3.5px;
-                        border-width: 1.5px;
-                        border-color: c.selected ? Theme.on-accent : Theme.muted;
+                        alignment: center;
+                        spacing: 3px;
+                        if c.done: Rectangle {
+                            width: 7px;
+                            height: 7px;
+                            border-radius: 3.5px;
+                            background: c.selected ? Theme.on-accent : Theme.text;
+                        }
+                        if c.planned: Rectangle {
+                            width: 7px;
+                            height: 7px;
+                            border-radius: 3.5px;
+                            border-width: 1.5px;
+                            border-color: c.selected ? Theme.on-accent : Theme.muted;
+                        }
                     }
                 }
             }

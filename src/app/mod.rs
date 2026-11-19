@@ -15,6 +15,8 @@ use crate::import_export::xlsx_import::{
 };
 use crate::persistence::{schema_version, Db};
 use crate::application::undo::{UndoKind, UndoOp};
+use crate::application::gestures::{self, GestureAction, GestureContext, GestureEvent};
+use crate::application::{shortcuts, storage, widget};
 use crate::domain::input::{self, FieldKind};
 use crate::platform::{FileResult, HapticEvent, Platform, ALARM_END, ALARM_PRE};
 use crate::training::ExerciseFilter;
@@ -67,6 +69,7 @@ enum ConfirmAction {
     DiscardSession,
     Restore,
     ArchiveExercise(Id, bool),
+    DeleteLocalBackup(std::path::PathBuf),
 }
 
 #[derive(Debug, Clone)]
@@ -80,6 +83,7 @@ enum ChoiceCtx {
     ImportMap(usize),
     ExportKind,
     Template,
+    Shortcut(usize),
 }
 
 #[derive(Debug, Clone)]
@@ -632,10 +636,39 @@ impl Controller {
             0,
         ));
 
+        if self.prefs.module_backup_reminder {
+            let last_ext = self.db.get_pref(storage::PREF_LAST_EXTERNAL)?.and_then(|v| v.parse::<i64>().ok());
+            let has_data = !all.is_empty() || !plans.is_empty();
+            if storage::external_copy_reminder_due(last_ext, has_data, now_ms()) {
+                let local = storage::list_local_backups(&self.platform.data_dir());
+                cards.push(card(
+                    "backup",
+                    "LEMBRETE · CÓPIA DO BACKUP",
+                    match last_ext {
+                        Some(t) => format!("Última cópia salva por você fora do app: {}", fmt_date_short(t)),
+                        None => "Nenhuma cópia salva fora do app por aqui".to_string(),
+                    },
+                    format!(
+                        "{} backup(s) no aparelho. Eles não protegem contra perda ou desinstalação: salve uma cópia fora do aparelho.",
+                        local.len()
+                    ),
+                    "Backups",
+                    0,
+                ));
+            }
+        }
+
+        let sc: Vec<ShortcutRow> = self
+            .home_shortcuts()
+            .iter()
+            .map(|c| ShortcutRow { code: ss(c), label: ss(shortcuts::label(c)), icon: ss(shortcuts::icon(c)) })
+            .collect();
+        self.update_widget(&cards);
         let date = cal::date_long(today);
         self.with_bridge(|b| {
             b.set_home_date(ss(capitalize(&date)));
             b.set_home_cards(model(cards));
+            b.set_home_shortcuts(model(sc));
         });
         Ok(())
     }
@@ -653,6 +686,7 @@ impl Controller {
                 self.with_bridge(|b| b.set_hist_tab(1));
                 self.navigate(P_HIST);
             }
+            "backup" => self.home_shortcut("backups"),
             _ => {}
         }
     }
@@ -2316,13 +2350,6 @@ impl Controller {
     fn refresh_settings(&mut self) -> AppResult<()> {
         let p = self.prefs.clone();
         let counts = self.db.counts()?;
-        let db_size = self
-            .db
-            .path
-            .as_ref()
-            .and_then(|path| std::fs::metadata(path).ok())
-            .map(|m| m.len())
-            .unwrap_or(0);
         let notif = if !self.platform.is_android() {
             "Em segundo plano, o alerta usa uma notificação do sistema.".to_string()
         } else if self.platform.notifications_allowed() {
@@ -2331,13 +2358,60 @@ impl Controller {
             "Notificações não permitidas: em segundo plano, apenas a vibração (se ativada) pode ocorrer. O cronômetro continua correto na tela.".to_string()
         };
         let data = format!(
-            "{} ficha(s) · {} exercício(s) na biblioteca · {} sessão(ões) · {} série(s) registradas\nBanco de dados: {:.1} MB, no armazenamento privado do app (sem internet, sem nuvem).",
+            "{} ficha(s) · {} exercício(s) na biblioteca · {} sessão(ões) · {} série(s) registradas. Tudo fica no armazenamento privado do app (sem internet, sem nuvem).",
             counts.plans,
             counts.exercises,
             counts.sessions,
             counts.sets,
-            db_size as f64 / 1_048_576.0
         );
+        let data_dir = self.platform.data_dir();
+        let rep = storage::storage_report(&data_dir, self.db.path.as_deref(), &self.platform.tmp_dir());
+        let backups = storage::list_local_backups(&data_dir);
+        let auto_on = self.db.get_pref(storage::PREF_AUTO)?.as_deref() != Some("0");
+        let last_auto = backups.iter().filter(|b| b.automatic && b.valid).map(|b| b.created_at).max();
+        let last_ext = self.db.get_pref(storage::PREF_LAST_EXTERNAL)?.and_then(|v| v.parse::<i64>().ok());
+        let backups_info = format!(
+            "{} backup(s) no aparelho · {}\nÚltimo automático: {}\nÚltima cópia que você salvou fora do app: {}\n\nOs backups ficam na área privada do app: são apagados se o app for desinstalado.",
+            backups.len(),
+            storage::fmt_bytes(rep.backups_bytes),
+            last_auto.map(fmt_date_time).unwrap_or_else(|| "nenhum ainda".into()),
+            last_ext.map(fmt_date_time).unwrap_or_else(|| "nenhuma registrada".into()),
+        );
+        let backup_rows: Vec<BackupRow> = backups
+            .iter()
+            .enumerate()
+            .map(|(i, b)| BackupRow {
+                index: i as i32,
+                title: ss(fmt_date_time(b.created_at)),
+                subtitle: ss(if b.valid {
+                    format!("{} · {} ficha(s) · {} sessão(ões){}", storage::fmt_bytes(b.bytes), b.plans, b.sessions, if b.encrypted { " · com senha" } else { "" })
+                } else {
+                    format!("{} · arquivo ilegível (não pode ser restaurado)", storage::fmt_bytes(b.bytes))
+                }),
+                automatic: b.automatic,
+                valid: b.valid,
+            })
+            .collect();
+        let sc = self.home_shortcuts();
+        let slots: Vec<SharedString> = (0..shortcuts::MAX_SHORTCUTS)
+            .map(|i| ss(sc.get(i).map(|c| shortcuts::label(c)).unwrap_or("Nenhum")))
+            .collect();
+        self.with_bridge(|b| {
+            b.set_storage_db(ss(storage::fmt_bytes(rep.db_bytes)));
+            b.set_storage_backups(ss(format!("{} · {} arquivo(s)", storage::fmt_bytes(rep.backups_bytes), rep.backups_count)));
+            b.set_storage_temp(ss(storage::fmt_bytes(rep.temp_bytes)));
+            b.set_storage_total(ss(storage::fmt_bytes(rep.total())));
+            b.set_set_auto_backup(auto_on);
+            b.set_backups_info(ss(&backups_info));
+            b.set_local_backups(model(backup_rows));
+            b.set_shortcut_slots(model(slots));
+            b.set_set_mod_records(p.module_records);
+            b.set_set_mod_heatmap(p.module_heatmap);
+            b.set_set_mod_progression(p.module_progression);
+            b.set_set_mod_gestures(p.module_gestures);
+            b.set_set_mod_decorative(p.module_decorative_anim);
+            b.set_set_mod_backup_reminder(p.module_backup_reminder);
+        });
         let version = self.platform.app_version();
         let schema = schema_version(&self.db.conn).unwrap_or(0);
         let about = format!(
@@ -2423,6 +2497,209 @@ impl Controller {
         t.set_anim_enabled(enabled);
         t.set_anim_reduced(reduced);
         t.set_anim_scale(scale);
+        t.set_decorative_enabled(self.prefs.module_decorative_anim);
+        self.apply_modules();
+    }
+
+    /// Reflete os módulos opcionais (7.5) na interface. Desligar só esconde: nada é apagado.
+    fn apply_modules(&mut self) {
+        let p = self.prefs.clone();
+        self.with_bridge(|b| {
+            b.set_gestures_enabled(p.module_gestures);
+            b.set_cal_heatmap_available(p.module_heatmap);
+            b.set_cal_heatmap(p.module_heatmap && p.calendar_heatmap);
+        });
+    }
+
+    fn home_shortcuts(&self) -> Vec<String> {
+        let v = self.db.get_pref(shortcuts::PREF_KEY).ok().flatten();
+        shortcuts::parse(v.as_deref())
+    }
+
+    fn home_shortcut(&mut self, code: &str) {
+        match code {
+            "next_workout" => {
+                if self.db.active_session_id().ok().flatten().is_some() {
+                    self.open_session();
+                    return;
+                }
+                let today = cal::today();
+                let plans = self.db.list_plans_full().unwrap_or_default();
+                let next = self.next_seq_map(&plans);
+                let done_ids: Vec<Id> = self
+                    .sessions_on(today)
+                    .unwrap_or_default()
+                    .iter()
+                    .filter_map(|s| self.db.get_session(s.id).ok().and_then(|x| x.plan_id))
+                    .collect();
+                let planned = cal::planned_on(today, today, &plans, &next, &done_ids);
+                match planned.first() {
+                    Some(p) => self.start_day(p.day_id),
+                    None => {
+                        self.toast("Nenhum treino planejado para hoje. Escolha uma ficha.");
+                        self.navigate(P_PLANS);
+                    }
+                }
+            }
+            "timer" => self.navigate(P_TIMER),
+            "library" => {
+                self.with_bridge(|b| b.set_lib_mode(ss("browse")));
+                self.lib_pick = false;
+                self.navigate(P_LIBRARY);
+            }
+            "search" => self.navigate(P_SEARCH),
+            "evolution" => {
+                self.with_bridge(|b| b.set_hist_tab(1));
+                self.navigate(P_HIST);
+            }
+            "calendar" => self.navigate(P_CAL),
+            "history" => {
+                self.with_bridge(|b| b.set_hist_tab(0));
+                self.navigate(P_HIST);
+            }
+            "new_plan" => self.new_plan(),
+            "templates" => self.open_templates(),
+            "backups" => {
+                self.with_bridge(|b| b.set_settings_section(10));
+                self.navigate(P_SETTINGS);
+                let r = self.refresh_settings();
+                self.report(r);
+            }
+            _ => {}
+        }
+    }
+
+    fn open_templates(&mut self) {
+        let opts = crate::training::templates::TEMPLATES
+            .iter()
+            .map(|t| format!("{} — {}", t.name, t.description))
+            .collect();
+        self.ask_choice(ChoiceCtx::Template, "Modelos de fichas", "Escolha um modelo para ver a prévia. Nada é criado antes de confirmar.", opts, -1);
+    }
+
+    fn shortcut_slot(&mut self, slot: usize) {
+        let cur = self.home_shortcuts();
+        let mut opts = vec!["Nenhum".to_string()];
+        opts.extend(shortcuts::SHORTCUTS.iter().map(|s| s.1.to_string()));
+        let selected = cur
+            .get(slot)
+            .and_then(|c| shortcuts::SHORTCUTS.iter().position(|s| s.0 == c))
+            .map(|i| i as i32 + 1)
+            .unwrap_or(0);
+        self.ask_choice(
+            ChoiceCtx::Shortcut(slot),
+            &format!("Atalho da posição {}", slot + 1),
+            "Se o atalho já estiver em outra posição, os dois trocam de lugar.",
+            opts,
+            selected,
+        );
+    }
+
+    fn gesture(&mut self, ctx: &str, ev: &str) {
+        let (Some(ctx), Some(ev)) = (GestureContext::parse(ctx), GestureEvent::parse(ev)) else { return };
+        match gestures::resolve(self.prefs.module_gestures, ctx, ev) {
+            Some(GestureAction::NextSet) => {
+                self.focus_store_draft();
+                self.focus_nav("next-set");
+            }
+            Some(GestureAction::PrevSet) => {
+                self.focus_store_draft();
+                self.focus_nav("prev-set");
+            }
+            Some(GestureAction::NextPeriod) => self.cal_shift(1),
+            Some(GestureAction::PrevPeriod) => self.cal_shift(-1),
+            None => {}
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Fase 6: armazenamento e backups no aparelho
+    // ------------------------------------------------------------------
+
+    fn local_backup_create(&mut self) {
+        let data = self.platform.data_dir();
+        let work = self.platform.tmp_dir();
+        let version = self.platform.app_version();
+        match storage::create_local_backup(&self.db, &data, &work, &version, false) {
+            Ok(_) => self.toast("Backup criado no aparelho. Salve uma cópia fora dele para mais segurança."),
+            Err(e) => self.toast(e.to_string()),
+        }
+        let r = self.refresh_settings();
+        self.report(r);
+    }
+
+    fn local_backup_at(&self, i: i32) -> Option<storage::LocalBackup> {
+        storage::list_local_backups(&self.platform.data_dir()).into_iter().nth(i.max(0) as usize)
+    }
+
+    fn local_backup_restore(&mut self, i: i32) {
+        let Some(bk) = self.local_backup_at(i) else { return };
+        // A validação consome o arquivo: trabalha numa cópia temporária, o backup local fica intacto.
+        let tmp = self.tmp_file(&format!("restore-{}.zip", now_ms()));
+        if let Err(e) = std::fs::copy(&bk.path, &tmp) {
+            self.toast(e.to_string());
+            return;
+        }
+        self.begin_restore(tmp);
+    }
+
+    fn local_backup_export(&mut self, i: i32) {
+        let Some(bk) = self.local_backup_at(i) else { return };
+        let tmp = self.tmp_file(&format!("copy-{}.zip", now_ms()));
+        if let Err(e) = std::fs::copy(&bk.path, &tmp) {
+            self.toast(e.to_string());
+            return;
+        }
+        let name = bk.file_name.clone();
+        self.save_via_picker(tmp, &name, "application/zip", "Cópia do backup salva");
+    }
+
+    fn local_backup_delete(&mut self, i: i32) {
+        let Some(bk) = self.local_backup_at(i) else { return };
+        let text = format!(
+            "Excluir o backup de {}{}? Esta ação não pode ser desfeita. Seus dados atuais não são afetados.",
+            fmt_date_time(bk.created_at),
+            if bk.automatic { " (automático)" } else { "" }
+        );
+        self.ask_confirm(ConfirmAction::DeleteLocalBackup(bk.path), "Excluir backup", &text, "Excluir");
+    }
+
+    fn storage_clear_temp(&mut self) {
+        let freed = storage::clear_temp(&self.platform.tmp_dir());
+        self.toast(format!("Temporários limpos: {} liberados.", storage::fmt_bytes(freed)));
+        let r = self.refresh_settings();
+        self.report(r);
+    }
+
+    /// Backup automático semanal (executado ao abrir o app).
+    fn auto_backup(&mut self) {
+        if self.db.path.is_none() {
+            return; // modo temporário: nada a proteger
+        }
+        let data = self.platform.data_dir();
+        let work = self.platform.tmp_dir();
+        let version = self.platform.app_version();
+        match storage::run_auto_backup(&self.db, &data, &work, &version) {
+            Ok(Some(p)) => log::info!("backup automático criado: {}", p.display()),
+            Ok(None) => {}
+            Err(e) => log::warn!("backup automático falhou: {e}"),
+        }
+    }
+
+    /// Resumo derivado para o widget (sem segunda fonte de dados).
+    fn update_widget(&mut self, cards: &[CardRow]) {
+        let pick = cards
+            .iter()
+            .find(|c| c.kind == "session")
+            .or_else(|| cards.iter().find(|c| c.kind == "today" || c.kind == "plans"))
+            .or_else(|| cards.first());
+        let s = match pick {
+            Some(c) => widget::WidgetSummary { title: c.title.to_string(), line1: c.line1.to_string(), line2: c.line2.to_string() },
+            None => widget::WidgetSummary::default(),
+        };
+        if widget::write(&self.platform.data_dir(), &s) {
+            self.platform.update_widget();
+        }
     }
 
     fn save_prefs(&mut self) {
@@ -2468,6 +2745,20 @@ impl Controller {
             "week-view" => p.calendar_week_view = !p.calendar_week_view,
             "keep-screen" => p.keep_screen_on = !p.keep_screen_on,
             "confirm-finish" => p.confirm_finish = !p.confirm_finish,
+            "mod-records" => p.module_records = !p.module_records,
+            "mod-heatmap" => p.module_heatmap = !p.module_heatmap,
+            "mod-progression" => p.module_progression = !p.module_progression,
+            "mod-gestures" => p.module_gestures = !p.module_gestures,
+            "mod-decorative" => p.module_decorative_anim = !p.module_decorative_anim,
+            "mod-backup-reminder" => p.module_backup_reminder = !p.module_backup_reminder,
+            "auto-backup" => {
+                let on = self.db.get_pref(storage::PREF_AUTO).ok().flatten().as_deref() != Some("0");
+                let r = self.db.set_pref(storage::PREF_AUTO, if on { "0" } else { "1" });
+                self.report(r);
+                let r = self.refresh_settings();
+                self.report(r);
+                return;
+            }
             _ => return,
         }
         self.save_prefs();
@@ -2614,6 +2905,16 @@ impl Controller {
                 }
                 self.rebuild_import_preview();
             }
+            ChoiceCtx::Shortcut(slot) => {
+                // 0 = "Nenhum"; demais = SHORTCUTS[i-1]
+                let code = if i <= 0 { "" } else { shortcuts::SHORTCUTS.get(i as usize - 1).map(|s| s.0).unwrap_or("") };
+                let cur = self.home_shortcuts();
+                let next = shortcuts::set_slot(&cur, slot, code);
+                let r = self.db.set_pref(shortcuts::PREF_KEY, &shortcuts::serialize(&next));
+                self.report(r);
+                let r = self.refresh_settings();
+                self.report(r);
+            }
             ChoiceCtx::Template => {
                 let Some(t) = crate::training::templates::TEMPLATES.get(i as usize) else { return };
                 match self.db.template_preview(t.code) {
@@ -2731,7 +3032,14 @@ impl Controller {
         match (op, res) {
             (_, FileResult::Cancelled) => {}
             (_, FileResult::Error(e)) => self.toast(e),
-            (FileOp::Save(what), FileResult::Saved { name }) => self.toast(format!("{what}: {name}")),
+            (FileOp::Save(what), FileResult::Saved { name }) => {
+                if what.starts_with("Backup") || what.starts_with("Cópia do backup") {
+                    // Só registramos a cópia externa quando o próprio usuário a salvou.
+                    let r = self.db.set_pref(storage::PREF_LAST_EXTERNAL, &now_ms().to_string());
+                    self.report(r);
+                }
+                self.toast(format!("{what}: {name}"))
+            }
             (FileOp::ImportXlsx, FileResult::Opened { path, name }) => {
                 let r = read_workbook(&path);
                 let _ = std::fs::remove_file(&path);
@@ -2753,7 +3061,15 @@ impl Controller {
                     Err(e) => self.show_info(InfoCtx::Plain, "Não foi possível importar", &e.to_string(), "OK", ""),
                 }
             }
-            (FileOp::Restore, FileResult::Opened { path, name: _ }) => {
+            (FileOp::Restore, FileResult::Opened { path, name: _ }) => self.begin_restore(path),
+            (op, res) => log::warn!("resultado de arquivo inesperado: {op:?} {res:?}"),
+        }
+    }
+
+    /// Início da restauração (arquivo escolhido ou backup local): pede senha se preciso e valida.
+    fn begin_restore(&mut self, path: std::path::PathBuf) {
+        {
+            {
                 match crate::import_export::backup::read_manifest(&path) {
                     Ok(m) if m.encrypted => {
                         self.restore_path = Some(path);
@@ -2770,7 +3086,6 @@ impl Controller {
                     _ => self.validate_restore(path, None),
                 }
             }
-            (op, res) => log::warn!("resultado de arquivo inesperado: {op:?} {res:?}"),
         }
     }
 
@@ -3045,6 +3360,15 @@ impl Controller {
                 }
             }
             ConfirmAction::Restore => self.do_restore(),
+            ConfirmAction::DeleteLocalBackup(path) => {
+                let r = storage::delete_local_backup(&self.platform.data_dir(), &path);
+                match r {
+                    Ok(()) => self.toast("Backup excluído."),
+                    Err(e) => self.toast(e.to_string()),
+                }
+                let r = self.refresh_settings();
+                self.report(r);
+            }
             ConfirmAction::ArchiveExercise(id, archive) => {
                 let r = self.db.set_exercise_archived(id, archive);
                 match r {
@@ -3326,8 +3650,8 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         b.set_lib_mode(ss("browse"));
         b.set_timer_presets(model(vec![30, 45, 60, 90, 120, 180]));
         b.set_use_app_keypad(c.prefs.app_keypad);
-        b.set_cal_heatmap(c.prefs.calendar_heatmap);
-        b.set_gestures_enabled(true);
+        c.apply_modules();
+        c.auto_backup();
         c.refresh_timer();
         c.navigate(P_HOME);
         if let Some(err) = open_error {
@@ -3518,13 +3842,22 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         let r = c.refresh_plans();
         c.report(r);
     });
-    cb!(b, ctrl, on_open_templates, |c| {
-        let opts = crate::training::templates::TEMPLATES
-            .iter()
-            .map(|t| format!("{} — {}", t.name, t.description))
-            .collect();
-        c.ask_choice(ChoiceCtx::Template, "Modelos de fichas", "Escolha um modelo para ver a prévia. Nada é criado antes de confirmar.", opts, -1);
+    cb!(b, ctrl, on_open_templates, |c| { c.open_templates(); });
+    cb!(b, ctrl, on_gesture, |c, ctx: SharedString, ev: SharedString| { c.gesture(&ctx, &ev); });
+    cb!(b, ctrl, on_home_shortcut, |c, code: SharedString| { c.home_shortcut(&code); });
+    cb!(b, ctrl, on_shortcut_slot, |c, i: i32| { c.shortcut_slot(i.max(0) as usize); });
+    cb!(b, ctrl, on_shortcuts_reset, |c| {
+        let r = c.db.set_pref(shortcuts::PREF_KEY, &shortcuts::serialize(&shortcuts::defaults()));
+        c.report(r);
+        c.toast("Atalhos padrão restaurados.");
+        let r = c.refresh_settings();
+        c.report(r);
     });
+    cb!(b, ctrl, on_storage_clear_temp, |c| { c.storage_clear_temp(); });
+    cb!(b, ctrl, on_backup_local_create, |c| { c.local_backup_create(); });
+    cb!(b, ctrl, on_backup_local_restore, |c, i: i32| { c.local_backup_restore(i); });
+    cb!(b, ctrl, on_backup_local_delete, |c, i: i32| { c.local_backup_delete(i); });
+    cb!(b, ctrl, on_backup_local_export, |c, i: i32| { c.local_backup_export(i); });
     cb!(b, ctrl, on_drag_plan_ex, |c, id: i32, delta: i32| {
         let r = c.db.get_plan_exercise(id as Id).and_then(|pe| {
             let list = c.db.list_plan_exercises(pe.schedule_id)?;
@@ -3884,7 +4217,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     cb!(b, ctrl, on_cal_entry, |c, i: i32| { c.cal_entry(i as usize); });
     cb!(b, ctrl, on_cal_toggle_heatmap, |c| {
         c.prefs.calendar_heatmap = !c.prefs.calendar_heatmap;
-        let on = c.prefs.calendar_heatmap;
+        let on = c.prefs.calendar_heatmap && c.prefs.module_heatmap;
         let _ = c.prefs.save(&c.db);
         c.with_bridge(|b| b.set_cal_heatmap(on));
     });

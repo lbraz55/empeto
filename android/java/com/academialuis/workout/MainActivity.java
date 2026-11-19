@@ -409,6 +409,11 @@ public class MainActivity extends NativeActivity {
         }
     }
 
+    /** Atualiza o widget depois que o app regravou files/widget.txt. */
+    public void updateWidget() {
+        EmpetoWidget.refreshAll(getApplicationContext());
+    }
+
     /** Feedback tátil: 1 = série registrada, 2 = fim do descanso, 3 = desfazer. */
     public void haptic(int kind) {
         try {

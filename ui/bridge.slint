@@ -31,6 +31,8 @@ export struct EvoPt { x: float, y: float, label: string }
 export struct SearchRow { kind: string, id: int, title: string, subtitle: string }
 export struct HistExRow { key: string, name: string, detail: string }
 export struct MapCol { index: int, header: string, sample: string, field: string }
+export struct ShortcutRow { code: string, label: string, icon: string }
+export struct BackupRow { index: int, title: string, subtitle: string, automatic: bool, valid: bool }
 export struct PlanPreview { name: string, detail: string, conflict: bool }
 
 export global Bridge {
@@ -390,6 +392,35 @@ export global Bridge {
     callback data-restore();
     callback data-ics();
     callback show-diagnostics();
+
+    // ---------------- Fase 5: personalização ----------------
+    // Gestos (GestureEvent): a UI só informa contexto e gesto; o Rust decide a ação.
+    callback gesture(string, string);
+    in-out property <[ShortcutRow]> home-shortcuts;
+    callback home-shortcut(string);
+    in-out property <[string]> shortcut-slots;
+    callback shortcut-slot(int);
+    callback shortcuts-reset();
+    in-out property <bool> set-mod-records;
+    in-out property <bool> set-mod-heatmap;
+    in-out property <bool> set-mod-progression;
+    in-out property <bool> set-mod-gestures;
+    in-out property <bool> set-mod-decorative;
+    in-out property <bool> set-mod-backup-reminder;
+
+    // ---------------- Fase 6: armazenamento e backups ----------------
+    in-out property <string> storage-db;
+    in-out property <string> storage-backups;
+    in-out property <string> storage-temp;
+    in-out property <string> storage-total;
+    callback storage-clear-temp();
+    in-out property <bool> set-auto-backup;
+    in-out property <string> backups-info;
+    in-out property <[BackupRow]> local-backups;
+    callback backup-local-create();
+    callback backup-local-restore(int);
+    callback backup-local-delete(int);
+    callback backup-local-export(int);
 
     // ---------------- Importação ----------------
     in-out property <string> imp-file;

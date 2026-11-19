@@ -92,6 +92,9 @@ export component AppWindow inherits Window {
             : Bridge.settings-section == 4 ? "Calendário"
             : Bridge.settings-section == 5 ? "Interface"
             : Bridge.settings-section == 6 ? "Dados e armazenamento"
+            : Bridge.settings-section == 8 ? "Recursos opcionais"
+            : Bridge.settings-section == 9 ? "Atalhos da Home"
+            : Bridge.settings-section == 10 ? "Backups"
             : "Sobre")
         : Bridge.page == 21 ? "Importar planilha"
         : "";

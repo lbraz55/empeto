@@ -68,9 +68,9 @@ export component FocusScreen inherits Rectangle {
         handle-swipe-right: true;
         swiped => {
             if (self.current-position.x - self.pressed-position.x < -60px) {
-                Bridge.focus-nav("next-set");
+                Bridge.gesture("focus", "swipe-left");
             } else if (self.current-position.x - self.pressed-position.x > 60px) {
-                Bridge.focus-nav("prev-set");
+                Bridge.gesture("focus", "swipe-right");
             }
         }
         VerticalLayout {
@@ -155,7 +155,20 @@ export component FocusScreen inherits Rectangle {
             }
             if Bridge.focus-record != "": HorizontalLayout {
                 alignment: center;
-                Badge { text: "★ " + Bridge.focus-record; }
+                pulse := Rectangle {
+                    // Pulso decorativo ao bater um recorde (desligável em Recursos opcionais).
+                    property <bool> lit: false;
+                    Timer {
+                        interval: 1ms;
+                        running: !pulse.lit;
+                        triggered => { pulse.lit = true; }
+                    }
+                    border-radius: 14px;
+                    border-width: Theme.decorative ? (self.lit ? 0px : 6px) : 0px;
+                    border-color: Theme.accent;
+                    animate border-width { duration: Theme.decorative ? 700ms : 0ms; easing: ease-out; }
+                    Badge { text: "★ " + Bridge.focus-record; }
+                }
             }
             HorizontalLayout {
                 spacing: 10px;

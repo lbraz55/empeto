@@ -5,4 +5,5 @@
     <string name="channel_alerts_desc">Fim do descanso e pré-alerta quando o app está em segundo plano</string>
     <string name="channel_progress">Cronômetro em andamento</string>
     <string name="channel_progress_desc">Mostra a contagem do descanso enquanto o app está em segundo plano</string>
+    <string name="widget_desc">Próximo treino e resumo da semana</string>
 </resources>

@@ -10,8 +10,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.academialuis.workout"
-    android:versionCode="200"
-    android:versionName="0.2.0">
+    android:versionCode="300"
+    android:versionName="0.3.0">
 
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
 
@@ -53,5 +53,13 @@
         </activity>
 
         <receiver android:name=".TimerAlarmReceiver" android:exported="false" />
+
+        <!-- Widget (somente leitura de um resumo gerado pelo app; nenhuma permissão nova). -->
+        <receiver android:name=".EmpetoWidget" android:exported="true" android:label="EMPETO">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info" />
+        </receiver>
     </application>
 </manifest>

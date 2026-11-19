@@ -41,6 +41,25 @@ export component SessionDetailScreen inherits Scroll {
     }
 }
 
+component StorageLine inherits HorizontalLayout {
+    in property <string> label;
+    in property <string> value;
+    in property <bool> strong: false;
+    Text {
+        text: root.label;
+        color: Theme.text;
+        font-size: Theme.fs-m;
+        font-weight: root.strong ? 700 : 400;
+        horizontal-stretch: 1;
+    }
+    Text {
+        text: root.value;
+        color: root.strong ? Theme.text : Theme.muted;
+        font-size: Theme.fs-m;
+        font-weight: root.strong ? 700 : 400;
+    }
+}
+
 // RF-15: evolução de um exercício ao longo de um período.
 export component EvolutionScreen inherits Scroll {
     Title {
@@ -282,10 +301,28 @@ export component SettingsScreen inherits Scroll {
             clicked => { Bridge.settings-open(5); }
         }
         CategoryRow {
+            icon: Icons.home;
+            text: "Atalhos da Home";
+            description: "Escolha até 4 atalhos de acesso rápido";
+            clicked => { Bridge.settings-open(9); }
+        }
+        CategoryRow {
+            icon: Icons.list;
+            text: "Recursos opcionais";
+            description: "Ligue ou desligue módulos sem perder dados";
+            clicked => { Bridge.settings-open(8); }
+        }
+        CategoryRow {
             icon: Icons.database;
             text: "Dados e armazenamento";
-            description: "Importar, exportar, backup e restauração";
+            description: "Espaço usado, importar, exportar e planilhas";
             clicked => { Bridge.settings-open(6); }
+        }
+        CategoryRow {
+            icon: Icons.copy;
+            text: "Backups";
+            description: "Backups no aparelho, automático semanal e restauração";
+            clicked => { Bridge.settings-open(10); }
         }
         CategoryRow {
             icon: Icons.info;
@@ -481,8 +518,18 @@ export component SettingsScreen inherits Scroll {
     if Bridge.settings-section == 6: VerticalLayout {
         spacing: 10px;
         Card {
-            SectionTitle { text: "ARMAZENAMENTO LOCAL"; }
-            Body { text: Bridge.data-info; }
+            SectionTitle { text: "ESPAÇO USADO NO APARELHO"; }
+            StorageLine { label: "Banco de dados"; value: Bridge.storage-db; }
+            StorageLine { label: "Backups locais"; value: Bridge.storage-backups; }
+            StorageLine { label: "Arquivos temporários"; value: Bridge.storage-temp; }
+            Rectangle { height: 1px; background: Theme.border; }
+            StorageLine { label: "Total"; value: Bridge.storage-total; strong: true; }
+            Label { text: Bridge.data-info; }
+        }
+        Btn {
+            text: "Limpar arquivos temporários";
+            icon: Icons.trash;
+            clicked => { Bridge.storage-clear-temp(); }
         }
         SectionTitle { text: "PLANILHAS"; }
         Btn {
@@ -501,24 +548,142 @@ export component SettingsScreen inherits Scroll {
             clicked => { Bridge.data-template(); }
         }
         SectionTitle { text: "BACKUP"; }
-        Label { text: "O backup guarda o estado completo do app (fichas, sessões, exercícios e preferências) para restauração. É diferente da planilha. Guarde cópias em local seguro: desinstalar o app apaga os dados locais."; }
+        Label { text: "Backups completos (fichas, sessões, exercícios e preferências) agora ficam em Configurações › Backups, com backup automático semanal no aparelho."; }
         Btn {
-            text: "Criar backup";
-            icon: Icons.download;
-            kind: "primary";
-            clicked => { Bridge.data-backup(); }
-        }
-        Btn {
-            text: "Restaurar backup";
-            icon: Icons.upload;
-            kind: "danger";
-            clicked => { Bridge.data-restore(); }
+            text: "Abrir backups";
+            icon: Icons.copy;
+            clicked => { Bridge.settings-open(10); }
         }
         SectionTitle { text: "CALENDÁRIO"; }
         Btn {
             text: "Exportar calendário (.ics)";
             icon: Icons.calendar;
             clicked => { Bridge.data-ics(); }
+        }
+    }
+    if Bridge.settings-section == 8: VerticalLayout {
+        spacing: 2px;
+        Label { text: "Desligar um recurso só esconde a função: nenhum dado é apagado. Ao religar, tudo volta como estava."; }
+        ToggleRow {
+            text: "Recordes pessoais";
+            description: "Aviso ao bater uma marca, cartão na Home e melhores marcas na Evolução";
+            checked: Bridge.set-mod-records;
+            toggled => { Bridge.pref-toggle("mod-records"); }
+        }
+        ToggleRow {
+            text: "Mapa de intensidade do calendário";
+            description: "Opção de colorir os dias pelo volume treinado";
+            checked: Bridge.set-mod-heatmap;
+            toggled => { Bridge.pref-toggle("mod-heatmap"); }
+        }
+        ToggleRow {
+            text: "Sugestão de progressão";
+            description: "Sugere aumentar a carga no editor da ficha (nunca altera sozinho)";
+            checked: Bridge.set-mod-progression;
+            toggled => { Bridge.pref-toggle("mod-progression"); }
+        }
+        ToggleRow {
+            text: "Gestos";
+            description: "Deslizar no modo foco (série) e no calendário (período). Os botões continuam disponíveis";
+            checked: Bridge.set-mod-gestures;
+            toggled => { Bridge.pref-toggle("mod-gestures"); }
+        }
+        ToggleRow {
+            text: "Animações decorativas";
+            description: "Efeitos que não informam nada (pulso do recorde, entrada de telas vazias)";
+            checked: Bridge.set-mod-decorative;
+            toggled => { Bridge.pref-toggle("mod-decorative"); }
+        }
+        ToggleRow {
+            text: "Lembrete de cópia externa do backup";
+            description: "Cartão na Home quando faz mais de 30 dias sem salvar um backup fora do aparelho";
+            checked: Bridge.set-mod-backup-reminder;
+            toggled => { Bridge.pref-toggle("mod-backup-reminder"); }
+        }
+    }
+    if Bridge.settings-section == 9: VerticalLayout {
+        spacing: 2px;
+        Label { text: "Os atalhos aparecem no topo da Home. Toque em uma posição para trocar; escolher um atalho que já está em outra posição troca os dois de lugar."; }
+        for slot[i] in Bridge.shortcut-slots: ValueRow {
+            text: "Posição " + (i + 1);
+            value: slot;
+            clicked => { Bridge.shortcut-slot(i); }
+        }
+        Btn {
+            text: "Restaurar atalhos padrão";
+            icon: Icons.reset;
+            clicked => { Bridge.shortcuts-reset(); }
+        }
+    }
+    if Bridge.settings-section == 10: VerticalLayout {
+        spacing: 10px;
+        Card {
+            SectionTitle { text: "BACKUPS NO APARELHO"; }
+            Body { text: Bridge.backups-info; }
+        }
+        ToggleRow {
+            text: "Backup automático semanal";
+            description: "Ao abrir o app, se o último tiver 7 dias ou mais. Mantém os 4 mais recentes.";
+            checked: Bridge.set-auto-backup;
+            toggled => { Bridge.pref-toggle("auto-backup"); }
+        }
+        Btn {
+            text: "Criar backup agora";
+            icon: Icons.plus;
+            kind: "primary";
+            clicked => { Bridge.backup-local-create(); }
+        }
+        if Bridge.local-backups.length == 0: EmptyState {
+            icon: Icons.copy;
+            title: "Nenhum backup no aparelho";
+            text: "Crie um backup agora ou aguarde o backup automático semanal.";
+        }
+        for bk in Bridge.local-backups: Card {
+            HorizontalLayout {
+                spacing: 8px;
+                Text {
+                    text: bk.title;
+                    color: Theme.text;
+                    font-size: Theme.fs-m;
+                    font-weight: 700;
+                    horizontal-stretch: 1;
+                    wrap: word-wrap;
+                }
+                Badge { text: bk.automatic ? "Automático" : "Manual"; }
+            }
+            Label { text: bk.subtitle; }
+            HorizontalLayout {
+                spacing: 6px;
+                if bk.valid: Btn {
+                    text: "Restaurar";
+                    compact: true;
+                    clicked => { Bridge.backup-local-restore(bk.index); }
+                }
+                if bk.valid: Btn {
+                    text: "Salvar cópia";
+                    compact: true;
+                    clicked => { Bridge.backup-local-export(bk.index); }
+                }
+                Btn {
+                    text: "Excluir";
+                    compact: true;
+                    kind: "danger";
+                    clicked => { Bridge.backup-local-delete(bk.index); }
+                }
+            }
+        }
+        SectionTitle { text: "BACKUP EM ARQUIVO"; }
+        Label { text: "Backups no aparelho não protegem contra perda, troca ou desinstalação do app. Salve uma cópia fora dele (com senha opcional) ou restaure um arquivo salvo antes."; }
+        Btn {
+            text: "Salvar backup em arquivo…";
+            icon: Icons.download;
+            clicked => { Bridge.data-backup(); }
+        }
+        Btn {
+            text: "Restaurar de um arquivo…";
+            icon: Icons.upload;
+            kind: "danger";
+            clicked => { Bridge.data-restore(); }
         }
     }
     if Bridge.settings-section == 7: VerticalLayout {
