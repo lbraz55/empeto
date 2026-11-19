@@ -232,6 +232,18 @@ export component ExerciseDialog inherits DialogFrame {
                 placeholder: "Ex.: Empurrar horizontal";
                 text <=> Bridge.exf-pattern;
             }
+            Field {
+                label: "Técnica de execução / descrição";
+                placeholder: "Ex.: escápulas aduzidas, descer até o peito";
+                multiline: true;
+                text <=> Bridge.exf-description;
+            }
+            Field {
+                label: "Observações pessoais / ajustes do aparelho";
+                placeholder: "Ex.: banco no furo 3";
+                multiline: true;
+                text <=> Bridge.exf-notes;
+            }
             if Bridge.exf-editing: SectionTitle { text: "ALTERNATIVAS CADASTRADAS"; }
             if Bridge.exf-editing: Text {
                 text: "Aparecem primeiro ao substituir este exercício na sessão. São sugestões suas, não equivalências garantidas.";

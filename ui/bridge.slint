@@ -1,9 +1,9 @@
 // Ponte entre a interface e a lógica em Rust. O Rust preenche propriedades e trata callbacks.
 
-export struct PlanRow { id: int, name: string, subtitle: string, active: bool }
+export struct PlanRow { id: int, name: string, subtitle: string, active: bool, favorite: bool }
 export struct PlanExRow { id: int, name: string, detail: string, notes: string }
 export struct DayRow { id: int, name: string, subtitle: string, exercises: [PlanExRow] }
-export struct ExRow { id: int, name: string, detail: string, note: string, archived: bool }
+export struct ExRow { id: int, name: string, detail: string, note: string, archived: bool, favorite: bool, custom: bool }
 export struct SetRow { id: int, number: int, planned: string, load: string, reps: string, done: bool, hint: string }
 export struct SessionExRow {
     id: int,
@@ -16,6 +16,7 @@ export struct SessionExRow {
     planned: string,
     rest: int,
     notes: string,
+    technique: string,
     completed: bool,
     done-sets: int,
     sets: [SetRow],
@@ -57,6 +58,11 @@ export global Bridge {
     callback delete-plan(int);
     callback toggle-plan-active(int);
     callback open-library();
+    callback plan-favorite(int);
+    callback open-templates();
+    // Reordenação por arrastar (4.4): id do item e deslocamento em posições.
+    callback drag-plan-ex(int, int);
+    callback drag-day(int, int);
 
     // Editor de ficha
     in-out property <int> edit-plan-id;
@@ -105,6 +111,16 @@ export global Bridge {
     in-out property <string> lib-equipment;
     in-out property <string> lib-pattern;
     in-out property <bool> lib-show-archived;
+    in-out property <string> lib-type;
+    in-out property <bool> lib-favorites;
+    in-out property <bool> lib-custom;
+    in-out property <bool> lib-filters-open;
+    in-out property <int> lib-active-filters;
+    in-out property <string> lib-count;
+    in-out property <bool> lib-has-more;
+    callback lib-toggle(string);
+    callback lib-more();
+    callback lib-favorite(int);
     in-out property <[ExRow]> library;
     callback lib-search-changed(string);
     callback lib-filter(string);
@@ -122,6 +138,9 @@ export global Bridge {
     in-out property <string> exf-type;
     in-out property <string> exf-equipment;
     in-out property <string> exf-pattern;
+    in-out property <string> exf-description;
+    in-out property <string> exf-notes;
+    in-out property <bool> exf-favorite;
     in-out property <bool> exf-editing;
     in-out property <bool> exf-archived;
     callback exf-save(string, string, string, string, string);

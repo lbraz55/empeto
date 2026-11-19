@@ -108,6 +108,13 @@ pub struct Exercise {
     pub equipment: String,
     pub movement_pattern: String,
     pub archived: bool,
+    /// Técnica de execução / descrição (4.5).
+    pub description: String,
+    /// Observações pessoais, ajustes de equipamento (4.5).
+    pub notes: String,
+    pub favorite: bool,
+    /// Criado pelo usuário (não faz parte da biblioteca inicial).
+    pub custom: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -117,6 +124,8 @@ pub struct ExerciseInput {
     pub exercise_type: String,
     pub equipment: String,
     pub movement_pattern: String,
+    pub description: String,
+    pub notes: String,
 }
 
 impl ExerciseInput {
@@ -131,6 +140,8 @@ impl ExerciseInput {
             exercise_type: clean_text(&self.exercise_type, 40),
             equipment: clean_text(&self.equipment, 40),
             movement_pattern: clean_text(&self.movement_pattern, 40),
+            description: clean_notes(&self.description),
+            notes: clean_notes(&self.notes),
         })
     }
 }
@@ -142,6 +153,7 @@ pub struct Plan {
     pub description: String,
     pub schedule_type: ScheduleType,
     pub active: bool,
+    pub favorite: bool,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -392,6 +404,9 @@ pub struct SnapshotExercise {
     pub target: Target,
     pub rest_seconds: i64,
     pub notes: String,
+    /// Técnica de execução no momento da sessão (preservada no snapshot — 4.5).
+    #[serde(default)]
+    pub description: String,
 }
 
 impl PlanSnapshot {
@@ -422,6 +437,7 @@ impl PlanSnapshot {
                     target: pe.target,
                     rest_seconds: pe.rest_seconds,
                     notes: pe.notes.clone(),
+                    description: pe.exercise.description.clone(),
                 })
                 .collect(),
         }

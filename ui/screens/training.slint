@@ -2,6 +2,7 @@ import { Theme, Icons } from "../theme.slint";
 import { Bridge, SetRow, SessionExRow } from "../bridge.slint";
 import { RestTimerIndicator } from "../components/rest_timer_indicator.slint";
 import { SessionProgress } from "../components/session_progress.slint";
+import { StarBtn, DragHandle } from "../components/widgets.slint";
 import { Btn, IconBtn, Card, Label, Title, SectionTitle, Body, Scroll, Segmented, Badge, Field, ToggleRow, Chip, Icon, Divider } from "../components/widgets.slint";
 import { EmptyState } from "../components/empty_state.slint";
 
@@ -13,7 +14,7 @@ export component PlanEditorScreen inherits Scroll {
         text <=> Bridge.edit-plan-name;
     }
     Field {
-        label: "Descrição (opcional)";
+        label: "Objetivo da ficha (opcional)";
         placeholder: "Objetivo, período, observações";
         text <=> Bridge.edit-plan-desc;
     }
@@ -50,6 +51,10 @@ export component PlanEditorScreen inherits Scroll {
                 Title { text: d.name; }
                 if d.subtitle != "": Label { text: d.subtitle; }
             }
+            DragHandle {
+                step: 140px;
+                dropped(dd) => { Bridge.drag-day(d.id, dd); }
+            }
             IconBtn {
                 icon: Icons.up;
                 label: "Mover dia para cima";
@@ -75,6 +80,7 @@ export component PlanEditorScreen inherits Scroll {
         for e[i] in d.exercises: Rectangle {
             min-height: Theme.touch + 8px;
             background: ta.pressed ? Theme.surface3 : transparent;
+            border-width: 0px;
             border-radius: 10px;
             accessible-role: button;
             accessible-label: "Editar " + e.name;
@@ -85,9 +91,13 @@ export component PlanEditorScreen inherits Scroll {
             HorizontalLayout {
                 padding-left: 4px;
                 spacing: 0px;
+                ex-handle := DragHandle {
+                    step: 60px;
+                    dropped(dd) => { Bridge.drag-plan-ex(e.id, dd); }
+                }
                 Text {
                     width: 24px;
-                    text: (i + 1) + ".";
+                    text: ex-handle.delta == 0 ? (i + 1) + "." : "→" + Math.max(1, Math.min(d.exercises.length, i + 1 + ex-handle.delta));
                     color: Theme.faint;
                     font-size: Theme.fs-s;
                     vertical-alignment: center;
@@ -138,59 +148,103 @@ export component PlanEditorScreen inherits Scroll {
 }
 
 // RF-09: biblioteca pesquisável por grupo muscular, equipamento e padrão de movimento.
+// Biblioteca aprimorada (4.1–4.3): busca, filtros em área expansível, favoritos, personalizados.
 export component LibraryScreen inherits Scroll {
     if Bridge.lib-mode == "pick": Label { text: "Toque em um exercício para selecioná-lo."; }
     Field {
-        placeholder: "Buscar por nome, músculo, equipamento…";
+        placeholder: "Buscar por nome, músculo, equipamento, técnica…";
         input-type: InputType.text;
         text <=> Bridge.lib-search;
         edited(t) => { Bridge.lib-search-changed(t); }
     }
     HorizontalLayout {
-        spacing: 6px;
-        Chip {
-            horizontal-stretch: 1;
-            text: Bridge.lib-muscle == "" ? "Músculo" : Bridge.lib-muscle;
-            selected: Bridge.lib-muscle != "";
-            clicked => { Bridge.lib-filter("muscle"); }
-        }
-        Chip {
-            horizontal-stretch: 1;
-            text: Bridge.lib-equipment == "" ? "Equipamento" : Bridge.lib-equipment;
-            selected: Bridge.lib-equipment != "";
-            clicked => { Bridge.lib-filter("equipment"); }
-        }
-        Chip {
-            horizontal-stretch: 1;
-            text: Bridge.lib-pattern == "" ? "Movimento" : Bridge.lib-pattern;
-            selected: Bridge.lib-pattern != "";
-            clicked => { Bridge.lib-filter("pattern"); }
-        }
-    }
-    HorizontalLayout {
         spacing: 8px;
         Btn {
-            text: "Novo exercício";
+            text: Bridge.lib-active-filters > 0 ? "Filtros (" + Bridge.lib-active-filters + ")" : "Filtros";
+            icon: Icons.filter;
+            kind: Bridge.lib-filters-open ? "primary" : "secondary";
+            accessible-label: (Bridge.lib-filters-open ? "Ocultar filtros" : "Mostrar filtros") + ", " + Bridge.lib-active-filters + " ativo(s)";
+            clicked => { Bridge.lib-toggle("open"); }
+        }
+        Btn {
+            text: "Novo";
             icon: Icons.plus;
-            kind: "primary";
             clicked => { Bridge.lib-new(); }
         }
-        if Bridge.lib-muscle != "" || Bridge.lib-equipment != "" || Bridge.lib-pattern != "" || Bridge.lib-search != "": Btn {
-            text: "Limpar";
+    }
+    if Bridge.lib-filters-open: Card {
+        HorizontalLayout {
+            spacing: 6px;
+            Chip {
+                horizontal-stretch: 1;
+                text: Bridge.lib-muscle == "" ? "Músculo" : Bridge.lib-muscle;
+                selected: Bridge.lib-muscle != "";
+                clicked => { Bridge.lib-filter("muscle"); }
+            }
+            Chip {
+                horizontal-stretch: 1;
+                text: Bridge.lib-equipment == "" ? "Equipamento" : Bridge.lib-equipment;
+                selected: Bridge.lib-equipment != "";
+                clicked => { Bridge.lib-filter("equipment"); }
+            }
+        }
+        HorizontalLayout {
+            spacing: 6px;
+            Chip {
+                horizontal-stretch: 1;
+                text: Bridge.lib-type == "" ? "Tipo" : Bridge.lib-type;
+                selected: Bridge.lib-type != "";
+                clicked => { Bridge.lib-filter("type"); }
+            }
+            Chip {
+                horizontal-stretch: 1;
+                text: Bridge.lib-pattern == "" ? "Movimento" : Bridge.lib-pattern;
+                selected: Bridge.lib-pattern != "";
+                clicked => { Bridge.lib-filter("pattern"); }
+            }
+        }
+        HorizontalLayout {
+            spacing: 6px;
+            Chip {
+                horizontal-stretch: 1;
+                text: (Bridge.lib-favorites ? "★ " : "☆ ") + "Favoritos";
+                selected: Bridge.lib-favorites;
+                clicked => { Bridge.lib-toggle("favorites"); }
+            }
+            Chip {
+                horizontal-stretch: 1;
+                text: "Personalizados";
+                selected: Bridge.lib-custom;
+                clicked => { Bridge.lib-toggle("custom"); }
+            }
+            if Bridge.lib-mode == "browse": Chip {
+                horizontal-stretch: 1;
+                text: "Arquivados";
+                selected: Bridge.lib-show-archived;
+                clicked => { Bridge.lib-toggle-archived(); }
+            }
+        }
+        if Bridge.lib-active-filters > 0 || Bridge.lib-search != "": Btn {
+            text: "Limpar filtros";
             icon: Icons.close;
+            compact: true;
             clicked => { Bridge.lib-clear-filters(); }
         }
     }
-    if Bridge.lib-mode == "browse": ToggleRow {
-        text: "Mostrar arquivados";
-        checked: Bridge.lib-show-archived;
-        toggled => { Bridge.lib-toggle-archived(); }
+    Label { text: Bridge.lib-count; }
+    if Bridge.library.length == 0: EmptyState {
+        icon: Bridge.lib-favorites ? Icons.star : Icons.search;
+        title: Bridge.lib-favorites ? "Adicione exercícios aos favoritos" : "Nenhum exercício encontrado";
+        text: Bridge.lib-favorites
+            ? "Toque na estrela de um exercício para acessá-lo rapidamente aqui."
+            : "Nenhum exercício corresponde à busca e aos filtros. Ajuste os filtros ou crie um exercício personalizado.";
+        action: Bridge.lib-favorites ? "Ver todos" : "Limpar filtros";
+        action-clicked => { Bridge.lib-clear-filters(); }
     }
-    Label { text: Bridge.library.length + " exercício(s)"; }
     for e in Bridge.library: Card {
         clickable: true;
         accessible-role: button;
-        accessible-label: e.name;
+        accessible-label: e.name + (e.favorite ? ", favorito" : "") + (e.custom ? ", personalizado" : "") + (e.archived ? ", arquivado" : "");
         clicked => { Bridge.lib-item(e.id); }
         HorizontalLayout {
             spacing: 4px;
@@ -202,10 +256,17 @@ export component LibraryScreen inherits Scroll {
                     font-weight: 600;
                 }
                 Label { text: e.detail; }
-                if e.archived: HorizontalLayout {
+                if e.archived || e.custom: HorizontalLayout {
                     alignment: start;
-                    Badge { text: "Arquivado"; }
+                    spacing: 4px;
+                    if e.custom: Badge { text: "Personalizado"; }
+                    if e.archived: Badge { text: "Arquivado"; }
                 }
+            }
+            StarBtn {
+                on: e.favorite;
+                name: e.name;
+                clicked => { Bridge.lib-favorite(e.id); }
             }
             if Bridge.lib-mode == "browse": IconBtn {
                 icon: Icons.edit;
@@ -213,6 +274,10 @@ export component LibraryScreen inherits Scroll {
                 clicked => { Bridge.lib-edit(e.id); }
             }
         }
+    }
+    if Bridge.lib-has-more: Btn {
+        text: "Carregar mais";
+        clicked => { Bridge.lib-more(); }
     }
 }
 
@@ -462,6 +527,15 @@ export component SessionScreen inherits Rectangle {
                 clicked => { Bridge.session-substitute(root.cur.id); }
             }
             if root.cur.notes != "": Label { text: "Obs.: " + root.cur.notes; }
+            if root.cur.technique != "": Card {
+                Text {
+                    text: "TÉCNICA E OBSERVAÇÕES";
+                    color: Theme.muted;
+                    font-size: Theme.fs-xs;
+                    font-weight: 700;
+                }
+                Body { text: root.cur.technique; }
+            }
             Divider { }
             Btn {
                 text: "Observações da sessão";

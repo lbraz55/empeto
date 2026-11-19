@@ -78,6 +78,7 @@ enum ChoiceCtx {
     ImportSheet,
     ImportMap(usize),
     ExportKind,
+    Template,
 }
 
 #[derive(Debug, Clone)]
@@ -93,6 +94,7 @@ enum TextCtx {
 enum InfoCtx {
     NotifPermission { then_enable: bool },
     ActiveSession,
+    Template(&'static str),
     Plain,
 }
 
@@ -131,6 +133,8 @@ pub struct Controller {
     day_ctx: Option<(Option<Id>, u8)>,
     exf_id: Option<Id>,
     lib_pick: bool,
+    /// Quantos itens da biblioteca mostrar (carregamento incremental).
+    lib_limit: usize,
     /// Escolhendo na biblioteca uma alternativa para este exercício.
     alt_for: Option<Id>,
     /// Arquivo de backup aguardando senha para validar.
@@ -513,6 +517,19 @@ impl Controller {
             }
         }
 
+        let favs: Vec<&PlanFull> = plans.iter().filter(|p| p.plan.favorite).collect();
+        if let Some(first) = favs.first() {
+            let names = favs.iter().map(|p| p.plan.name.clone()).collect::<Vec<_>>();
+            cards.push(card(
+                "favorite",
+                "ACESSO RÁPIDO · FICHAS FAVORITAS",
+                names.iter().take(3).cloned().collect::<Vec<_>>().join(" · "),
+                if favs.len() > 3 { format!("+{} favorita(s)", favs.len() - 3) } else { "Toque para abrir".into() },
+                "Abrir",
+                first.plan.id,
+            ));
+        }
+
         let mut upcoming = Vec::new();
         for i in 1..=7 {
             let d = today + Duration::days(i);
@@ -602,6 +619,7 @@ impl Controller {
             "calendar" => self.navigate(P_CAL),
             "last" => self.open_detail(id),
             "week" => self.navigate(P_HIST),
+            "favorite" => self.open_plan(id),
             _ => {}
         }
     }
@@ -632,6 +650,7 @@ impl Controller {
                     name: ss(&p.plan.name),
                     subtitle: ss(format!("{} dia(s) · {} exercício(s) · {}", p.days.len(), n, org)),
                     active: p.plan.active,
+                    favorite: p.plan.favorite,
                 }
             })
             .collect();
@@ -906,14 +925,34 @@ impl Controller {
             muscle: b.get_lib_muscle().to_string(),
             equipment: b.get_lib_equipment().to_string(),
             pattern: b.get_lib_pattern().to_string(),
-            include_archived: b.get_lib_show_archived() && !self.lib_pick,
+            exercise_type: b.get_lib_type().to_string(),
+            favorites_only: b.get_lib_favorites(),
+            custom_only: b.get_lib_custom(),
+            include_archived: false,
+            archived_only: b.get_lib_show_archived() && !self.lib_pick,
         })
     }
 
     fn refresh_library(&mut self) -> AppResult<()> {
         let f = self.lib_filter_struct();
-        let rows: Vec<ExRow> = self.db.list_exercises(&f)?.into_iter().map(|e| ex_row(&e, "")).collect();
-        self.with_bridge(|b| b.set_library(model(rows)));
+        let page = self.db.list_exercises_page(&f, self.lib_limit)?;
+        let active = [!f.muscle.is_empty(), !f.equipment.is_empty(), !f.pattern.is_empty(), !f.exercise_type.is_empty(), f.favorites_only, f.custom_only, f.archived_only]
+            .iter()
+            .filter(|x| **x)
+            .count() as i32;
+        let count = if page.items.len() < page.total {
+            format!("Mostrando {} de {} exercício(s)", page.items.len(), page.total)
+        } else {
+            format!("{} exercício(s)", page.total)
+        };
+        let has_more = page.items.len() < page.total;
+        let rows: Vec<ExRow> = page.items.iter().map(|e| ex_row(e, "")).collect();
+        self.with_bridge(|b| {
+            b.set_library(model(rows));
+            b.set_lib_active_filters(active);
+            b.set_lib_count(ss(count));
+            b.set_lib_has_more(has_more);
+        });
         Ok(())
     }
 
@@ -967,6 +1006,9 @@ impl Controller {
             b.set_exf_type(ss(&e.exercise_type));
             b.set_exf_equipment(ss(&e.equipment));
             b.set_exf_pattern(ss(&e.movement_pattern));
+            b.set_exf_description(ss(&e.description));
+            b.set_exf_notes(ss(&e.notes));
+            b.set_exf_favorite(e.favorite);
             b.set_exf_editing(id.is_some());
             b.set_exf_archived(e.archived);
             b.set_dialog(ss("exercise"));
@@ -1007,6 +1049,7 @@ impl Controller {
         let current = self.with_bridge(|b| match field {
             "muscle" => b.get_lib_muscle(),
             "equipment" => b.get_lib_equipment(),
+            "type" => b.get_lib_type(),
             _ => b.get_lib_pattern(),
         });
         let mut opts = vec!["Todos".to_string()];
@@ -1015,6 +1058,7 @@ impl Controller {
         let title = match field {
             "muscle" => "Grupo muscular",
             "equipment" => "Equipamento",
+            "type" => "Tipo de exercício",
             _ => "Padrão de movimento",
         };
         self.ask_choice(ChoiceCtx::LibFilter(field, values), title, "", opts, sel);
@@ -1118,6 +1162,11 @@ impl Controller {
                 planned: ss(planned),
                 rest: e.rest_seconds as i32,
                 notes: ss(&e.notes),
+                technique: ss(e
+                    .performed_exercise_id
+                    .and_then(|id| self.db.get_exercise(id).ok())
+                    .map(|x| [x.description, x.notes].iter().filter(|t| !t.is_empty()).cloned().collect::<Vec<_>>().join("\n"))
+                    .unwrap_or_default()),
                 completed: e.completed,
                 done_sets: done_sets as i32,
                 sets: model(sets),
@@ -2380,8 +2429,10 @@ impl Controller {
                 self.with_bridge(|b| match field {
                     "muscle" => b.set_lib_muscle(ss(&v)),
                     "equipment" => b.set_lib_equipment(ss(&v)),
+                    "type" => b.set_lib_type(ss(&v)),
                     _ => b.set_lib_pattern(ss(&v)),
                 });
+                self.lib_limit = LIB_PAGE;
                 let r = self.refresh_library();
                 self.report(r);
             }
@@ -2402,6 +2453,24 @@ impl Controller {
                     st.mapping.set(col, f);
                 }
                 self.rebuild_import_preview();
+            }
+            ChoiceCtx::Template => {
+                let Some(t) = crate::training::templates::TEMPLATES.get(i as usize) else { return };
+                match self.db.template_preview(t.code) {
+                    Ok(p) => {
+                        let mut text = p.text;
+                        if !p.missing_exercises.is_empty() {
+                            text.push_str(&format!(
+                                "\nAtenção: {} exercício(s) não estão na biblioteca e serão criados como personalizados: {}.",
+                                p.missing_exercises.len(),
+                                p.missing_exercises.join(", ")
+                            ));
+                        }
+                        text.push_str("\nA ficha criada é independente: você poderá editar exercícios, séries e cargas.");
+                        self.show_info(InfoCtx::Template(t.code), &format!("Modelo {}", t.name), &text, "Criar ficha", "Cancelar");
+                    }
+                    Err(e) => self.toast(e.to_string()),
+                }
             }
             ChoiceCtx::ExportKind => {
                 let kind = match i {
@@ -2900,6 +2969,14 @@ impl Controller {
                 self.platform.request_notification_permission();
             }
             Some(InfoCtx::ActiveSession) => self.open_session(),
+            Some(InfoCtx::Template(code)) => match self.db.create_from_template(code) {
+                Ok(id) => {
+                    self.plan_id = Some(id);
+                    self.navigate(P_EDITOR);
+                    self.toast("Ficha criada a partir do modelo. Ajuste à vontade — o modelo não muda.");
+                }
+                Err(e) => self.toast(e.to_string()),
+            },
             _ => {}
         }
     }
@@ -2954,6 +3031,7 @@ impl Controller {
     }
 }
 
+const LIB_PAGE: usize = 40;
 const LOAD_STEPS: [i64; 6] = [500, 1_000, 1_250, 2_000, 2_500, 5_000];
 const TEXT_SIZES: [&str; 3] = ["Normal", "Grande", "Extragrande"];
 const DENSITIES: [&str; 3] = ["Compacta", "Padrão", "Espaçosa"];
@@ -2990,7 +3068,15 @@ fn ex_row(e: &Exercise, note: &str) -> ExRow {
         .cloned()
         .collect::<Vec<_>>()
         .join(" · ");
-    ExRow { id: e.id as i32, name: ss(&e.name), detail: ss(detail), note: ss(note), archived: e.archived }
+    ExRow {
+        id: e.id as i32,
+        name: ss(&e.name),
+        detail: ss(detail),
+        note: ss(note),
+        archived: e.archived,
+        favorite: e.favorite,
+        custom: e.custom,
+    }
 }
 
 fn target_text(t: &Target, rest: i64, unit: LoadUnit) -> String {
@@ -3037,6 +3123,7 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         day_ctx: None,
         exf_id: None,
         lib_pick: false,
+        lib_limit: LIB_PAGE,
         alt_for: None,
         restore_path: None,
         confirm: None,
@@ -3219,6 +3306,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         let field: &'static str = match f.as_str() {
             "muscle" => "muscle",
             "equipment" => "equipment",
+            "type" => "type",
             _ => "pattern",
         };
         c.lib_choose_filter(field);
@@ -3229,9 +3317,67 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
             b.set_lib_muscle(ss(""));
             b.set_lib_equipment(ss(""));
             b.set_lib_pattern(ss(""));
+            b.set_lib_type(ss(""));
+            b.set_lib_favorites(false);
+            b.set_lib_custom(false);
+            b.set_lib_show_archived(false);
         });
+        c.lib_limit = LIB_PAGE;
         let r = c.refresh_library();
         c.report(r);
+    });
+    cb!(b, ctrl, on_lib_toggle, |c, k: SharedString| {
+        c.with_bridge(|b| match k.as_str() {
+            "open" => b.set_lib_filters_open(!b.get_lib_filters_open()),
+            "favorites" => b.set_lib_favorites(!b.get_lib_favorites()),
+            "custom" => b.set_lib_custom(!b.get_lib_custom()),
+            _ => {}
+        });
+        c.lib_limit = LIB_PAGE;
+        let r = c.refresh_library();
+        c.report(r);
+    });
+    cb!(b, ctrl, on_lib_more, |c| {
+        c.lib_limit += LIB_PAGE;
+        let r = c.refresh_library();
+        c.report(r);
+    });
+    cb!(b, ctrl, on_lib_favorite, |c, id: i32| {
+        let r = c.db.get_exercise(id as Id).and_then(|e| c.db.set_exercise_favorite(e.id, !e.favorite));
+        c.report(r);
+        let r = c.refresh_library();
+        c.report(r);
+    });
+    cb!(b, ctrl, on_plan_favorite, |c, id: i32| {
+        let r = c.db.get_plan(id as Id).and_then(|p| c.db.set_plan_favorite(p.id, !p.favorite));
+        c.report(r);
+        let r = c.refresh_plans();
+        c.report(r);
+    });
+    cb!(b, ctrl, on_open_templates, |c| {
+        let opts = crate::training::templates::TEMPLATES
+            .iter()
+            .map(|t| format!("{} — {}", t.name, t.description))
+            .collect();
+        c.ask_choice(ChoiceCtx::Template, "Modelos de fichas", "Escolha um modelo para ver a prévia. Nada é criado antes de confirmar.", opts, -1);
+    });
+    cb!(b, ctrl, on_drag_plan_ex, |c, id: i32, delta: i32| {
+        let r = c.db.get_plan_exercise(id as Id).and_then(|pe| {
+            let list = c.db.list_plan_exercises(pe.schedule_id)?;
+            let idx = list.iter().position(|x| x.id == pe.id).unwrap_or(0) as i64;
+            c.db.move_plan_exercise_to(pe.id, (idx + delta as i64).max(0) as usize)
+        });
+        c.report(r);
+        c.report_refresh_editor();
+    });
+    cb!(b, ctrl, on_drag_day, |c, id: i32, delta: i32| {
+        let r = c.db.get_day(id as Id).and_then(|d| {
+            let list = c.db.list_days(d.plan_id)?;
+            let idx = list.iter().position(|x| x.id == d.id).unwrap_or(0) as i64;
+            c.db.move_day_to(d.id, (idx + delta as i64).max(0) as usize)
+        });
+        c.report(r);
+        c.report_refresh_editor();
     });
     cb!(b, ctrl, on_lib_toggle_archived, |c| {
         c.with_bridge(|b| b.set_lib_show_archived(!b.get_lib_show_archived()));
@@ -3264,6 +3410,8 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
             exercise_type: t.to_string(),
             equipment: e.to_string(),
             movement_pattern: p.to_string(),
+            description: c.with_bridge(|b| b.get_exf_description().to_string()),
+            notes: c.with_bridge(|b| b.get_exf_notes().to_string()),
         });
     });
 

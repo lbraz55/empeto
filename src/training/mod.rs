@@ -1,6 +1,7 @@
 //! Treinos: biblioteca de exercícios, fichas, dias e exercícios da ficha (RF-01..RF-03, RF-09).
 
 pub mod session;
+pub mod templates;
 
 use crate::domain::*;
 use crate::persistence::Db;
@@ -15,10 +16,17 @@ fn row_exercise(r: &Row, base: usize) -> rusqlite::Result<Exercise> {
         equipment: r.get(base + 4)?,
         movement_pattern: r.get(base + 5)?,
         archived: r.get::<_, i64>(base + 6)? != 0,
+        description: r.get(base + 7)?,
+        notes: r.get(base + 8)?,
+        favorite: r.get::<_, i64>(base + 9)? != 0,
+        custom: r.get::<_, i64>(base + 10)? != 0,
     })
 }
 
-const EX_COLS: &str = "e.id, e.name, e.muscle_focus, e.exercise_type, e.equipment, e.movement_pattern, e.archived";
+const EX_COLS: &str = "e.id, e.name, e.muscle_focus, e.exercise_type, e.equipment, e.movement_pattern, e.archived, \
+     e.description, e.notes, e.is_favorite, e.is_custom";
+/// Quantidade de colunas de EX_COLS (para ler colunas extras após o exercício).
+const EX_N: usize = 11;
 
 fn row_plan(r: &Row) -> rusqlite::Result<Plan> {
     Ok(Plan {
@@ -29,39 +37,47 @@ fn row_plan(r: &Row) -> rusqlite::Result<Plan> {
         active: r.get::<_, i64>(4)? != 0,
         created_at: r.get(5)?,
         updated_at: r.get(6)?,
+        favorite: r.get::<_, i64>(7)? != 0,
     })
 }
 
-const PLAN_COLS: &str = "id, name, description, schedule_type, active, created_at, updated_at";
+const PLAN_COLS: &str = "id, name, description, schedule_type, active, created_at, updated_at, is_favorite";
 
-/// Filtro de busca da biblioteca de exercícios (RF-09).
+/// Filtro de busca da biblioteca de exercícios (RF-09, 4.3).
 #[derive(Debug, Clone, Default)]
 pub struct ExerciseFilter {
     pub text: String,
     pub muscle: String,
     pub equipment: String,
     pub pattern: String,
+    pub exercise_type: String,
+    pub favorites_only: bool,
+    pub custom_only: bool,
+    /// Incluir arquivados junto com os ativos.
     pub include_archived: bool,
+    /// Mostrar somente arquivados.
+    pub archived_only: bool,
 }
 
 impl ExerciseFilter {
-    fn matches(&self, e: &Exercise) -> bool {
-        if !self.include_archived && e.archived {
-            return false;
-        }
-        let eq = |f: &str, v: &str| f.is_empty() || normalize(f) == normalize(v);
-        if !eq(&self.muscle, &e.muscle_focus) || !eq(&self.equipment, &e.equipment) || !eq(&self.pattern, &e.movement_pattern) {
-            return false;
-        }
+    /// Busca textual sem acentos (feita em Rust; os demais filtros vão no SQL).
+    fn text_matches(&self, e: &Exercise) -> bool {
         if self.text.trim().is_empty() {
             return true;
         }
         let hay = normalize(&format!(
-            "{} {} {} {} {}",
-            e.name, e.muscle_focus, e.exercise_type, e.equipment, e.movement_pattern
+            "{} {} {} {} {} {}",
+            e.name, e.muscle_focus, e.exercise_type, e.equipment, e.movement_pattern, e.description
         ));
         normalize(&self.text).split_whitespace().all(|w| hay.contains(w))
     }
+}
+
+/// Página de resultados da biblioteca (carregamento incremental — 4.3).
+#[derive(Debug, Clone, Default)]
+pub struct ExercisePage {
+    pub items: Vec<Exercise>,
+    pub total: usize,
 }
 
 impl Db {
@@ -70,13 +86,71 @@ impl Db {
     // ----------------------------------------------------------------------
 
     pub fn list_exercises(&self, filter: &ExerciseFilter) -> AppResult<Vec<Exercise>> {
-        let mut st = self
-            .conn
-            .prepare(&format!("SELECT {EX_COLS} FROM exercise e ORDER BY e.name COLLATE NOCASE"))?;
-        let all = st.query_map([], |r| row_exercise(r, 0))?.collect::<Result<Vec<_>, _>>()?;
-        let mut v: Vec<Exercise> = all.into_iter().filter(|e| filter.matches(e)).collect();
-        v.sort_by_key(|e| normalize(&e.name));
-        Ok(v)
+        Ok(self.list_exercises_page(filter, usize::MAX)?.items)
+    }
+
+    /// Lista com filtros aplicados no SQL e até `limit` itens (o total é informado).
+    pub fn list_exercises_page(&self, filter: &ExerciseFilter, limit: usize) -> AppResult<ExercisePage> {
+        let mut conds: Vec<String> = Vec::new();
+        let mut args: Vec<String> = Vec::new();
+        if filter.archived_only {
+            conds.push("e.archived = 1".into());
+        } else if !filter.include_archived {
+            conds.push("e.archived = 0".into());
+        }
+        if filter.favorites_only {
+            conds.push("e.is_favorite = 1".into());
+        }
+        if filter.custom_only {
+            conds.push("e.is_custom = 1".into());
+        }
+        for (col, v) in [
+            ("muscle_focus", &filter.muscle),
+            ("equipment", &filter.equipment),
+            ("movement_pattern", &filter.pattern),
+            ("exercise_type", &filter.exercise_type),
+        ] {
+            if !v.trim().is_empty() {
+                args.push(v.trim().to_string());
+                conds.push(format!("e.{col} = ?{} COLLATE NOCASE", args.len()));
+            }
+        }
+        let where_ = if conds.is_empty() { String::new() } else { format!("WHERE {}", conds.join(" AND ")) };
+        let mut st = self.conn.prepare(&format!(
+            "SELECT {EX_COLS} FROM exercise e {where_} ORDER BY e.is_favorite DESC, e.name COLLATE NOCASE"
+        ))?;
+        let rows = st
+            .query_map(rusqlite::params_from_iter(args.iter()), |r| row_exercise(r, 0))?
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut v: Vec<Exercise> = rows.into_iter().filter(|e| filter.text_matches(e)).collect();
+        v.sort_by_key(|e| (!e.favorite, normalize(&e.name)));
+        let total = v.len();
+        v.truncate(limit);
+        Ok(ExercisePage { items: v, total })
+    }
+
+    pub fn set_exercise_favorite(&self, id: Id, favorite: bool) -> AppResult<()> {
+        let n = self.conn.execute(
+            "UPDATE exercise SET is_favorite = ?2, updated_at = ?3 WHERE id = ?1",
+            params![id, favorite as i64, now_ms()],
+        )?;
+        if n == 0 {
+            return Err(AppError::NotFound("Exercício não encontrado.".into()));
+        }
+        Ok(())
+    }
+
+    /// Favoritar não altera o conteúdo da ficha (apenas o marcador).
+    pub fn set_plan_favorite(&self, id: Id, favorite: bool) -> AppResult<()> {
+        let n = self.conn.execute("UPDATE workout_plan SET is_favorite = ?2 WHERE id = ?1", params![id, favorite as i64])?;
+        if n == 0 {
+            return Err(AppError::NotFound("Ficha não encontrada.".into()));
+        }
+        Ok(())
+    }
+
+    pub fn favorite_plans(&self) -> AppResult<Vec<Plan>> {
+        Ok(self.list_plans()?.into_iter().filter(|p| p.favorite).collect())
     }
 
     pub fn get_exercise(&self, id: Id) -> AppResult<Exercise> {
@@ -103,9 +177,10 @@ impl Db {
         let v = input.validated()?;
         let now = now_ms();
         self.conn.execute(
-            "INSERT INTO exercise(name, muscle_focus, exercise_type, equipment, movement_pattern, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)",
-            params![v.name, v.muscle_focus, v.exercise_type, v.equipment, v.movement_pattern, now],
+            "INSERT INTO exercise(name, muscle_focus, exercise_type, equipment, movement_pattern, description, notes,
+               is_custom, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8, ?8)",
+            params![v.name, v.muscle_focus, v.exercise_type, v.equipment, v.movement_pattern, v.description, v.notes, now],
         )?;
         Ok(self.conn.last_insert_rowid())
     }
@@ -114,9 +189,9 @@ impl Db {
     pub fn update_exercise(&self, id: Id, input: &ExerciseInput) -> AppResult<()> {
         let v = input.validated()?;
         let n = self.conn.execute(
-            "UPDATE exercise SET name=?2, muscle_focus=?3, exercise_type=?4, equipment=?5, movement_pattern=?6, updated_at=?7
-             WHERE id = ?1",
-            params![id, v.name, v.muscle_focus, v.exercise_type, v.equipment, v.movement_pattern, now_ms()],
+            "UPDATE exercise SET name=?2, muscle_focus=?3, exercise_type=?4, equipment=?5, movement_pattern=?6,
+               description=?7, notes=?8, updated_at=?9 WHERE id = ?1",
+            params![id, v.name, v.muscle_focus, v.exercise_type, v.equipment, v.movement_pattern, v.description, v.notes, now_ms()],
         )?;
         if n == 0 {
             return Err(AppError::NotFound("Exercício não encontrado.".into()));
@@ -182,7 +257,7 @@ impl Db {
             "SELECT {EX_COLS}, a.reason FROM exercise_alternative a JOIN exercise e ON e.id = a.alternative_id
              WHERE a.exercise_id = ?1 AND e.archived = 0 ORDER BY e.name COLLATE NOCASE"
         ))?;
-        for r in st.query_map(params![exercise_id], |r| Ok((row_exercise(r, 0)?, r.get::<_, String>(7)?)))? {
+        for r in st.query_map(params![exercise_id], |r| Ok((row_exercise(r, 0)?, r.get::<_, String>(EX_N)?)))? {
             out.push(r?);
         }
         if !base.muscle_focus.is_empty() {
@@ -203,7 +278,7 @@ impl Db {
              WHERE a.exercise_id = ?1 ORDER BY e.name COLLATE NOCASE"
         ))?;
         let v = st
-            .query_map(params![exercise_id], |r| Ok((row_exercise(r, 0)?, r.get::<_, String>(7)?)))?
+            .query_map(params![exercise_id], |r| Ok((row_exercise(r, 0)?, r.get::<_, String>(EX_N)?)))?
             .collect::<Result<Vec<_>, _>>()?;
         Ok(v)
     }
@@ -233,7 +308,7 @@ impl Db {
 
     pub fn list_plans(&self) -> AppResult<Vec<Plan>> {
         let mut st = self.conn.prepare(&format!(
-            "SELECT {PLAN_COLS} FROM workout_plan ORDER BY active DESC, name COLLATE NOCASE"
+            "SELECT {PLAN_COLS} FROM workout_plan ORDER BY is_favorite DESC, active DESC, name COLLATE NOCASE"
         ))?;
         let v = st.query_map([], row_plan)?.collect::<Result<Vec<_>, _>>()?;
         Ok(v)
@@ -634,6 +709,36 @@ mod tests {
         let r = db.list_exercises(&f).unwrap();
         assert_eq!(r.len(), 1);
         assert_eq!(r[0].name, "Supino na máquina");
+    }
+
+    #[test]
+    fn filters_and_favorites() {
+        let db = Db::open_in_memory().unwrap();
+        let all = db.list_exercises(&ExerciseFilter::default()).unwrap();
+        assert!(all.iter().all(|e| !e.custom));
+        let id = db
+            .create_exercise(&ExerciseInput { name: "Meu exercício".into(), muscle_focus: "Peito".into(), description: "Cotovelos a 45°".into(), ..Default::default() })
+            .unwrap();
+        assert!(db.get_exercise(id).unwrap().custom);
+        let f = ExerciseFilter { custom_only: true, ..Default::default() };
+        assert_eq!(db.list_exercises(&f).unwrap().len(), 1);
+        let f = ExerciseFilter { text: "cotovelos".into(), ..Default::default() }; // busca na descrição
+        assert_eq!(db.list_exercises(&f).unwrap()[0].id, id);
+        db.set_exercise_favorite(id, true).unwrap();
+        let fav = ExerciseFilter { favorites_only: true, ..Default::default() };
+        assert_eq!(db.list_exercises(&fav).unwrap().len(), 1);
+        assert_eq!(db.list_exercises(&ExerciseFilter::default()).unwrap()[0].id, id); // favoritos primeiro
+        let page = db.list_exercises_page(&ExerciseFilter::default(), 5).unwrap();
+        assert_eq!(page.items.len(), 5);
+        assert!(page.total > 50);
+        let t = ExerciseFilter { exercise_type: "isolado".into(), muscle: "peito".into(), ..Default::default() };
+        assert!(db.list_exercises(&t).unwrap().iter().all(|e| e.exercise_type == "Isolado" && e.muscle_focus == "Peito"));
+        db.set_exercise_archived(id, true).unwrap();
+        let arch = ExerciseFilter { archived_only: true, ..Default::default() };
+        assert_eq!(db.list_exercises(&arch).unwrap().len(), 1);
+        let p = db.create_plan("P", "", ScheduleType::Weekday).unwrap();
+        db.set_plan_favorite(p, true).unwrap();
+        assert_eq!(db.favorite_plans().unwrap().len(), 1);
     }
 
     #[test]

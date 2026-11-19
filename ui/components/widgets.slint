@@ -1,5 +1,10 @@
 import { Theme, Icons } from "../theme.slint";
 
+// Estado global de arraste: enquanto ativo, as áreas roláveis não capturam o gesto.
+export global DragState {
+    in-out property <bool> active;
+}
+
 export component Icon inherits Rectangle {
     in property <string> cmd;
     in property <brush> tint: Theme.text;
@@ -451,6 +456,7 @@ export component Badge inherits Rectangle {
 // Área rolável com coluna de conteúdo.
 export component Scroll inherits Flickable {
     in property <length> pad: Theme.pad;
+    interactive: !DragState.active;
     in property <length> gap: Theme.gap;
     content-width: self.width;
     content-height: max(self.height, inner.preferred-height);
@@ -541,5 +547,77 @@ export component PageTransition inherits Rectangle {
         height: root.height;
         opacity: 0.25 + 0.75 * root.t;
         @children
+    }
+}
+
+// Favorito: estrela cheia quando marcado (forma + rótulo, não só cor — 4.2).
+export component StarBtn inherits Rectangle {
+    in property <bool> on;
+    in property <string> name;
+    callback clicked();
+    width: Theme.touch;
+    height: Theme.touch;
+    border-radius: Theme.touch / 2;
+    background: ta.pressed ? Theme.pressed : transparent;
+    accessible-role: button;
+    accessible-label: on ? "Remover " + name + " dos favoritos" : "Favoritar " + name;
+    accessible-checked: on;
+    accessible-action-default => { clicked(); }
+    ta := TouchArea {
+        clicked => { root.clicked(); }
+    }
+    Path {
+        x: (parent.width - 22px) / 2;
+        y: (parent.height - 22px) / 2;
+        width: 22px;
+        height: 22px;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        commands: Icons.star;
+        stroke: Theme.text;
+        stroke-width: 1.8px;
+        stroke-line-join: round;
+        fill: root.on ? Theme.text : transparent;
+    }
+}
+
+// Alça de arrastar (4.4): emite o deslocamento em posições ao soltar; arraste cancelado não altera nada.
+export component DragHandle inherits Rectangle {
+    in property <length> step: 60px;
+    in property <string> label;
+    out property <int> delta: 0;
+    callback dropped(int);
+    width: 36px;
+    min-height: Theme.touch;
+    border-radius: 8px;
+    background: ta.pressed ? Theme.surface3 : transparent;
+    accessible-role: none;
+    ta := TouchArea {
+        mouse-cursor: grab;
+        moved => {
+            root.delta = Math.round((self.mouse-y - self.pressed-y) / root.step);
+        }
+        pointer-event(ev) => {
+            if (ev.kind == PointerEventKind.down) {
+                DragState.active = true;
+            } else if (ev.kind == PointerEventKind.up) {
+                DragState.active = false;
+                if (root.delta != 0) {
+                    root.dropped(root.delta);
+                }
+                root.delta = 0;
+            } else if (ev.kind == PointerEventKind.cancel) {
+                DragState.active = false;
+                root.delta = 0;
+            }
+        }
+    }
+    Icon {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        cmd: Icons.drag;
+        size: 20px;
+        stroke: 3px;
+        tint: Theme.muted;
     }
 }

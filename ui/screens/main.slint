@@ -2,6 +2,7 @@ import { Theme, Icons } from "../theme.slint";
 import { Bridge } from "../bridge.slint";
 import { Btn, IconBtn, Card, Label, Title, SectionTitle, Body, Scroll, Segmented, Badge, Icon } from "../components/widgets.slint";
 import { EmptyState } from "../components/empty_state.slint";
+import { StarBtn } from "../components/widgets.slint";
 
 // RF-19 / 6.2: cartões informativos clicáveis.
 export component HomeScreen inherits Scroll {
@@ -46,10 +47,15 @@ export component PlansScreen inherits Scroll {
             clicked => { Bridge.new-plan(); }
         }
         Btn {
-            text: "Exercícios";
-            icon: Icons.list;
-            clicked => { Bridge.open-library(); }
+            text: "Modelos";
+            icon: Icons.template;
+            clicked => { Bridge.open-templates(); }
         }
+    }
+    Btn {
+        text: "Biblioteca de exercícios";
+        icon: Icons.list;
+        clicked => { Bridge.open-library(); }
     }
     if Bridge.plans.length == 0: EmptyState {
         icon: Icons.dumbbell;
@@ -74,6 +80,11 @@ export component PlansScreen inherits Scroll {
                     alignment: start;
                     Badge { text: "Inativa"; }
                 }
+            }
+            StarBtn {
+                on: p.favorite;
+                name: p.name;
+                clicked => { Bridge.plan-favorite(p.id); }
             }
             IconBtn {
                 icon: Icons.copy;
