@@ -49,6 +49,11 @@
 | 5.1 (v1.1) Ilustrações | `assets/exercises`, `exercise_media`, `ExerciseArt`, migração 0005 | `exercise_media::tests`, `exercise_media_is_persisted_and_seeded` |
 | 5.2 (v1.1) Vídeos (link externo) | `Exercise::video_url`, `validate_video_url`, `Platform::open_url` | `video_links` + manual |
 | 9.3 (v1.1) Detalhes do exercício | `ui/screens/exercise_detail.slint`, `Controller::refresh_exercise_detail` | visual |
+| 8.1 (v1.1) Tipos de série | `SetKind`, migração 0006, chips no editor, rótulo na sessão | `set_kinds_persist_and_copy_to_session` |
+| 8.2 (v1.1) Superséries/circuitos | `training::groups`, `Controller::group_after_set` | `link_unlink_and_normalize`, `superset_navigation` |
+| 8.3 (v1.1) Valores da sessão anterior | `refresh_session` (cartão + `repeat_prev`) | visual |
+| 8.5 (v1.1) Calculadora de anilhas | `calculators::plates_for`, `ui/screens/tools.slint` | `plates_exact_and_minimal`, `plates_impossible_and_limits` |
+| 8.6 (v1.1) Calculadora de aquecimento | `calculators::warmup_sets` | `warmup` |
 | 9.4 Widget Android | `application/widget.rs`, `EmpetoWidget.java` | `widget::tests` + manual |
 
 ## Regras de negócio

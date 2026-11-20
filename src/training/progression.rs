@@ -52,10 +52,13 @@ impl Db {
         let Some((se_id, session_id)) = last else { return Ok(None) };
         let mut st = self.conn.prepare(
             "SELECT COALESCE(actual_load_g,0), COALESCE(actual_reps,0) FROM session_set
-             WHERE session_exercise_id = ?1 AND completed_at IS NOT NULL ORDER BY set_number",
+             WHERE session_exercise_id = ?1 AND completed_at IS NOT NULL AND set_kind <> 'warmup' ORDER BY set_number",
         )?;
         let results = st.query_map(params![se_id], |r| Ok((r.get(0)?, r.get(1)?)))?.collect::<Result<Vec<(i64, i64)>, _>>()?;
-        let Some(new_load) = suggest(pe.target, step_g, &results) else { return Ok(None) };
+        // Séries de aquecimento planejadas não entram na regra (evolução 8.1).
+        let warmups = (1..=pe.target.sets).filter(|n| pe.kind_of(*n) == SetKind::Warmup).count() as i64;
+        let work = Target { sets: (pe.target.sets - warmups).max(1), ..pe.target };
+        let Some(new_load) = suggest(work, step_g, &results) else { return Ok(None) };
         let reps: Vec<i64> = results.iter().map(|r| r.1).collect();
         Ok(Some(ProgressionSuggestion {
             plan_exercise_id,

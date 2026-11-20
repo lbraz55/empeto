@@ -37,6 +37,9 @@ msgstr "Buscar"
 msgid "Exercício"
 msgstr "Ejercicio"
 
+msgid "Anilhas e aquecimento"
+msgstr "Discos y calentamiento"
+
 msgid "Sessão realizada"
 msgstr "Sesión realizada"
 
@@ -985,6 +988,54 @@ msgstr "No se encontró nada"
 msgid "Nenhum exercício, ficha ou sessão corresponde à busca."
 msgstr "Ningún ejercicio, rutina o sesión coincide con la búsqueda."
 
+msgid "Diminuir"
+msgstr "Disminuir"
+
+msgid "Aumentar"
+msgstr "Aumentar"
+
+msgid "Anilhas"
+msgstr "Discos"
+
+msgid "Aquecimento"
+msgstr "Calentamiento"
+
+msgid "Carga total desejada"
+msgstr "Carga total deseada"
+
+msgid "Peso da barra"
+msgstr "Peso de la barra"
+
+msgid "CADA LADO DA BARRA"
+msgstr "CADA LADO DE LA BARRA"
+
+msgid "ANILHAS DISPONÍVEIS (PARES)"
+msgstr "DISCOS DISPONIBLES (PARES)"
+
+msgid "Informe quantos pares de cada anilha você tem. O cálculo usa o menor número de anilhas possível."
+msgstr "Indica cuántos pares de cada disco tienes. El cálculo usa la menor cantidad de discos posible."
+
+msgid "Carga de trabalho"
+msgstr "Carga de trabajo"
+
+msgid "SÉRIES DE AQUECIMENTO"
+msgstr "SERIES DE CALENTAMIENTO"
+
+msgid "Carga de trabalho baixa demais para aquecer abaixo dela."
+msgstr "Carga de trabajo demasiado baja para calentar por debajo de ella."
+
+msgid "PERCENTUAIS E REPETIÇÕES"
+msgstr "PORCENTAJES Y REPETICIONES"
+
+msgid "−rep"
+msgstr "−rep"
+
+msgid "+rep"
+msgstr "+rep"
+
+msgid "Ferramenta de organização: as cargas são calculadas a partir dos percentuais escolhidos e arredondadas pelo incremento de carga. Não é uma prescrição — ajuste ao seu caso."
+msgstr "Herramienta de organización: las cargas se calculan a partir de los porcentajes elegidos y se redondean según el incremento de carga. No es una prescripción — ajústala a tu caso."
+
 msgid "Nome da ficha"
 msgstr "Nombre de la rutina"
 
@@ -1044,6 +1095,15 @@ msgstr "No hay ejercicios en este día."
 
 msgid "Editar "
 msgstr "Editar "
+
+msgid "Série "
+msgstr "Serie "
+
+msgid "Desagrupar do próximo exercício"
+msgstr "Desagrupar del siguiente ejercicio"
+
+msgid "Agrupar com o próximo exercício (supersérie)"
+msgstr "Agrupar con el siguiente ejercicio (superserie)"
 
 msgid " É só uma sugestão, não uma prescrição."
 msgstr " Es solo una sugerencia, no una prescripción."
@@ -1135,8 +1195,8 @@ msgstr ", archivado"
 msgid "Carregar mais"
 msgstr "Cargar más"
 
-msgid "Série "
-msgstr "Serie "
+msgid ". Toque para mudar o tipo."
+msgstr ". Toca para cambiar el tipo."
 
 msgid "  ×  "
 msgstr "  ×  "
@@ -1167,6 +1227,9 @@ msgstr "Serie"
 
 msgid "Obs."
 msgstr "Notas"
+
+msgid "Repetir valores da sessão anterior"
+msgstr "Repetir valores de la sesión anterior"
 
 msgid "TÉCNICA E OBSERVAÇÕES"
 msgstr "TÉCNICA Y NOTAS"
@@ -1429,6 +1492,21 @@ msgstr "Patrón de movimiento"
 msgid "Nenhuma sessão em andamento."
 msgstr "No hay ninguna sesión en curso."
 
+msgid "SESSÃO ANTERIOR · {}"
+msgstr "SESIÓN ANTERIOR · {}"
+
+msgid "Série {}: {} × {}"
+msgstr "Serie {}: {} × {}"
+
+msgid " · depois: {}"
+msgstr " · después: {}"
+
+msgid " · depois: descanso"
+msgstr " · después: descanso"
+
+msgid "{} {}/{}{}"
+msgstr "{} {}/{}{}"
+
 msgid "Última vez: {} × {} ({})"
 msgstr "Última vez: {} × {} ({})"
 
@@ -1468,6 +1546,9 @@ msgstr "Serie actualizada."
 msgid "Série registrada."
 msgstr "Serie registrada."
 
+msgid "Série registrada. Agora: {} (sem descanso no grupo)."
+msgstr "Serie registrada. Ahora: {} (sin descanso en el grupo)."
+
 msgid "Série registrada. Descanso de {} iniciado."
 msgstr "Serie registrada. Descanso de {} iniciado."
 
@@ -1479,6 +1560,30 @@ msgstr "Registro de la serie"
 
 msgid "Novo recorde: {}"
 msgstr "Nuevo récord: {}"
+
+msgid "Só a barra"
+msgstr "Solo la barra"
+
+msgid "Total montado: {} (barra {})."
+msgstr "Total montado: {} (barra {})."
+
+msgid "Não é possível montar exatamente {} com as anilhas cadastradas. Mais próximo abaixo: {}."
+msgstr "No es posible montar exactamente {} con los discos guardados. Lo más cercano por debajo: {}."
+
+msgid "{} par(es)"
+msgstr "{} par(es)"
+
+msgid "{}. {} × {} reps"
+msgstr "{}. {} × {} reps"
+
+msgid "Trabalho: {}"
+msgstr "Trabajo: {}"
+
+msgid "{}% × {} reps"
+msgstr "{}% × {} reps"
+
+msgid "Cada lado: {}"
+msgstr "Cada lado: {}"
 
 msgid "Sem séries — adicione na tela da sessão"
 msgstr "Sin series — añádelas en la pantalla de la sesión"
@@ -1609,8 +1714,8 @@ msgstr "no registrada"
 msgid " · intervalo {}"
 msgstr " · intervalo {}"
 
-msgid "Série {}: {}  (plan. {}{}){}"
-msgstr "Serie {}: {}  (plan. {}{}){}"
+msgid "Série {}{}: {}  (plan. {}{}){}"
+msgstr "Serie {}{}: {}  (plan. {}{}){}"
 
 msgid "Não realizado nesta sessão."
 msgstr "No realizado en esta sesión."
@@ -1948,6 +2053,12 @@ msgstr "Quitar ejercicio"
 msgid "Remover este exercício da ficha? O histórico não é afetado."
 msgstr "¿Quitar este ejercicio de la rutina? El historial no se ve afectado."
 
+msgid "Tipo da série: {}"
+msgstr "Tipo de serie: {}"
+
+msgid "Valores da sessão anterior preenchidos. Confira e registre cada série."
+msgstr "Valores de la sesión anterior rellenados. Revísalos y registra cada serie."
+
 msgid "Atalhos padrão restaurados."
 msgstr "Accesos predeterminados restaurados."
 
@@ -2179,6 +2290,15 @@ msgstr "Noviembre"
 msgid "Dezembro"
 msgstr "Diciembre"
 
+msgid "Informe valores positivos."
+msgstr "Indica valores positivos."
+
+msgid "A carga desejada é menor que o peso da barra."
+msgstr "La carga deseada es menor que el peso de la barra."
+
+msgid "Carga alta demais para calcular."
+msgstr "Carga demasiado alta para calcular."
+
 msgid "Informe as repetições realizadas."
 msgstr "Indica las repeticiones realizadas."
 
@@ -2208,6 +2328,33 @@ msgstr "Secuencia (A/B/C…)"
 
 msgid "Informe o nome do exercício."
 msgstr "Indica el nombre del ejercicio."
+
+msgid "Drop set"
+msgstr "Drop set"
+
+msgid "Até a falha"
+msgstr "Al fallo"
+
+msgid "Back-off"
+msgstr "Back-off"
+
+msgid "Técnica especial"
+msgstr "Técnica especial"
+
+msgid "AQ"
+msgstr "CAL"
+
+msgid "DROP"
+msgstr "DROP"
+
+msgid "FALHA"
+msgstr "FALLO"
+
+msgid "BACK-OFF"
+msgstr "BACK-OFF"
+
+msgid "TÉC"
+msgstr "TÉC"
 
 msgid "Séries devem estar entre 1 e 50."
 msgstr "Las series deben estar entre 1 y 50."
@@ -2529,6 +2676,21 @@ msgstr "Importada de la hoja \"{}\""
 
 msgid "O banco de dados é de uma versão mais nova do app (schema {}). Atualize o aplicativo."
 msgstr "La base de datos es de una versión más nueva de la app (esquema {}). Actualiza la app."
+
+msgid "Supersérie"
+msgstr "Superserie"
+
+msgid "Trissérie"
+msgstr "Triserie"
+
+msgid "Circuito"
+msgstr "Circuito"
+
+msgid "Não há exercício seguinte para agrupar."
+msgstr "No hay un ejercicio siguiente para agrupar."
+
+msgid "Série inválida."
+msgstr "Serie no válida."
 
 msgid "Exercício não encontrado."
 msgstr "Ejercicio no encontrado."

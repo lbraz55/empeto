@@ -105,6 +105,7 @@ impl Db {
              FROM session_set ss JOIN session_exercise e ON e.id = ss.session_exercise_id
              JOIN workout_session s ON s.id = e.session_id
              WHERE {} AND ss.completed_at IS NOT NULL AND ss.completed_at < ?2 AND COALESCE(ss.actual_reps,0) > 0
+               AND ss.set_kind <> 'warmup'
                AND (s.status = 'completed' OR s.id = ?3)",
             key_cond(exercise_id)
         );
@@ -128,7 +129,8 @@ impl Db {
     pub fn records_for_set(&self, set_id: Id) -> AppResult<Vec<RecordKind>> {
         let (ex_id, name, sid, load, reps, at): (Option<Id>, String, Id, Option<i64>, Option<i64>, Option<i64>) =
             self.conn.query_row(
-                "SELECT e.performed_exercise_id, e.performed_name, e.session_id, ss.actual_load_g, ss.actual_reps, ss.completed_at
+                "SELECT e.performed_exercise_id, e.performed_name, e.session_id, ss.actual_load_g,
+                        CASE WHEN ss.set_kind = 'warmup' THEN NULL ELSE ss.actual_reps END, ss.completed_at
                  FROM session_set ss JOIN session_exercise e ON e.id = ss.session_exercise_id WHERE ss.id = ?1",
                 params![set_id],
                 |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?)),
@@ -146,6 +148,7 @@ impl Db {
              FROM session_set ss JOIN session_exercise e ON e.id = ss.session_exercise_id
              JOIN workout_session s ON s.id = e.session_id
              WHERE s.status = 'completed' AND ss.completed_at IS NOT NULL AND COALESCE(ss.actual_reps,0) > 0
+               AND ss.set_kind <> 'warmup'
              ORDER BY ss.completed_at, ss.id",
         )?;
         let rows = st

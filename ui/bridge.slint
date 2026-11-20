@@ -1,10 +1,10 @@
 // Ponte entre a interface e a lógica em Rust. O Rust preenche propriedades e trata callbacks.
 
 export struct PlanRow { id: int, name: string, subtitle: string, active: bool, favorite: bool }
-export struct PlanExRow { id: int, name: string, detail: string, notes: string, suggestion: string, suggestion-detail: string }
+export struct PlanExRow { id: int, name: string, detail: string, notes: string, suggestion: string, suggestion-detail: string, kinds: [string], group-label: string, group-pos: int, linked: bool, last: bool }
 export struct DayRow { id: int, name: string, subtitle: string, exercises: [PlanExRow] }
 export struct ExRow { id: int, name: string, detail: string, note: string, archived: bool, favorite: bool, custom: bool, art: string }
-export struct SetRow { id: int, number: int, planned: string, load: string, reps: string, done: bool, hint: string }
+export struct SetRow { id: int, number: int, planned: string, load: string, reps: string, done: bool, hint: string, kind: string }
 export struct SessionExRow {
     id: int,
     name: string,
@@ -18,6 +18,9 @@ export struct SessionExRow {
     notes: string,
     technique: string,
     art: string,
+    group: string,
+    prev-title: string,
+    prev-lines: [string],
     completed: bool,
     done-sets: int,
     sets: [SetRow],
@@ -401,6 +404,30 @@ export global Bridge {
     callback data-restore();
     callback data-ics();
     callback show-diagnostics();
+
+    // ---------------- Eficiência de treinamento (evolução 8.1–8.6) ----------------
+    callback pe-cycle-kind(int, int);
+    callback pe-toggle-group(int);
+    callback session-cycle-kind(int);
+    callback session-repeat-previous(int);
+    callback open-tools(int);
+    in-out property <int> tools-tab;
+    in-out property <string> tools-target;
+    in-out property <string> tools-bar;
+    in-out property <string> tools-result;
+    in-out property <string> tools-detail;
+    in-out property <bool> tools-exact: true;
+    in-out property <[float]> tools-plates;
+    in-out property <[string]> tools-plate-labels;
+    in-out property <[string]> tools-inventory;
+    in-out property <string> tools-work;
+    in-out property <[string]> tools-warmup;
+    in-out property <[string]> tools-steps;
+    callback tools-step(string, int);
+    callback tools-edit(string);
+    callback tools-plate-pairs(int, int);
+    callback tools-step-edit(int, int, int);
+    callback tools-use-load();
 
     // ---------------- Detalhes do exercício (evolução 5.1) ----------------
     in-out property <int> exd-id;

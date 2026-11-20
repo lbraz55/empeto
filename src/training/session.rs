@@ -67,19 +67,21 @@ impl Db {
         for (pos, pe) in day_full.exercises.iter().enumerate() {
             tx.execute(
                 "INSERT INTO session_exercise(session_id, plan_exercise_id, original_exercise_id, performed_exercise_id,
-                   original_name, performed_name, muscle_focus, exercise_type, equipment, substitution_type, position, rest_seconds)
-                 VALUES (?1, ?2, ?3, ?3, ?4, ?4, ?5, ?6, ?7, 'none', ?8, ?9)",
+                   original_name, performed_name, muscle_focus, exercise_type, equipment, substitution_type, position, rest_seconds,
+                   group_tag)
+                 VALUES (?1, ?2, ?3, ?3, ?4, ?4, ?5, ?6, ?7, 'none', ?8, ?9, ?10)",
                 params![
                     sid, pe.id, pe.exercise.id, pe.exercise.name, pe.exercise.muscle_focus, pe.exercise.exercise_type,
-                    pe.exercise.equipment, pos as i64, pe.rest_seconds
+                    pe.exercise.equipment, pos as i64, pe.rest_seconds, pe.group_tag
                 ],
             )?;
             let seid = tx.last_insert_rowid();
             for n in 1..=pe.target.sets {
                 tx.execute(
-                    "INSERT INTO session_set(session_exercise_id, set_number, planned_reps_min, planned_reps_max, planned_load_g)
-                     VALUES (?1, ?2, ?3, ?4, ?5)",
-                    params![seid, n, pe.target.reps_min, pe.target.reps_max, pe.target.load_g],
+                    "INSERT INTO session_set(session_exercise_id, set_number, planned_reps_min, planned_reps_max, planned_load_g,
+                       set_kind)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                    params![seid, n, pe.target.reps_min, pe.target.reps_max, pe.target.load_g, pe.kind_of(n).as_str()],
                 )?;
             }
         }
@@ -99,7 +101,7 @@ impl Db {
         let mut st = self.conn.prepare(
             "SELECT id, session_id, plan_exercise_id, original_exercise_id, performed_exercise_id, original_name,
                     performed_name, muscle_focus, exercise_type, equipment, substitution_type, position, rest_seconds,
-                    notes, completed
+                    notes, completed, group_tag
              FROM session_exercise WHERE session_id = ?1 ORDER BY position, id",
         )?;
         let mut exercises = st
@@ -121,12 +123,13 @@ impl Db {
                     notes: r.get(13)?,
                     completed: r.get::<_, i64>(14)? != 0,
                     sets: vec![],
+                    group_tag: r.get(15)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
         let mut st = self.conn.prepare(
             "SELECT id, set_number, planned_reps_min, planned_reps_max, planned_load_g, actual_reps, actual_load_g, completed_at,
-                    rest_taken_s
+                    rest_taken_s, set_kind
              FROM session_set WHERE session_exercise_id = ?1 ORDER BY set_number",
         )?;
         for e in exercises.iter_mut() {
@@ -142,6 +145,7 @@ impl Db {
                         actual_load_g: r.get(6)?,
                         completed_at: r.get(7)?,
                         rest_taken_s: r.get(8)?,
+                        kind: SetKind::parse(&r.get::<_, String>(9)?),
                     })
                 })?
                 .collect::<Result<Vec<_>, _>>()?;
@@ -451,7 +455,7 @@ impl Db {
         self.conn
             .query_row(
                 "SELECT id, set_number, planned_reps_min, planned_reps_max, planned_load_g, actual_reps, actual_load_g,
-                        completed_at, rest_taken_s FROM session_set WHERE id = ?1",
+                        completed_at, rest_taken_s, set_kind FROM session_set WHERE id = ?1",
                 params![set_id],
                 |r| {
                     Ok(SessionSet {
@@ -464,6 +468,7 @@ impl Db {
                         actual_load_g: r.get(6)?,
                         completed_at: r.get(7)?,
                         rest_taken_s: r.get(8)?,
+                        kind: SetKind::parse(&r.get::<_, String>(9)?),
                     })
                 },
             )

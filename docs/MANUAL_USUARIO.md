@@ -71,6 +71,17 @@ Sons e alertas · Cronômetro · Treinamento · Calendário · Interface · Dado
 - **Backup** é diferente de planilha: guarda o estado completo para restaurar o app. **Restaurar**
   valida o arquivo antes de substituir os dados atuais.
 
+## Durante o treino: tipos de série, grupos e calculadoras
+
+- **Tipos de série**: no editor da ficha, toque no número da série (1, 2, 3…) para alternar entre normal,
+  aquecimento (AQ), drop set, até a falha, back-off e técnica especial. Na sessão, toque em "Série N".
+- **Superséries e circuitos**: no editor, toque no ícone de corrente para ligar o exercício ao seguinte (2 =
+  supersérie, 3 = trissérie, 4+ = circuito). Na sessão, o app passa de um exercício ao outro sem descanso.
+- **Sessão anterior**: o cartão mostra o que você fez da última vez; "Repetir valores" preenche os campos para
+  você conferir e registrar.
+- **Anilhas e aquecimento**: na sessão (ou pelo atalho da Home) — quanto colocar de cada lado da barra e uma
+  sugestão de séries de aquecimento a partir dos percentuais que você escolher.
+
 ## Biblioteca visual
 
 - Cada exercício tem uma ilustração. Toque em um exercício na biblioteca para ver os detalhes: técnica,

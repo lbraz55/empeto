@@ -143,7 +143,7 @@ impl Default for Prefs {
             prepare_seconds: 5,
             unit: LoadUnit::Kg,
             load_step_g: 2_500,
-            prefill_last: true,
+            prefill_last: false,
             default_sets: 3,
             default_reps: 10,
             week_starts_monday: true,

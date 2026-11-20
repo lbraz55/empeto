@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.6.0 — 2026-11-20 (schema do banco: 6) — Eficiência de treinamento (Fase 3 do documento de evolução v1.1)
+- **Valores da sessão anterior**: cartão "SESSÃO ANTERIOR · data" com carga × repetições de cada série do mesmo
+  exercício, e ação "Repetir valores da sessão anterior". Nada é preenchido sem pedido: "Sugerir carga da última
+  sessão" passa a vir desligado em instalações novas (quem já usava mantém a escolha).
+- **Tipos de série**: normal, aquecimento, drop set, até a falha, back-off e técnica especial. Planejados na ficha
+  (toque no número da série) e ajustáveis na sessão (toque em "Série N"); registrados no histórico, no detalhe da
+  sessão e na exportação. Aquecimento não conta para recordes nem para a sugestão de progressão.
+- **Superséries, trisséries e circuitos**: botão de corrente no editor liga um exercício ao seguinte. Na sessão, ao
+  registrar uma série o app vai direto ao próximo exercício do grupo sem descanso; o descanso vem depois do último,
+  voltando ao primeiro para a rodada seguinte. Cada exercício mantém seus próprios registros.
+- **Calculadora de anilhas**: monta a carga com o menor número de anilhas, respeita barra e pares disponíveis
+  (configuráveis) e avisa quando a carga não pode ser montada exatamente.
+- **Calculadora de aquecimento**: séries a partir de percentuais e repetições configuráveis, arredondadas pelo
+  incremento de carga (ferramenta de organização, não prescrição).
+- Migração 0006 (`plan_exercise.set_kinds`, `plan_exercise.group_tag`, `session_exercise.group_tag`,
+  `session_set.set_kind`); sessões antigas ficam com tipo "normal". Exportação: colunas "Tipo da série" e "Grupo".
+
 ## 0.5.0 — 2026-11-20 (schema do banco: 5) — Biblioteca visual (Fase 2 do documento de evolução v1.1)
 - **Ilustrações próprias** dos exercícios (25 desenhos monocromáticos + genérica) em `assets/exercises/`,
   embutidas no app (funcionam offline) e recoloridas pelo tema claro/escuro. Aparecem na biblioteca, nos

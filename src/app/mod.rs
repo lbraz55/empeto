@@ -46,6 +46,7 @@ const P_FOCUS: i32 = 16;
 const P_SEARCH: i32 = 17;
 const P_ONBOARDING: i32 = 18;
 const P_EXDETAIL: i32 = 19;
+const P_TOOLS: i32 = 22;
 
 const XLSX_MIMES: &[&str] = &[
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -96,6 +97,7 @@ enum TextCtx {
     SessionNotes,
     ExerciseNotes(Id),
     TimerCustom,
+    ToolsValue(&'static str),
     BackupPassword,
     RestorePassword,
 }
@@ -177,6 +179,10 @@ pub struct Controller {
     /// Modo foco: índice da série no exercício atual e rascunhos não salvos por série.
     focus_set: usize,
     drafts: HashMap<Id, (String, String)>,
+    /// Exercícios da sessão em que o usuário pediu "Repetir valores da sessão anterior" (8.3).
+    repeat_prev: std::collections::HashSet<Id>,
+    /// Estado das calculadoras (8.5/8.6).
+    tools: ToolsState,
     /// Última operação reversível (aviso "Desfazer").
     undo: Option<UndoOp>,
     /// Próxima tecla substitui o valor (campo recém-selecionado/preenchido).
@@ -385,6 +391,10 @@ impl Controller {
             P_EDITOR => self.refresh_editor(),
             P_LIBRARY => self.refresh_library(),
             P_EXDETAIL => self.refresh_exercise_detail(),
+            P_TOOLS => {
+                self.refresh_tools();
+                Ok(())
+            }
             P_SESSION => self.refresh_session(),
             P_TIMER => {
                 self.refresh_timer();
@@ -818,7 +828,9 @@ impl Controller {
                     exercises: model(
                         d.exercises
                             .iter()
-                            .map(|e| PlanExRow {
+                            .enumerate()
+                            .map(|(i, e)| (i, e, plan_group_info(&d.exercises, i)))
+                            .map(|(_, e, (glabel, gpos, linked, last))| PlanExRow {
                                 id: e.id as i32,
                                 name: ss(&e.exercise.name),
                                 detail: ss(target_text(&e.target, e.rest_seconds, unit)),
@@ -829,6 +841,18 @@ impl Controller {
                                     format_load_unit(s.suggested_load_g, unit)
                                 )).unwrap_or_default()),
                                 suggestion_detail: ss(sugg.get(&e.id).map(|s| s.justification.clone()).unwrap_or_default()),
+                                kinds: model(
+                                    (1..=e.target.sets)
+                                        .map(|n| {
+                                            let k = e.kind_of(n);
+                                            ss(if k == SetKind::Normal { n.to_string() } else { format!("{} · {}", n, k.short()) })
+                                        })
+                                        .collect::<Vec<_>>(),
+                                ),
+                                group_label: ss(glabel),
+                                group_pos: gpos,
+                                linked,
+                                last,
                             })
                             .collect(),
                     ),
@@ -1283,11 +1307,32 @@ impl Controller {
         let f = self.db.get_session_full(sid)?;
         let unit = self.prefs.unit;
         let mut rows = Vec::new();
-        for e in &f.exercises {
-            let last = if self.prefs.prefill_last {
-                e.performed_exercise_id.and_then(|id| self.db.last_performance(id, sid).ok().flatten())
-            } else {
-                None
+        let tags: Vec<String> = f.exercises.iter().map(|e| e.group_tag.clone()).collect();
+        for (idx, e) in f.exercises.iter().enumerate() {
+            // Sessão anterior do mesmo exercício (8.3): sempre exibida; só preenche os campos se o usuário
+            // ativou "Sugerir carga da última sessão" ou tocou em "Repetir valores da sessão anterior".
+            let last = e.performed_exercise_id.and_then(|id| self.db.last_performance(id, sid).ok().flatten());
+            let fill_prev = self.prefs.prefill_last || self.repeat_prev.contains(&e.id);
+            let (prev_title, prev_lines) = match &last {
+                Some(l) if l.sets.iter().any(|x| x.1.is_some()) => (
+                    trf!("SESSÃO ANTERIOR · {}", fmt_date_short(l.session_started_at)),
+                    l.sets
+                        .iter()
+                        .filter_map(|(n, r, ld)| {
+                            let r = (*r)?;
+                            Some(ss(trf!("Série {}: {} × {}", n, format_load_unit(ld.unwrap_or(0), unit), r)))
+                        })
+                        .collect::<Vec<_>>(),
+                ),
+                _ => (String::new(), vec![]),
+            };
+            let (ga, gb) = crate::training::groups::members(&tags, idx);
+            let group = match crate::training::groups::GroupKind::of_size(gb - ga + 1) {
+                Some(k) => {
+                    let next = if idx < gb { trf!(" · depois: {}", f.exercises[idx + 1].performed_name) } else { tr(" · depois: descanso").to_string() };
+                    trf!("{} {}/{}{}", k.label(), idx - ga + 1, gb - ga + 1, next)
+                }
+                None => String::new(),
             };
             let done_sets = e.sets.iter().filter(|s| s.completed_at.is_some()).count();
             let sets: Vec<SetRow> = e
@@ -1298,8 +1343,11 @@ impl Controller {
                     let (load, reps) = match (s.actual_load_g, s.actual_reps) {
                         (Some(l), Some(r)) if s.completed_at.is_some() => (format_load(l, unit), r.to_string()),
                         _ => {
-                            let l = prev.and_then(|p| p.2).unwrap_or(s.planned_load_g);
-                            (if l > 0 { format_load(l, unit) } else { String::new() }, s.planned_reps_max.to_string())
+                            let pl = if fill_prev { prev.and_then(|p| p.2) } else { None };
+                            let l = pl.unwrap_or(s.planned_load_g);
+                            let r = if self.repeat_prev.contains(&e.id) { prev.and_then(|p| p.1) } else { None }
+                                .unwrap_or(s.planned_reps_max);
+                            (if l > 0 { format_load(l, unit) } else { String::new() }, r.to_string())
                         }
                     };
                     let hint = match prev {
@@ -1323,6 +1371,7 @@ impl Controller {
                         reps: ss(reps),
                         done: s.completed_at.is_some(),
                         hint: ss(hint),
+                        kind: ss(s.kind.short()),
                     }
                 })
                 .collect();
@@ -1357,7 +1406,10 @@ impl Controller {
                     .and_then(|id| self.db.get_exercise(id).ok())
                     .map(|x| [x.description, x.notes].iter().filter(|t| !t.is_empty()).cloned().collect::<Vec<_>>().join("\n"))
                     .unwrap_or_default()),
-                art: ss(self.session_art(&e)),
+                art: ss(self.session_art(e)),
+                group: ss(group),
+                prev_title: ss(prev_title),
+                prev_lines: model(prev_lines),
                 completed: e.completed,
                 done_sets: done_sets as i32,
                 sets: model(sets),
@@ -1426,7 +1478,30 @@ impl Controller {
                 self.report(r);
                 let record = self.check_record(set_id);
                 let mut msg = if was_done { tr("Série atualizada.").to_string() } else { tr("Série registrada.").to_string() };
-                if !was_done && self.prefs.auto_start_rest {
+                // Grupos (8.2): dentro do grupo vai direto ao próximo exercício, sem descanso.
+                let mut group_rest = true;
+                if !was_done {
+                    if let Some((go_to, rest, next_name)) = self.group_after_set(set_id) {
+                        group_rest = rest;
+                        if let Some(k) = go_to {
+                            self.with_bridge(|b| b.set_session_index(k as i32));
+                            if let Some(e) = self.current_session_exercise() {
+                                self.focus_set = Self::first_open_set(&e);
+                            }
+                            let r = self.refresh_session();
+                            self.report(r);
+                            if self.page() == P_FOCUS {
+                                self.refresh_focus();
+                            }
+                        }
+                        if !rest {
+                            msg = trf!("Série registrada. Agora: {} (sem descanso no grupo).", next_name);
+                        }
+                    }
+                }
+                if !was_done && !group_rest {
+                    // Sem descanso entre exercícios do grupo.
+                } else if !was_done && self.prefs.auto_start_rest {
                     let secs = if rest > 0 { rest } else { self.prefs.timer_default_seconds };
                     self.start_rest(secs, &context);
                     self.timer.linked_set = Some(set_id);
@@ -1459,6 +1534,20 @@ impl Controller {
         }
     }
 
+    /// Para exercícios agrupados: (exercício seguinte, iniciar descanso?, nome do seguinte).
+    fn group_after_set(&self, set_id: Id) -> Option<(Option<usize>, bool, String)> {
+        let f = self.db.get_session_full(self.session_id?).ok()?;
+        let idx = f.exercises.iter().position(|e| e.sets.iter().any(|s| s.id == set_id))?;
+        let tags: Vec<String> = f.exercises.iter().map(|e| e.group_tag.clone()).collect();
+        if tags[idx].is_empty() {
+            return None;
+        }
+        let open: Vec<usize> = f.exercises.iter().map(|e| e.sets.iter().filter(|s| s.completed_at.is_none()).count()).collect();
+        let a = crate::training::groups::after_set(&tags, &open, idx);
+        let name = a.go_to.and_then(|k| f.exercises.get(k)).map(|e| e.performed_name.clone()).unwrap_or_default();
+        Some((a.go_to, a.rest, name))
+    }
+
     /// Verificação de recorde pessoal após registrar (implementada no grupo C).
     fn check_record(&mut self, set_id: Id) -> Option<String> {
         if !self.prefs.module_records {
@@ -1489,6 +1578,128 @@ impl Controller {
         let f = self.db.get_session_full(sid).ok()?;
         let i = self.with_bridge(|b| b.get_session_index()).max(0) as usize;
         f.exercises.get(i.min(f.exercises.len().saturating_sub(1))).cloned()
+    }
+
+    // ------------------------------------------------------------------
+    // Calculadoras (evolução 8.5/8.6)
+    // ------------------------------------------------------------------
+
+    fn load_tools(&mut self) {
+        use crate::domain::calculators::*;
+        if self.tools.loaded {
+            return;
+        }
+        let unit = self.prefs.unit;
+        let pref = |k: &str| self.db.get_pref(k).ok().flatten();
+        let plates = pref("plates.available").map(|v| parse_plates(&v)).filter(|v| !v.is_empty()).unwrap_or_else(|| default_plates(unit));
+        let bar = pref("plates.bar_g").and_then(|v| v.parse().ok()).unwrap_or_else(|| default_bar(unit));
+        let steps = parse_warmup(&pref("warmup.steps").unwrap_or_default());
+        self.tools = ToolsState { loaded: true, target_g: bar + 40_000, bar_g: bar, work_g: 60_000, plates, steps };
+    }
+
+    fn save_tools(&mut self) {
+        use crate::domain::calculators::*;
+        let t = self.tools.clone();
+        let r = self
+            .db
+            .set_pref("plates.available", &format_plates(&t.plates))
+            .and_then(|_| self.db.set_pref("plates.bar_g", &t.bar_g.to_string()))
+            .and_then(|_| self.db.set_pref("warmup.steps", &format_warmup(&t.steps)));
+        self.report(r);
+    }
+
+    /// Abre as calculadoras; a partir da sessão, usa a carga da próxima série em aberto do exercício.
+    fn open_tools(&mut self, se_id: Id) {
+        self.load_tools();
+        if se_id > 0 {
+            if let Some(f) = self.session_id.and_then(|sid| self.db.get_session_full(sid).ok()) {
+                if let Some(e) = f.exercises.iter().find(|e| e.id == se_id) {
+                    let s = e.sets.iter().find(|s| s.completed_at.is_none()).or(e.sets.last());
+                    if let Some(s) = s {
+                        let g = s.actual_load_g.filter(|g| *g > 0).unwrap_or(s.planned_load_g);
+                        if g > 0 {
+                            self.tools.target_g = g.max(self.tools.bar_g);
+                            self.tools.work_g = g;
+                        }
+                    }
+                }
+            }
+        }
+        self.navigate(P_TOOLS);
+    }
+
+    fn refresh_tools(&mut self) {
+        use crate::domain::calculators::*;
+        self.load_tools();
+        let unit = self.prefs.unit;
+        let t = self.tools.clone();
+        let (result, detail, exact, heights) = match plates_for(t.target_g, t.bar_g, &t.plates) {
+            Ok(r) => {
+                let maxw = t.plates.iter().map(|p| p.weight_g).max().unwrap_or(1).max(1) as f32;
+                let mut heights: Vec<f32> = Vec::new();
+                for (w, n) in &r.per_side {
+                    for _ in 0..*n {
+                        heights.push(0.3 + 0.7 * (*w as f32 / maxw));
+                    }
+                }
+                let side = if r.per_side.is_empty() {
+                    tr("Só a barra").to_string()
+                } else {
+                    r.per_side
+                        .iter()
+                        .map(|(w, n)| if *n > 1 { format!("{} × {}", n, format_load_unit(*w, unit)) } else { format_load_unit(*w, unit) })
+                        .collect::<Vec<_>>()
+                        .join(" + ")
+                };
+                let detail = if r.exact {
+                    trf!("Total montado: {} (barra {}).", format_load_unit(r.total_g, unit), format_load_unit(t.bar_g, unit))
+                } else {
+                    trf!(
+                        "Não é possível montar exatamente {} com as anilhas cadastradas. Mais próximo abaixo: {}.",
+                        format_load_unit(t.target_g, unit),
+                        format_load_unit(r.total_g, unit)
+                    )
+                };
+                (side, detail, r.exact, heights)
+            }
+            Err(e) => (e.to_string(), String::new(), false, vec![]),
+        };
+        let inventory: Vec<SharedString> = t.plates.iter().map(|p| ss(format_load_unit(p.weight_g, unit))).collect();
+        let pairs: Vec<SharedString> = t.plates.iter().map(|p| ss(trf!("{} par(es)", p.pairs))).collect();
+        let warm = warmup_sets(t.work_g, &t.steps, self.prefs.load_step_g, t.bar_g.min(t.work_g));
+        let warm_lines: Vec<SharedString> = warm
+            .iter()
+            .enumerate()
+            .map(|(i, (g, r))| ss(trf!("{}. {} × {} reps", i + 1, format_load_unit(*g, unit), r)))
+            .chain(std::iter::once(ss(trf!("Trabalho: {}", format_load_unit(t.work_g, unit)))))
+            .collect();
+        let steps: Vec<SharedString> = t.steps.iter().map(|s| ss(trf!("{}% × {} reps", s.percent, s.reps))).collect();
+        self.with_bridge(|b| {
+            b.set_tools_target(ss(format_load_unit(t.target_g, unit)));
+            b.set_tools_bar(ss(format_load_unit(t.bar_g, unit)));
+            b.set_tools_result(ss(trf!("Cada lado: {}", result)));
+            b.set_tools_detail(ss(detail));
+            b.set_tools_exact(exact);
+            b.set_tools_plates(model(heights));
+            b.set_tools_inventory(model(inventory));
+            b.set_tools_plate_labels(model(pairs));
+            b.set_tools_work(ss(format_load_unit(t.work_g, unit)));
+            b.set_tools_warmup(model(warm_lines));
+            b.set_tools_steps(model(steps));
+        });
+    }
+
+    fn tools_step(&mut self, field: &str, d: i32) {
+        self.load_tools();
+        let step = self.prefs.load_step_g.max(250);
+        let v = match field {
+            "bar" => &mut self.tools.bar_g,
+            "work" => &mut self.tools.work_g,
+            _ => &mut self.tools.target_g,
+        };
+        *v = (*v + d as i64 * step).clamp(0, MAX_LOAD_G);
+        self.save_tools();
+        self.refresh_tools();
     }
 
     /// Ilustração do exercício realizado (catálogo atual; se ele não existir mais, pelo nome).
@@ -2253,8 +2464,9 @@ impl Controller {
                                 .unwrap_or_default(),
                         };
                         ss(trf!(
-                            "Série {}: {}  (plan. {}{}){}",
+                            "Série {}{}: {}  (plan. {}{}){}",
                             s.set_number,
+                            if s.kind == SetKind::Normal { String::new() } else { format!(" [{}]", s.kind.label()) },
                             actual,
                             if s.planned_load_g > 0 { trf!("{} × ", format_load_unit(s.planned_load_g, unit)) } else { String::new() },
                             format_reps(s.planned_reps_min, s.planned_reps_max),
@@ -2677,6 +2889,7 @@ impl Controller {
             }
             "new_plan" => self.new_plan(),
             "templates" => self.open_templates(),
+            "tools" => self.open_tools(0),
             "backups" => {
                 self.with_bridge(|b| b.set_settings_section(10));
                 self.navigate(P_SETTINGS);
@@ -3655,6 +3868,19 @@ impl Controller {
             TextCtx::BackupPassword | TextCtx::RestorePassword => Ok(()),
             TextCtx::SessionNotes => self.session_id.map(|sid| self.db.set_session_notes(sid, value)).unwrap_or(Ok(())),
             TextCtx::ExerciseNotes(se) => self.db.set_session_exercise_notes(se, value),
+            TextCtx::ToolsValue(field) => match parse_load(value, self.prefs.unit) {
+                Ok(g) => {
+                    match field {
+                        "bar" => self.tools.bar_g = g,
+                        "work" => self.tools.work_g = g,
+                        _ => self.tools.target_g = g,
+                    }
+                    self.save_tools();
+                    self.refresh_tools();
+                    Ok(())
+                }
+                Err(e) => Err(e),
+            },
             TextCtx::TimerCustom => {
                 let secs = parse_rest(value).and_then(|s| if s < 1 { validation(tr("Informe pelo menos 1 segundo.")) } else { Ok(s) });
                 match secs {
@@ -3807,6 +4033,34 @@ fn ring_path(remaining: f32) -> String {
     format!("M 50 8 A 42 42 0 {} 1 {:.2} {:.2}", if f > 0.5 { 1 } else { 0 }, x, y)
 }
 
+/// Estado das calculadoras de anilhas e aquecimento (8.5/8.6).
+#[derive(Debug, Clone, Default)]
+struct ToolsState {
+    loaded: bool,
+    target_g: i64,
+    bar_g: i64,
+    work_g: i64,
+    plates: Vec<crate::domain::calculators::Plate>,
+    steps: Vec<crate::domain::calculators::WarmupStep>,
+}
+
+/// Grupo do exercício `i` no dia: (rótulo no primeiro membro, posição 0 solto/1 primeiro/2 meio/3 último,
+/// ligado ao próximo?, é o último do dia?).
+fn plan_group_info(list: &[PlanExercise], i: usize) -> (String, i32, bool, bool) {
+    let tags: Vec<String> = list.iter().map(|e| e.group_tag.clone()).collect();
+    let (a, b) = crate::training::groups::members(&tags, i);
+    let links = crate::training::groups::links_of(&tags);
+    let last = i + 1 >= list.len();
+    match crate::training::groups::GroupKind::of_size(b - a + 1) {
+        None => (String::new(), 0, false, last),
+        Some(k) => {
+            let label = if i == a { k.label().to_uppercase() } else { String::new() };
+            let pos = if i == a { 1 } else if i == b { 3 } else { 2 };
+            (label, pos, links.get(i).copied().unwrap_or(false), last)
+        }
+    }
+}
+
 fn ex_row(e: &Exercise, note: &str) -> ExRow {
     let detail = [e.muscle_focus.as_str(), e.exercise_type.as_str(), e.equipment.as_str(), e.movement_pattern.as_str()]
         .iter()
@@ -3896,6 +4150,8 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         in_background: false,
         focus_set: 0,
         drafts: HashMap::new(),
+        repeat_prev: Default::default(),
+        tools: ToolsState::default(),
         undo: None,
         focus_fresh: true,
         evo_chart: (300.0, 160.0),
@@ -4111,6 +4367,84 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         c.report(r);
     });
     cb!(b, ctrl, on_open_templates, |c| { c.open_templates(); });
+    cb!(b, ctrl, on_open_tools, |c, se: i32| { c.open_tools(se as Id); });
+    cb!(b, ctrl, on_tools_step, |c, f: SharedString, d: i32| { c.tools_step(&f, d); });
+    cb!(b, ctrl, on_tools_edit, |c, f: SharedString| {
+        let field: &'static str = match f.as_str() {
+            "bar" => "bar",
+            "work" => "work",
+            _ => "target",
+        };
+        let current = match field {
+            "bar" => c.tools.bar_g,
+            "work" => c.tools.work_g,
+            _ => c.tools.target_g,
+        };
+        let unit = c.prefs.unit;
+        c.ask_text(TextCtx::ToolsValue(field), tr("Carga"), unit.as_str(), &format_load(current, unit), false, true);
+    });
+    cb!(b, ctrl, on_tools_plate_pairs, |c, i: i32, d: i32| {
+        c.load_tools();
+        if let Some(p) = c.tools.plates.get_mut(i.max(0) as usize) {
+            p.pairs = (p.pairs + d as i64).clamp(0, 10);
+        }
+        c.save_tools();
+        c.refresh_tools();
+    });
+    cb!(b, ctrl, on_tools_step_edit, |c, i: i32, dp: i32, dr: i32| {
+        c.load_tools();
+        if let Some(s) = c.tools.steps.get_mut(i.max(0) as usize) {
+            s.percent = (s.percent + dp as i64).clamp(5, 95);
+            s.reps = (s.reps + dr as i64).clamp(1, 30);
+        }
+        c.save_tools();
+        c.refresh_tools();
+    });
+    cb!(b, ctrl, on_pe_cycle_kind, |c, pe_id: i32, n: i32| {
+        let r = c.db.get_plan_exercise(pe_id as Id).and_then(|pe| {
+            let k = pe.kind_of(n as i64).next();
+            c.db.set_plan_set_kind(pe.id, n as i64, k)
+        });
+        c.report(r);
+        c.report_refresh_editor();
+    });
+    cb!(b, ctrl, on_pe_toggle_group, |c, pe_id: i32| {
+        let r = c.db.toggle_group_with_next(pe_id as Id);
+        if let Err(e) = r {
+            c.toast(e.to_string());
+        }
+        c.report_refresh_editor();
+    });
+    cb!(b, ctrl, on_session_cycle_kind, |c, set_id: i32| {
+        let r = c.db.get_session_set(set_id as Id).and_then(|s| c.db.set_session_set_kind(s.id, s.kind.next()));
+        match r {
+            Ok(()) => {
+                let k = c.db.get_session_set(set_id as Id).map(|s| s.kind).unwrap_or_default();
+                c.toast(trf!("Tipo da série: {}", k.label()));
+            }
+            Err(e) => c.toast(e.to_string()),
+        }
+        let r = c.refresh_session();
+        c.report(r);
+    });
+    cb!(b, ctrl, on_session_repeat_previous, |c, se_id: i32| {
+        c.repeat_prev.insert(se_id as Id);
+        // Também vale para o modo foco: descarta rascunhos das séries em aberto deste exercício.
+        if let Some(sid) = c.session_id {
+            if let Ok(f) = c.db.get_session_full(sid) {
+                if let Some(e) = f.exercises.iter().find(|e| e.id == se_id as Id) {
+                    for s in &e.sets {
+                        if s.completed_at.is_none() {
+                            c.drafts.remove(&s.id);
+                        }
+                    }
+                }
+            }
+        }
+        c.toast(tr("Valores da sessão anterior preenchidos. Confira e registre cada série."));
+        let r = c.refresh_session();
+        c.report(r);
+    });
     cb!(b, ctrl, on_onboarding_skip, |c| { c.onboarding_finish("explore"); });
     cb!(b, ctrl, on_onboarding_finish, |c, a: SharedString| { c.onboarding_finish(&a); });
     cb!(b, ctrl, on_onboarding_restart, |c| { c.open_onboarding(); });

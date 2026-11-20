@@ -1,5 +1,6 @@
 //! Domínio: entidades, validações e regras independentes de interface e banco.
 
+pub mod calculators;
 pub mod input;
 pub mod timer;
 
@@ -193,6 +194,93 @@ pub struct PlanExercise {
     pub target: Target,
     pub rest_seconds: i64,
     pub notes: String,
+    /// Tipo planejado de cada série (posição 0 = série 1). Séries sem tipo são normais.
+    pub set_kinds: Vec<SetKind>,
+    /// Grupo (supersérie/trissérie/circuito): exercícios consecutivos com a mesma etiqueta.
+    pub group_tag: String,
+}
+
+impl PlanExercise {
+    pub fn kind_of(&self, set_number: i64) -> SetKind {
+        self.set_kinds.get((set_number - 1).max(0) as usize).copied().unwrap_or(SetKind::Normal)
+    }
+}
+
+/// Finalidade da série (evolução v1.1, 8.1).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum SetKind {
+    #[default]
+    Normal,
+    Warmup,
+    Drop,
+    Failure,
+    Backoff,
+    Technique,
+}
+
+impl SetKind {
+    pub const ALL: [SetKind; 6] =
+        [SetKind::Normal, SetKind::Warmup, SetKind::Drop, SetKind::Failure, SetKind::Backoff, SetKind::Technique];
+    pub fn as_str(self) -> &'static str {
+        match self {
+            SetKind::Normal => "normal",
+            SetKind::Warmup => "warmup",
+            SetKind::Drop => "drop",
+            SetKind::Failure => "failure",
+            SetKind::Backoff => "backoff",
+            SetKind::Technique => "technique",
+        }
+    }
+    pub fn parse(s: &str) -> SetKind {
+        SetKind::ALL.iter().copied().find(|k| k.as_str() == s.trim()).unwrap_or(SetKind::Normal)
+    }
+    pub fn label(self) -> &'static str {
+        use crate::i18n::tr;
+        match self {
+            SetKind::Normal => tr("Normal"),
+            SetKind::Warmup => tr("Aquecimento"),
+            SetKind::Drop => tr("Drop set"),
+            SetKind::Failure => tr("Até a falha"),
+            SetKind::Backoff => tr("Back-off"),
+            SetKind::Technique => tr("Técnica especial"),
+        }
+    }
+    /// Abreviação curta para a etiqueta da série.
+    pub fn short(self) -> &'static str {
+        use crate::i18n::tr;
+        match self {
+            SetKind::Normal => "",
+            SetKind::Warmup => tr("AQ"),
+            SetKind::Drop => tr("DROP"),
+            SetKind::Failure => tr("FALHA"),
+            SetKind::Backoff => tr("BACK-OFF"),
+            SetKind::Technique => tr("TÉC"),
+        }
+    }
+    pub fn next(self) -> SetKind {
+        let i = SetKind::ALL.iter().position(|k| *k == self).unwrap_or(0);
+        SetKind::ALL[(i + 1) % SetKind::ALL.len()]
+    }
+    /// Séries de aquecimento não contam para recordes nem para a sugestão de progressão.
+    pub fn counts_for_records(self) -> bool {
+        self != SetKind::Warmup
+    }
+}
+
+/// Lista de tipos "warmup,normal,drop" ↔ vetor (vazio = todas normais).
+pub fn parse_set_kinds(s: &str) -> Vec<SetKind> {
+    if s.trim().is_empty() {
+        return vec![];
+    }
+    s.split(',').map(SetKind::parse).collect()
+}
+
+pub fn format_set_kinds(v: &[SetKind]) -> String {
+    let mut v = v.to_vec();
+    while v.last() == Some(&SetKind::Normal) {
+        v.pop();
+    }
+    v.iter().map(|k| k.as_str()).collect::<Vec<_>>().join(",")
 }
 
 /// Parâmetros planejados de um exercício.
@@ -322,6 +410,8 @@ pub struct SessionSet {
     pub completed_at: Option<i64>,
     /// Descanso cumprido após esta série, medido pelo cronômetro (segundos).
     pub rest_taken_s: Option<i64>,
+    /// Finalidade da série (aquecimento, drop set…).
+    pub kind: SetKind,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -342,6 +432,8 @@ pub struct SessionExercise {
     pub notes: String,
     pub completed: bool,
     pub sets: Vec<SessionSet>,
+    /// Grupo copiado da ficha (preservado no histórico).
+    pub group_tag: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -422,6 +514,11 @@ pub struct SnapshotExercise {
     /// Técnica de execução no momento da sessão (preservada no snapshot — 4.5).
     #[serde(default)]
     pub description: String,
+    /// Tipos planejados das séries e grupo, no momento da sessão (evolução 8.1/8.2).
+    #[serde(default)]
+    pub set_kinds: Vec<SetKind>,
+    #[serde(default)]
+    pub group_tag: String,
 }
 
 impl PlanSnapshot {
@@ -453,6 +550,8 @@ impl PlanSnapshot {
                     rest_seconds: pe.rest_seconds,
                     notes: pe.notes.clone(),
                     description: pe.exercise.description.clone(),
+                    set_kinds: pe.set_kinds.clone(),
+                    group_tag: pe.group_tag.clone(),
                 })
                 .collect(),
         }

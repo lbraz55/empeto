@@ -32,6 +32,15 @@
 | `src/application` | Casos de uso transversais: preferências, busca global, desfazer, `GestureEvent`, atalhos da Home, armazenamento e backups locais, resumo do widget |
 | `android/java` | `MainActivity` (NativeActivity + ponte), `LauncherActivity` (diagnóstico de abertura), `TimerAlarmReceiver` e `EmpetoWidget` |
 
+## Eficiência de treinamento (evolução v1.1, 8.1–8.6)
+
+- `domain::SetKind` (+ `parse_set_kinds`/`format_set_kinds`): tipo planejado em `plan_exercise.set_kinds`
+  (lista por série) e registrado em `session_set.set_kind`. Recordes e progressão ignoram aquecimento.
+- `training::groups` (`training_groups`): grupos = exercícios consecutivos com a mesma `group_tag`;
+  `toggle_link`/`normalize` (após mover/remover) e `after_set` (navegação sem descanso dentro do grupo).
+- `domain::calculators`: `plates_for` (programação dinâmica limitada pelos pares disponíveis, mínimo de anilhas)
+  e `warmup_sets`. Preferências: `plates.available`, `plates.bar_g`, `warmup.steps`.
+
 ## Mídia dos exercícios (evolução v1.1, 5.1/5.2)
 
 - `src/exercise_media`: lista de ilustrações (ids estáveis), sugestão automática por padrão de movimento,

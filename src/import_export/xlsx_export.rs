@@ -25,7 +25,7 @@ pub const PLAN_HEADERS: [&str; 13] = [
 
 const PLAN_NOTES_HEADER: &str = "Observações";
 
-pub const SESSION_HEADERS: [&str; 17] = [
+pub const SESSION_HEADERS: [&str; 19] = [
     "Data",
     "Início",
     "Fim",
@@ -43,6 +43,8 @@ pub const SESSION_HEADERS: [&str; 17] = [
     "Descanso realizado (s)",
     "Obs. do exercício",
     "Obs. da sessão",
+    "Tipo da série",
+    "Grupo",
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -142,6 +144,9 @@ fn write_history(db: &Db, ws: &mut Worksheet, bold: &Format) -> AppResult<usize>
                 }
                 w(ws, 15, &e.notes)?;
                 w(ws, 16, &full.session.notes)?;
+                // Colunas acrescentadas na 0.6.0 (no fim, para não mudar a posição das anteriores).
+                w(ws, 17, set.kind.as_str())?;
+                w(ws, 18, &e.group_tag)?;
                 row += 1;
             }
         }

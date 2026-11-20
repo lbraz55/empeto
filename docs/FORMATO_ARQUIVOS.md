@@ -69,3 +69,12 @@ próximas 8 semanas (dia inteiro). É uma cópia: não há sincronização cont�
 SQLite em `files/workout.db` (armazenamento privado). Datas em epoch ms UTC; cargas em gramas
 inteiros. Migrações em `migrations/` aplicadas em transação; antes de migrar um banco existente é
 feita uma cópia `workout.pre-migration-vN.db`.
+
+## Colunas acrescentadas na versão 0.6.0 (aba "Sessões")
+
+| Coluna | Conteúdo |
+|---|---|
+| Tipo da série | `normal`, `warmup` (aquecimento), `drop`, `failure` (até a falha), `backoff` ou `technique` (técnica especial) |
+| Grupo | Etiqueta do grupo (`G1`, `G2`…) quando o exercício fez parte de supersérie/trissérie/circuito; vazio caso contrário |
+
+As colunas novas ficam no fim da aba; as anteriores mantêm a mesma posição.

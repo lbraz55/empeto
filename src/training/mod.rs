@@ -1,5 +1,6 @@
 //! Treinos: biblioteca de exercícios, fichas, dias e exercícios da ficha (RF-01..RF-03, RF-09).
 
+pub mod groups;
 pub mod session;
 pub mod progression;
 pub mod templates;
@@ -373,7 +374,7 @@ impl Db {
         Ok(())
     }
 
-    fn touch_plan(&self, id: Id) -> AppResult<()> {
+    pub(crate) fn touch_plan(&self, id: Id) -> AppResult<()> {
         self.conn.execute("UPDATE workout_plan SET updated_at=?2 WHERE id=?1", params![id, now_ms()])?;
         Ok(())
     }
@@ -573,7 +574,7 @@ impl Db {
     pub fn list_plan_exercises(&self, day_id: Id) -> AppResult<Vec<PlanExercise>> {
         let mut st = self.conn.prepare(&format!(
             "SELECT pe.id, pe.plan_id, pe.schedule_id, pe.position, pe.target_sets, pe.target_reps_min, pe.target_reps_max,
-                    pe.target_load_g, pe.rest_seconds, pe.notes, {EX_COLS}
+                    pe.target_load_g, pe.rest_seconds, pe.notes, pe.set_kinds, pe.group_tag, {EX_COLS}
              FROM plan_exercise pe JOIN exercise e ON e.id = pe.exercise_id
              WHERE pe.schedule_id = ?1 ORDER BY pe.position, pe.id"
         ))?;
@@ -587,7 +588,9 @@ impl Db {
                     target: Target { sets: r.get(4)?, reps_min: r.get(5)?, reps_max: r.get(6)?, load_g: r.get(7)? },
                     rest_seconds: r.get(8)?,
                     notes: r.get(9)?,
-                    exercise: row_exercise(r, 10)?,
+                    set_kinds: parse_set_kinds(&r.get::<_, String>(10)?),
+                    group_tag: r.get(11)?,
+                    exercise: row_exercise(r, 12)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -660,6 +663,7 @@ impl Db {
     pub fn delete_plan_exercise(&self, id: Id) -> AppResult<()> {
         let pe = self.get_plan_exercise(id)?;
         self.conn.execute("DELETE FROM plan_exercise WHERE id = ?1", params![id])?;
+        self.normalize_groups(pe.schedule_id)?;
         self.touch_plan(pe.plan_id)
     }
 
@@ -683,6 +687,7 @@ impl Db {
             tx.execute("UPDATE plan_exercise SET position=?2 WHERE id=?1", params![x, i as i64])?;
         }
         tx.commit()?;
+        self.normalize_groups(pe.schedule_id)?;
         self.touch_plan(pe.plan_id)
     }
 

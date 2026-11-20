@@ -37,6 +37,9 @@ msgstr "Search"
 msgid "Exercício"
 msgstr "Exercise"
 
+msgid "Anilhas e aquecimento"
+msgstr "Plates and warm-up"
+
 msgid "Sessão realizada"
 msgstr "Completed session"
 
@@ -985,6 +988,54 @@ msgstr "Nothing found"
 msgid "Nenhum exercício, ficha ou sessão corresponde à busca."
 msgstr "No exercise, plan or session matches the search."
 
+msgid "Diminuir"
+msgstr "Decrease"
+
+msgid "Aumentar"
+msgstr "Increase"
+
+msgid "Anilhas"
+msgstr "Plates"
+
+msgid "Aquecimento"
+msgstr "Warm-up"
+
+msgid "Carga total desejada"
+msgstr "Desired total load"
+
+msgid "Peso da barra"
+msgstr "Bar weight"
+
+msgid "CADA LADO DA BARRA"
+msgstr "EACH SIDE OF THE BAR"
+
+msgid "ANILHAS DISPONÍVEIS (PARES)"
+msgstr "AVAILABLE PLATES (PAIRS)"
+
+msgid "Informe quantos pares de cada anilha você tem. O cálculo usa o menor número de anilhas possível."
+msgstr "Enter how many pairs of each plate you have. The calculation uses as few plates as possible."
+
+msgid "Carga de trabalho"
+msgstr "Working load"
+
+msgid "SÉRIES DE AQUECIMENTO"
+msgstr "WARM-UP SETS"
+
+msgid "Carga de trabalho baixa demais para aquecer abaixo dela."
+msgstr "Working load too low to warm up below it."
+
+msgid "PERCENTUAIS E REPETIÇÕES"
+msgstr "PERCENTAGES AND REPS"
+
+msgid "−rep"
+msgstr "−rep"
+
+msgid "+rep"
+msgstr "+rep"
+
+msgid "Ferramenta de organização: as cargas são calculadas a partir dos percentuais escolhidos e arredondadas pelo incremento de carga. Não é uma prescrição — ajuste ao seu caso."
+msgstr "Organization tool: loads are calculated from the chosen percentages and rounded by the load increment. It is not a prescription — adjust it to your case."
+
 msgid "Nome da ficha"
 msgstr "Plan name"
 
@@ -1044,6 +1095,15 @@ msgstr "No exercises on this day."
 
 msgid "Editar "
 msgstr "Edit "
+
+msgid "Série "
+msgstr "Set "
+
+msgid "Desagrupar do próximo exercício"
+msgstr "Ungroup from the next exercise"
+
+msgid "Agrupar com o próximo exercício (supersérie)"
+msgstr "Group with the next exercise (superset)"
 
 msgid " É só uma sugestão, não uma prescrição."
 msgstr " It is only a suggestion, not a prescription."
@@ -1135,8 +1195,8 @@ msgstr ", archived"
 msgid "Carregar mais"
 msgstr "Load more"
 
-msgid "Série "
-msgstr "Set "
+msgid ". Toque para mudar o tipo."
+msgstr ". Tap to change the type."
 
 msgid "  ×  "
 msgstr "  ×  "
@@ -1167,6 +1227,9 @@ msgstr "Set"
 
 msgid "Obs."
 msgstr "Notes"
+
+msgid "Repetir valores da sessão anterior"
+msgstr "Repeat previous session values"
 
 msgid "TÉCNICA E OBSERVAÇÕES"
 msgstr "TECHNIQUE AND NOTES"
@@ -1429,6 +1492,21 @@ msgstr "Movement pattern"
 msgid "Nenhuma sessão em andamento."
 msgstr "No session in progress."
 
+msgid "SESSÃO ANTERIOR · {}"
+msgstr "PREVIOUS SESSION · {}"
+
+msgid "Série {}: {} × {}"
+msgstr "Set {}: {} × {}"
+
+msgid " · depois: {}"
+msgstr " · then: {}"
+
+msgid " · depois: descanso"
+msgstr " · then: rest"
+
+msgid "{} {}/{}{}"
+msgstr "{} {}/{}{}"
+
 msgid "Última vez: {} × {} ({})"
 msgstr "Last time: {} × {} ({})"
 
@@ -1468,6 +1546,9 @@ msgstr "Set updated."
 msgid "Série registrada."
 msgstr "Set logged."
 
+msgid "Série registrada. Agora: {} (sem descanso no grupo)."
+msgstr "Set logged. Now: {} (no rest within the group)."
+
 msgid "Série registrada. Descanso de {} iniciado."
 msgstr "Set logged. {} rest started."
 
@@ -1479,6 +1560,30 @@ msgstr "Set log"
 
 msgid "Novo recorde: {}"
 msgstr "New record: {}"
+
+msgid "Só a barra"
+msgstr "Bar only"
+
+msgid "Total montado: {} (barra {})."
+msgstr "Total loaded: {} (bar {})."
+
+msgid "Não é possível montar exatamente {} com as anilhas cadastradas. Mais próximo abaixo: {}."
+msgstr "{} cannot be loaded exactly with the saved plates. Closest below: {}."
+
+msgid "{} par(es)"
+msgstr "{} pair(s)"
+
+msgid "{}. {} × {} reps"
+msgstr "{}. {} × {} reps"
+
+msgid "Trabalho: {}"
+msgstr "Working set: {}"
+
+msgid "{}% × {} reps"
+msgstr "{}% × {} reps"
+
+msgid "Cada lado: {}"
+msgstr "Each side: {}"
 
 msgid "Sem séries — adicione na tela da sessão"
 msgstr "No sets — add them on the session screen"
@@ -1609,8 +1714,8 @@ msgstr "not logged"
 msgid " · intervalo {}"
 msgstr " · rest {}"
 
-msgid "Série {}: {}  (plan. {}{}){}"
-msgstr "Set {}: {}  (plan. {}{}){}"
+msgid "Série {}{}: {}  (plan. {}{}){}"
+msgstr "Set {}{}: {}  (plan. {}{}){}"
 
 msgid "Não realizado nesta sessão."
 msgstr "Not done in this session."
@@ -1948,6 +2053,12 @@ msgstr "Remove exercise"
 msgid "Remover este exercício da ficha? O histórico não é afetado."
 msgstr "Remove this exercise from the plan? History is not affected."
 
+msgid "Tipo da série: {}"
+msgstr "Set type: {}"
+
+msgid "Valores da sessão anterior preenchidos. Confira e registre cada série."
+msgstr "Previous session values filled in. Check them and log each set."
+
 msgid "Atalhos padrão restaurados."
 msgstr "Default shortcuts restored."
 
@@ -2179,6 +2290,15 @@ msgstr "November"
 msgid "Dezembro"
 msgstr "December"
 
+msgid "Informe valores positivos."
+msgstr "Enter positive values."
+
+msgid "A carga desejada é menor que o peso da barra."
+msgstr "The desired load is lower than the bar weight."
+
+msgid "Carga alta demais para calcular."
+msgstr "Load too high to calculate."
+
 msgid "Informe as repetições realizadas."
 msgstr "Enter the reps done."
 
@@ -2208,6 +2328,33 @@ msgstr "Sequence (A/B/C…)"
 
 msgid "Informe o nome do exercício."
 msgstr "Enter the exercise name."
+
+msgid "Drop set"
+msgstr "Drop set"
+
+msgid "Até a falha"
+msgstr "To failure"
+
+msgid "Back-off"
+msgstr "Back-off"
+
+msgid "Técnica especial"
+msgstr "Special technique"
+
+msgid "AQ"
+msgstr "WU"
+
+msgid "DROP"
+msgstr "DROP"
+
+msgid "FALHA"
+msgstr "FAIL"
+
+msgid "BACK-OFF"
+msgstr "BACK-OFF"
+
+msgid "TÉC"
+msgstr "TECH"
 
 msgid "Séries devem estar entre 1 e 50."
 msgstr "Sets must be between 1 and 50."
@@ -2529,6 +2676,21 @@ msgstr "Imported from sheet \"{}\""
 
 msgid "O banco de dados é de uma versão mais nova do app (schema {}). Atualize o aplicativo."
 msgstr "The database is from a newer version of the app (schema {}). Update the app."
+
+msgid "Supersérie"
+msgstr "Superset"
+
+msgid "Trissérie"
+msgstr "Tri-set"
+
+msgid "Circuito"
+msgstr "Circuit"
+
+msgid "Não há exercício seguinte para agrupar."
+msgstr "There is no next exercise to group with."
+
+msgid "Série inválida."
+msgstr "Invalid set."
 
 msgid "Exercício não encontrado."
 msgstr "Exercise not found."

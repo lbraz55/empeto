@@ -1,0 +1,171 @@
+import { Theme, Icons } from "../theme.slint";
+import { Bridge } from "../bridge.slint";
+import { Btn, IconBtn, Card, Label, Body, Title, SectionTitle, Scroll, Segmented, ValueRow } from "../components/widgets.slint";
+
+// Ferramentas de organização (documento de evolução v1.1, 8.5 e 8.6): calculadora de anilhas e de
+// aquecimento. Os cálculos são feitos em Rust; a tela só mostra o resultado.
+
+component Stepper inherits HorizontalLayout {
+    in property <string> label;
+    in property <string> value;
+    callback minus();
+    callback plus();
+    callback edit();
+    spacing: 8px;
+    Text {
+        text: root.label;
+        color: Theme.text;
+        font-size: Theme.fs-m;
+        vertical-alignment: center;
+        horizontal-stretch: 1;
+        wrap: word-wrap;
+    }
+    IconBtn {
+        icon: Icons.minus;
+        label: @tr("Diminuir");
+        clicked => { root.minus(); }
+    }
+    Rectangle {
+        min-width: 96px;
+        border-radius: 10px;
+        background: vta.pressed ? Theme.pressed : Theme.surface2;
+        accessible-role: button;
+        accessible-label: root.label + ": " + root.value;
+        accessible-action-default => { root.edit(); }
+        vta := TouchArea { clicked => { root.edit(); } }
+        Text {
+            text: root.value;
+            color: Theme.text;
+            font-size: Theme.fs-l;
+            font-weight: 700;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+    IconBtn {
+        icon: Icons.plus;
+        label: @tr("Aumentar");
+        clicked => { root.plus(); }
+    }
+}
+
+export component ToolsScreen inherits Scroll {
+    Segmented {
+        items: [@tr("Anilhas"), @tr("Aquecimento")];
+        selected: Bridge.tools-tab;
+        select(i) => { Bridge.tools-tab = i; }
+    }
+    if Bridge.tools-tab == 0: VerticalLayout {
+        spacing: 10px;
+        Stepper {
+            label: @tr("Carga total desejada");
+            value: Bridge.tools-target;
+            minus => { Bridge.tools-step("target", -1); }
+            plus => { Bridge.tools-step("target", 1); }
+            edit => { Bridge.tools-edit("target"); }
+        }
+        Stepper {
+            label: @tr("Peso da barra");
+            value: Bridge.tools-bar;
+            minus => { Bridge.tools-step("bar", -1); }
+            plus => { Bridge.tools-step("bar", 1); }
+            edit => { Bridge.tools-edit("bar"); }
+        }
+        Card {
+            SectionTitle { text: @tr("CADA LADO DA BARRA"); }
+            // Desenho da barra: anilhas proporcionais ao peso (mais pesadas perto do centro).
+            Rectangle {
+                height: 96px;
+                Rectangle {
+                    y: parent.height / 2 - 3px;
+                    height: 6px;
+                    border-radius: 3px;
+                    background: Theme.border-strong;
+                }
+                HorizontalLayout {
+                    alignment: start;
+                    spacing: 3px;
+                    padding-left: 18px;
+                    Rectangle {
+                        width: 10px;
+                        y: parent.height * 0.3;
+                        height: parent.height * 0.4;
+                        border-radius: 2px;
+                        background: Theme.text;
+                    }
+                    for h[i] in Bridge.tools-plates: Rectangle {
+                        width: 14px;
+                        y: (parent.height - self.height) / 2;
+                        height: parent.height * h;
+                        border-radius: 3px;
+                        background: Theme.text;
+                    }
+                }
+            }
+            Text {
+                text: Bridge.tools-result;
+                color: Bridge.tools-exact ? Theme.text : Theme.warning;
+                font-size: Theme.fs-l;
+                font-weight: 700;
+                wrap: word-wrap;
+            }
+            if Bridge.tools-detail != "": Label { text: Bridge.tools-detail; }
+        }
+        SectionTitle { text: @tr("ANILHAS DISPONÍVEIS (PARES)"); }
+        Label { text: @tr("Informe quantos pares de cada anilha você tem. O cálculo usa o menor número de anilhas possível."); }
+        for p[i] in Bridge.tools-inventory: Stepper {
+            label: p;
+            value: Bridge.tools-plate-labels[i];
+            minus => { Bridge.tools-plate-pairs(i, -1); }
+            plus => { Bridge.tools-plate-pairs(i, 1); }
+            edit => { Bridge.tools-plate-pairs(i, 0); }
+        }
+    }
+    if Bridge.tools-tab == 1: VerticalLayout {
+        spacing: 10px;
+        Stepper {
+            label: @tr("Carga de trabalho");
+            value: Bridge.tools-work;
+            minus => { Bridge.tools-step("work", -1); }
+            plus => { Bridge.tools-step("work", 1); }
+            edit => { Bridge.tools-edit("work"); }
+        }
+        Card {
+            SectionTitle { text: @tr("SÉRIES DE AQUECIMENTO"); }
+            for w in Bridge.tools-warmup: Body { text: w; }
+            if Bridge.tools-warmup.length == 0: Label { text: @tr("Carga de trabalho baixa demais para aquecer abaixo dela."); }
+        }
+        SectionTitle { text: @tr("PERCENTUAIS E REPETIÇÕES"); }
+        for st[i] in Bridge.tools-steps: HorizontalLayout {
+            spacing: 6px;
+            Text {
+                text: st;
+                color: Theme.text;
+                font-size: Theme.fs-m;
+                vertical-alignment: center;
+                horizontal-stretch: 1;
+            }
+            Btn {
+                text: "−5%";
+                compact: true;
+                clicked => { Bridge.tools-step-edit(i, -5, 0); }
+            }
+            Btn {
+                text: "+5%";
+                compact: true;
+                clicked => { Bridge.tools-step-edit(i, 5, 0); }
+            }
+            Btn {
+                text: @tr("−rep");
+                compact: true;
+                clicked => { Bridge.tools-step-edit(i, 0, -1); }
+            }
+            Btn {
+                text: @tr("+rep");
+                compact: true;
+                clicked => { Bridge.tools-step-edit(i, 0, 1); }
+            }
+        }
+        Label { text: @tr("Ferramenta de organização: as cargas são calculadas a partir dos percentuais escolhidos e arredondadas pelo incremento de carga. Não é uma prescrição — ajuste ao seu caso."); }
+    }
+}

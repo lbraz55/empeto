@@ -89,6 +89,14 @@ export component PlanEditorScreen inherits Scroll {
             ta := TouchArea {
                 clicked => { Bridge.edit-plan-ex(e.id); }
             }
+            // Barra lateral que une os exercícios de um mesmo grupo (supersérie/trissérie/circuito).
+            if e.group-pos > 0: Rectangle {
+                x: 0;
+                y: e.group-pos == 1 ? parent.height * 0.25 : 0;
+                width: 3px;
+                height: e.group-pos == 2 ? parent.height : e.group-pos == 1 || e.group-pos == 3 ? parent.height * 0.75 : parent.height;
+                background: Theme.text;
+            }
             HorizontalLayout {
                 padding-left: 4px;
                 spacing: 0px;
@@ -106,8 +114,64 @@ export component PlanEditorScreen inherits Scroll {
                 VerticalLayout {
                     alignment: center;
                     spacing: 2px;
+                    if e.group-label != "": Text {
+                        text: e.group-label;
+                        color: Theme.text;
+                        font-size: Theme.fs-xs;
+                        font-weight: 800;
+                    }
                     Body { text: e.name; }
                     Label { text: e.detail; }
+                    // Tipo de cada série (toque para alternar): normal, aquecimento, drop, falha, back-off, técnica.
+                    HorizontalLayout {
+                        spacing: 4px;
+                        alignment: start;
+                        for k[j] in e.kinds: Rectangle {
+                            height: 26px;
+                            min-width: 30px;
+                            border-radius: 13px;
+                            background: kta.pressed ? Theme.pressed : Theme.surface2;
+                            border-width: 1px;
+                            border-color: Theme.border;
+                            accessible-role: button;
+                            accessible-label: @tr("Série ") + (j + 1) + ": " + k;
+                            accessible-action-default => { Bridge.pe-cycle-kind(e.id, j + 1); }
+                            kta := TouchArea { clicked => { Bridge.pe-cycle-kind(e.id, j + 1); } }
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                Text {
+                                    text: k;
+                                    color: Theme.text;
+                                    font-size: Theme.fs-xs;
+                                    vertical-alignment: center;
+                                    horizontal-alignment: center;
+                                }
+                            }
+                        }
+                        // Agrupar com o próximo (supersérie/trissérie/circuito).
+                        if !e.last: Rectangle {
+                            height: 26px;
+                            width: 34px;
+                            border-radius: 13px;
+                            background: e.linked ? Theme.accent : (lta.pressed ? Theme.pressed : Theme.surface2);
+                            border-width: 1px;
+                            border-color: e.linked ? Theme.accent : Theme.border;
+                            accessible-role: button;
+                            accessible-checked: e.linked;
+                            accessible-label: e.linked ? @tr("Desagrupar do próximo exercício") : @tr("Agrupar com o próximo exercício (supersérie)");
+                            accessible-action-default => { Bridge.pe-toggle-group(e.id); }
+                            lta := TouchArea { clicked => { Bridge.pe-toggle-group(e.id); } }
+                            Icon {
+                                x: (parent.width - self.width) / 2;
+                                y: (parent.height - self.height) / 2;
+                                cmd: Icons.link;
+                                size: 16px;
+                                stroke: 1.8px;
+                                tint: e.linked ? Theme.on-accent : Theme.text;
+                            }
+                        }
+                    }
                     if e.notes != "": Label {
                         text: @tr("Obs.: ") + e.notes;
                         color: Theme.faint;
@@ -342,11 +406,24 @@ component SetLine inherits Rectangle {
         spacing: 6px;
         HorizontalLayout {
             spacing: 8px;
-            Text {
-                text: @tr("Série ") + root.s.number;
-                color: Theme.text;
-                font-size: Theme.fs-m;
-                font-weight: 700;
+            Rectangle {
+                // Toque no rótulo alterna o tipo da série (evolução 8.1).
+                accessible-role: button;
+                accessible-label: @tr("Série ") + root.s.number + (root.s.kind != "" ? ", " + root.s.kind : "") + @tr(". Toque para mudar o tipo.");
+                accessible-action-default => { Bridge.session-cycle-kind(root.s.id); }
+                min-width: lbl.preferred-width;
+                TouchArea { clicked => { Bridge.session-cycle-kind(root.s.id); } }
+                lbl := HorizontalLayout {
+                    spacing: 6px;
+                    Text {
+                        text: @tr("Série ") + root.s.number;
+                        color: Theme.text;
+                        font-size: Theme.fs-m;
+                        font-weight: 700;
+                        vertical-alignment: center;
+                    }
+                    if root.s.kind != "": Badge { text: root.s.kind; }
+                }
             }
             Text {
                 text: root.s.planned;
@@ -539,6 +616,10 @@ export component SessionScreen inherits Rectangle {
                     alignment: center;
                     Badge { text: root.cur.substitution; }
                 }
+                if root.cur.group != "": HorizontalLayout {
+                    alignment: center;
+                    Badge { text: root.cur.group; }
+                }
                 Text {
                     text: root.cur.planned;
                     color: Theme.text;
@@ -551,6 +632,16 @@ export component SessionScreen inherits Rectangle {
                 s: st;
                 unit: Bridge.session-unit;
                 se-id: root.cur.id;
+            }
+            HorizontalLayout {
+                alignment: start;
+                Btn {
+                    text: @tr("Anilhas e aquecimento");
+                    icon: Icons.tools;
+                    compact: true;
+                    kind: "ghost";
+                    clicked => { Bridge.open-tools(root.cur.id); }
+                }
             }
             HorizontalLayout {
                 spacing: 8px;
@@ -579,6 +670,22 @@ export component SessionScreen inherits Rectangle {
                 clicked => { Bridge.session-substitute(root.cur.id); }
             }
             if root.cur.notes != "": Label { text: @tr("Obs.: ") + root.cur.notes; }
+            // Valores da sessão anterior (evolução 8.3): só exibidos; repetir é uma ação explícita.
+            if root.cur.prev-title != "": Card {
+                Text {
+                    text: root.cur.prev-title;
+                    color: Theme.muted;
+                    font-size: Theme.fs-xs;
+                    font-weight: 700;
+                }
+                for l in root.cur.prev-lines: Body { text: l; }
+                Btn {
+                    text: @tr("Repetir valores da sessão anterior");
+                    icon: Icons.repeat;
+                    compact: true;
+                    clicked => { Bridge.session-repeat-previous(root.cur.id); }
+                }
+            }
             if root.cur.technique != "": Card {
                 Text {
                     text: @tr("TÉCNICA E OBSERVAÇÕES");
