@@ -32,6 +32,14 @@
 | `src/application` | Casos de uso transversais: preferências, busca global, desfazer, `GestureEvent`, atalhos da Home, armazenamento e backups locais, resumo do widget |
 | `android/java` | `MainActivity` (NativeActivity + ponte), `LauncherActivity` (diagnóstico de abertura), `TimerAlarmReceiver` e `EmpetoWidget` |
 
+## Análise (evolução v1.1, 8.4, 8.7–8.9) — `history::analytics`
+
+- `set_set_effort`/`set_session_feeling`: só em sessão em andamento; gatilho `trg_session_feeling_immutable`.
+- `session_stats` (comparação), `comparable_sessions`, `month_report` e `diary`: consultas agregadas no SQLite;
+  aquecimento fora de volume/carga máxima/1RM. A comparação é montada no controlador (`refresh_compare`).
+- Compartilhar: `Platform::share_text` → `MainActivity.shareText` (ACTION_SEND com seletor; sem permissão).
+- Desempenho: `tests/bench.rs` + docs/DESEMPENHO.md.
+
 ## Eficiência de treinamento (evolução v1.1, 8.1–8.6)
 
 - `domain::SetKind` (+ `parse_set_kinds`/`format_set_kinds`): tipo planejado em `plan_exercise.set_kinds`

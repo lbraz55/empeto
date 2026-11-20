@@ -528,6 +528,49 @@ component SetLine inherits Rectangle {
             color: Theme.faint;
             font-size: Theme.fs-xs;
         }
+        // Percepção de esforço (8.4): opcional, ativada em Configurações › Treinamento.
+        if Bridge.effort-enabled: HorizontalLayout {
+            spacing: 6px;
+            alignment: start;
+            Rectangle {
+                height: 30px;
+                min-width: rpe-t.preferred-width + 20px;
+                border-radius: 15px;
+                background: rpe-ta.pressed ? Theme.pressed : Theme.surface2;
+                border-width: 1px;
+                border-color: Theme.border;
+                accessible-role: button;
+                accessible-label: "RPE " + (root.s.rpe != "" ? root.s.rpe : "—");
+                accessible-action-default => { Bridge.session-effort(root.s.id, "rpe"); }
+                rpe-ta := TouchArea { clicked => { Bridge.session-effort(root.s.id, "rpe"); } }
+                rpe-t := Text {
+                    text: "RPE " + (root.s.rpe != "" ? root.s.rpe : "—");
+                    color: Theme.text;
+                    font-size: Theme.fs-s;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            Rectangle {
+                height: 30px;
+                min-width: rir-t.preferred-width + 20px;
+                border-radius: 15px;
+                background: rir-ta.pressed ? Theme.pressed : Theme.surface2;
+                border-width: 1px;
+                border-color: Theme.border;
+                accessible-role: button;
+                accessible-label: "RIR " + (root.s.rir != "" ? root.s.rir : "—");
+                accessible-action-default => { Bridge.session-effort(root.s.id, "rir"); }
+                rir-ta := TouchArea { clicked => { Bridge.session-effort(root.s.id, "rir"); } }
+                rir-t := Text {
+                    text: "RIR " + (root.s.rir != "" ? root.s.rir : "—");
+                    color: Theme.text;
+                    font-size: Theme.fs-s;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
     }
 }
 
@@ -696,6 +739,12 @@ export component SessionScreen inherits Rectangle {
                 Body { text: root.cur.technique; }
             }
             Divider { }
+            Btn {
+                text: @tr("Como foi o treino?") + (Bridge.session-feeling != "" ? " " + Bridge.session-feeling : "");
+                icon: Icons.note;
+                kind: "ghost";
+                clicked => { Bridge.session-choose-feeling(); }
+            }
             Btn {
                 text: @tr("Observações da sessão");
                 icon: Icons.note;

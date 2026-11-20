@@ -396,6 +396,8 @@ pub struct Session {
     pub status: SessionStatus,
     pub notes: String,
     pub plan_snapshot_json: String,
+    /// Diário: como foi o treino (1–5), opcional.
+    pub feeling: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -412,6 +414,9 @@ pub struct SessionSet {
     pub rest_taken_s: Option<i64>,
     /// Finalidade da série (aquecimento, drop set…).
     pub kind: SetKind,
+    /// Percepção de esforço (opcional): RPE 1–10 e repetições em reserva.
+    pub rpe: Option<f64>,
+    pub rir: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

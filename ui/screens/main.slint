@@ -350,9 +350,41 @@ export component CalendarScreen inherits Scroll {
 }
 
 // RF-14 / RF-15 / 6.6: visão geral; detalhe e evolução abrem em telas próprias.
+component BarLine inherits VerticalLayout {
+    in property <string> label;
+    in property <string> value;
+    in property <float> frac;
+    spacing: 3px;
+    HorizontalLayout {
+        Text {
+            text: root.label;
+            color: Theme.text;
+            font-size: Theme.fs-s;
+            horizontal-stretch: 1;
+        }
+        Text {
+            text: root.value;
+            color: Theme.muted;
+            font-size: Theme.fs-s;
+        }
+    }
+    Rectangle {
+        height: 8px;
+        border-radius: 4px;
+        background: Theme.surface2;
+        Rectangle {
+            x: 0;
+            width: parent.width * root.frac;
+            animate width { duration: Theme.anim-page; easing: ease-out; }
+            border-radius: 4px;
+            background: Theme.text;
+        }
+    }
+}
+
 export component HistoryScreen inherits Scroll {
     Segmented {
-        items: [@tr("Sessões"), @tr("Evolução por exercício")];
+        items: [@tr("Sessões"), @tr("Evolução"), @tr("Mensal"), @tr("Diário")];
         selected: Bridge.hist-tab;
         select(i) => { Bridge.hist-set-tab(i); }
     }
@@ -377,6 +409,10 @@ export component HistoryScreen inherits Scroll {
                 font-weight: 600;
             }
             Label { text: r.subtitle; }
+        }
+        if Bridge.hist-has-more: Btn {
+            text: @tr("Carregar mais");
+            clicked => { Bridge.hist-more(); }
         }
     }
     if Bridge.hist-tab == 1 && Bridge.evo-exercises.length == 0: EmptyState {
@@ -407,6 +443,93 @@ export component HistoryScreen inherits Scroll {
                     tint: Theme.muted;
                 }
             }
+        }
+    }
+    // Relatório mensal (8.8)
+    if Bridge.hist-tab == 2: VerticalLayout {
+        spacing: 10px;
+        HorizontalLayout {
+            IconBtn {
+                icon: Icons.back;
+                label: @tr("Mês anterior");
+                clicked => { Bridge.rep-shift(-1); }
+            }
+            Text {
+                text: Bridge.rep-title;
+                color: Theme.text;
+                font-size: Theme.fs-l;
+                font-weight: 700;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                horizontal-stretch: 1;
+            }
+            IconBtn {
+                icon: Icons.forward;
+                label: @tr("Próximo mês");
+                clicked => { Bridge.rep-shift(1); }
+            }
+        }
+        if Bridge.rep-empty: EmptyState {
+            icon: Icons.chart;
+            title: @tr("Nenhum treino neste mês");
+            text: @tr("O relatório aparece quando houver sessões concluídas no mês escolhido.");
+        }
+        if !Bridge.rep-empty: Card {
+            for r in Bridge.rep-rows: HorizontalLayout {
+                Text {
+                    text: r.label;
+                    color: Theme.muted;
+                    font-size: Theme.fs-m;
+                    horizontal-stretch: 1;
+                }
+                Text {
+                    text: r.a;
+                    color: Theme.text;
+                    font-size: Theme.fs-m;
+                    font-weight: 700;
+                }
+            }
+        }
+        if !Bridge.rep-empty: Card {
+            SectionTitle { text: @tr("SESSÕES POR SEMANA"); }
+            for w in Bridge.rep-weeks: BarLine { label: w.label; value: w.value; frac: w.frac; }
+        }
+        if !Bridge.rep-empty && Bridge.rep-muscles.length > 0: Card {
+            SectionTitle { text: @tr("SÉRIES POR GRUPO MUSCULAR"); }
+            for m in Bridge.rep-muscles: BarLine { label: m.label; value: m.value; frac: m.frac; }
+        }
+        if !Bridge.rep-empty && Bridge.rep-records.length > 0: Card {
+            SectionTitle { text: @tr("RECORDES DO MÊS"); }
+            for r in Bridge.rep-records: Body { text: "★ " + r; }
+        }
+        if !Bridge.rep-empty: Btn {
+            text: @tr("Compartilhar resumo");
+            icon: Icons.upload;
+            clicked => { Bridge.rep-share(); }
+        }
+    }
+    // Diário de treinamento (8.9)
+    if Bridge.hist-tab == 3 && Bridge.diary.length == 0: EmptyState {
+        icon: Icons.note;
+        title: @tr("Seu diário está vazio");
+        text: @tr("Durante a sessão, toque em \"Como foi o treino?\" e em \"Observações da sessão\". Ao finalizar, o registro aparece aqui.");
+    }
+    if Bridge.hist-tab == 3: VerticalLayout {
+        spacing: Theme.gap;
+        for d in Bridge.diary: Card {
+            clickable: true;
+            accessible-role: button;
+            accessible-label: d.date + " " + d.title;
+            clicked => { Bridge.hist-open(d.id); }
+            HorizontalLayout {
+                Label { text: d.date; horizontal-stretch: 1; }
+                if d.feeling != "": Badge { text: d.feeling; }
+            }
+            Body {
+                text: d.title;
+                font-weight: 600;
+            }
+            if d.text != "": Body { text: d.text; }
         }
     }
 }

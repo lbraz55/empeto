@@ -422,6 +422,22 @@ public class MainActivity extends NativeActivity {
         }
     }
 
+    /** Compartilha um texto (relatório mensal) pelo seletor do sistema. Nada é enviado sem a escolha do usuário. */
+    public boolean shareText(String subject, String text) {
+        try {
+            Intent send = new Intent(Intent.ACTION_SEND);
+            send.setType("text/plain");
+            send.putExtra(Intent.EXTRA_SUBJECT, subject);
+            send.putExtra(Intent.EXTRA_TEXT, text);
+            Intent chooser = Intent.createChooser(send, subject);
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(chooser);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** Atualiza o widget depois que o app regravou files/widget.txt. */
     public void updateWidget() {
         EmpetoWidget.refreshAll(getApplicationContext());

@@ -76,17 +76,30 @@ pub fn search(db: &Db, query: &str) -> AppResult<Vec<SearchHit>> {
                 .join(" · "),
         });
     }
-    // Sessões concluídas (ficha, dia, observações)
+    // Sessões concluídas (ficha, dia, observações): uma só consulta com os textos; a contagem de séries
+    // só é calculada para os resultados encontrados (12.1).
     let mut n = 0;
-    for s in db.list_session_summaries(None, None)? {
-        let notes = db.get_session(s.id).map(|x| x.notes).unwrap_or_default();
-        if matches(&format!("{} {} {}", s.plan_name, s.schedule_name, notes), q) {
-            let d = local_date_of(s.started_at);
+    let mut st = db.conn.prepare(
+        "SELECT id, plan_name, schedule_name, notes, started_at FROM workout_session
+         WHERE status = 'completed' ORDER BY started_at DESC",
+    )?;
+    let rows = st
+        .query_map([], |r| Ok((r.get::<_, Id>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?, r.get::<_, String>(3)?, r.get::<_, i64>(4)?)))?
+        .collect::<Result<Vec<_>, _>>()?;
+    for (id, plan, day, notes, started) in rows {
+        if matches(&format!("{} {} {}", plan, day, notes), q) {
+            let d = local_date_of(started);
+            let sets: i64 = db.conn.query_row(
+                "SELECT COUNT(*) FROM session_set ss JOIN session_exercise e ON e.id = ss.session_exercise_id
+                 WHERE e.session_id = ?1 AND ss.completed_at IS NOT NULL",
+                [id],
+                |r| r.get(0),
+            )?;
             out.push(SearchHit {
                 kind: HitKind::Session,
-                id: s.id,
-                title: format!("{} — {}", s.plan_name, s.schedule_name),
-                subtitle: trf!("{:02}/{:02}/{} · {} série(s)", d.day(), d.month(), d.year(), s.sets),
+                id,
+                title: format!("{} — {}", plan, day),
+                subtitle: trf!("{:02}/{:02}/{} · {} série(s)", d.day(), d.month(), d.year(), sets),
             });
             n += 1;
             if n >= PER_KIND {

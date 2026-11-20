@@ -71,6 +71,15 @@ Sons e alertas · Cronômetro · Treinamento · Calendário · Interface · Dado
 - **Backup** é diferente de planilha: guarda o estado completo para restaurar o app. **Restaurar**
   valida o arquivo antes de substituir os dados atuais.
 
+## Análise: relatório, diário e comparação
+
+- **Histórico › Mensal**: resumo do mês (treinos, duração, volume, recordes, sessões por semana e séries por
+  grupo muscular). Use as setas para outros meses e "Compartilhar resumo" para enviar o texto.
+- **Histórico › Diário**: na sessão, toque em "Como foi o treino?" e escreva as observações; ao finalizar, o
+  registro aparece no diário.
+- **Comparar**: abra uma sessão no histórico e toque em "Comparar com outra sessão".
+- **RPE/RIR**: ative em Configurações › Treinamento › Registrar esforço; cada série ganha os botões RPE e RIR.
+
 ## Durante o treino: tipos de série, grupos e calculadoras
 
 - **Tipos de série**: no editor da ficha, toque no número da série (1, 2, 3…) para alternar entre normal,

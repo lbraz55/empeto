@@ -47,6 +47,7 @@ const P_SEARCH: i32 = 17;
 const P_ONBOARDING: i32 = 18;
 const P_EXDETAIL: i32 = 19;
 const P_TOOLS: i32 = 22;
+const P_COMPARE: i32 = 23;
 
 const XLSX_MIMES: &[&str] = &[
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -89,6 +90,9 @@ enum ChoiceCtx {
     Template,
     Language,
     Illustration,
+    Effort(Id, &'static str),
+    Feeling,
+    Compare(Vec<Id>),
     Shortcut(usize),
 }
 
@@ -183,6 +187,12 @@ pub struct Controller {
     repeat_prev: std::collections::HashSet<Id>,
     /// Estado das calculadoras (8.5/8.6).
     tools: ToolsState,
+    /// Sessões comparadas (A = anterior, B = escolhida).
+    cmp: Option<(Id, Id)>,
+    /// Sessões carregadas na lista do histórico (paginação).
+    hist_limit: usize,
+    /// Mês do relatório (ano, mês).
+    rep_month: (i32, u32),
     /// Última operação reversível (aviso "Desfazer").
     undo: Option<UndoOp>,
     /// Próxima tecla substitui o valor (campo recém-selecionado/preenchido).
@@ -391,6 +401,7 @@ impl Controller {
             P_EDITOR => self.refresh_editor(),
             P_LIBRARY => self.refresh_library(),
             P_EXDETAIL => self.refresh_exercise_detail(),
+            P_COMPARE => self.refresh_compare(),
             P_TOOLS => {
                 self.refresh_tools();
                 Ok(())
@@ -1306,6 +1317,8 @@ impl Controller {
         self.session_id = Some(sid);
         let f = self.db.get_session_full(sid)?;
         let unit = self.prefs.unit;
+        let feeling = f.session.feeling.map(crate::history::analytics::feeling_label).unwrap_or("");
+        self.with_bridge(|b| b.set_session_feeling(ss(feeling)));
         let mut rows = Vec::new();
         let tags: Vec<String> = f.exercises.iter().map(|e| e.group_tag.clone()).collect();
         for (idx, e) in f.exercises.iter().enumerate() {
@@ -1372,6 +1385,8 @@ impl Controller {
                         done: s.completed_at.is_some(),
                         hint: ss(hint),
                         kind: ss(s.kind.short()),
+                        rpe: ss(s.rpe.map(fmt_rpe).unwrap_or_default()),
+                        rir: ss(s.rir.map(|r| r.to_string()).unwrap_or_default()),
                     }
                 })
                 .collect();
@@ -2384,7 +2399,8 @@ impl Controller {
 
     fn refresh_history(&mut self) -> AppResult<()> {
         let unit = self.prefs.unit;
-        let list = self.db.list_session_summaries(None, None)?;
+        let total = self.db.count_completed_sessions()?;
+        let list = self.db.list_session_summaries_limit(None, None, Some(self.hist_limit))?;
         let rows: Vec<HistRow> = list
             .iter()
             .map(|s| HistRow {
@@ -2410,11 +2426,241 @@ impl Controller {
                 detail: ss(trf!("{} sessão(ões) · última em {}", h.sessions, fmt_date_short(h.last_at))),
             })
             .collect();
-        let summary = if list.is_empty() { String::new() } else { trf!("{} sessão(ões) concluída(s)", list.len()) };
+        let summary = if list.is_empty() { String::new() } else { trf!("{} sessão(ões) concluída(s)", total) };
+        let more = (list.len() as i64) < total;
         self.with_bridge(|b| {
+            b.set_hist_has_more(more);
             b.set_hist_rows(model(rows));
             b.set_evo_exercises(model(evo));
             b.set_hist_summary(ss(summary));
+        });
+        match self.with_bridge(|b| b.get_hist_tab()) {
+            2 => self.refresh_report()?,
+            3 => self.refresh_diary()?,
+            _ => {}
+        }
+        Ok(())
+    }
+
+    // ------------------------------------------------------------------
+    // Análise (evolução 8.7–8.9)
+    // ------------------------------------------------------------------
+
+    fn refresh_report(&mut self) -> AppResult<()> {
+        let unit = self.prefs.unit;
+        let (y, m) = self.rep_month;
+        let r = self.db.month_report(y, m)?;
+        let title = capitalize(&cal::month_title(y, m));
+        let row = |label: &str, value: String| CmpRow { label: ss(label), a: ss(value), b: ss(""), delta: ss(""), trend: 0 };
+        let mut rows = vec![
+            row(tr("Treinos realizados"), r.sessions.to_string()),
+            row(tr("Dias com treino"), r.days_trained.to_string()),
+            row(tr("Duração total"), fmt_minutes(r.total_duration_ms)),
+            row(tr("Duração média"), fmt_minutes(r.avg_duration_ms)),
+            row(tr("Exercícios diferentes"), r.distinct_exercises.to_string()),
+            row(tr("Séries registradas"), r.sets.to_string()),
+            row(tr("Volume total"), fmt_volume(r.volume_g, unit)),
+            row(tr("Recordes pessoais"), r.records.len().to_string()),
+        ];
+        if let Some(rpe) = r.avg_rpe {
+            rows.push(row(tr("RPE médio"), fmt_rpe(rpe)));
+        }
+        if let Some(f) = r.avg_feeling {
+            rows.push(row(tr("Avaliação média"), format!("{:.1} / 5", f).replace('.', &crate::i18n::decimal_sep().to_string())));
+        }
+        let wmax = r.weeks.iter().map(|w| w.1).max().unwrap_or(1).max(1) as f32;
+        let weeks: Vec<BarRow> = r
+            .weeks
+            .iter()
+            .map(|(d, n)| BarRow { label: ss(trf!("Semana de {}", fmt_dm(*d))), value: ss(n.to_string()), frac: *n as f32 / wmax })
+            .collect();
+        let mmax = r.muscles.iter().map(|m| m.1).max().unwrap_or(1).max(1) as f32;
+        let muscles: Vec<BarRow> =
+            r.muscles.iter().map(|(m, n)| BarRow { label: ss(m), value: ss(trf!("{} série(s)", n)), frac: *n as f32 / mmax }).collect();
+        let records: Vec<SharedString> = r
+            .records
+            .iter()
+            .take(10)
+            .map(|e| {
+                ss(trf!(
+                    "{} — {} ({} × {}, {})",
+                    e.exercise_name,
+                    e.kinds.iter().map(|k| k.label()).collect::<Vec<_>>().join(", "),
+                    format_load_unit(e.load_g, unit),
+                    e.reps,
+                    fmt_date_short(e.at_ms)
+                ))
+            })
+            .collect();
+        let empty = r.sessions == 0;
+        self.with_bridge(|b| {
+            b.set_rep_title(ss(title));
+            b.set_rep_rows(model(rows));
+            b.set_rep_weeks(model(weeks));
+            b.set_rep_muscles(model(muscles));
+            b.set_rep_records(model(records));
+            b.set_rep_empty(empty);
+        });
+        Ok(())
+    }
+
+    /// Texto do relatório para compartilhar (opcional; o usuário escolhe o app no seletor do sistema).
+    fn report_text(&self) -> String {
+        let mut out = format!("EMPETO — {}\n", self.with_bridge(|b| b.get_rep_title()));
+        self.with_bridge(|b| {
+            for r in b.get_rep_rows().iter() {
+                out.push_str(&format!("• {}: {}\n", r.label, r.a));
+            }
+            let m = b.get_rep_muscles();
+            if m.row_count() > 0 {
+                out.push_str(&format!("\n{}\n", tr("Séries por grupo muscular")));
+                for r in m.iter() {
+                    out.push_str(&format!("• {}: {}\n", r.label, r.value));
+                }
+            }
+            let rec = b.get_rep_records();
+            if rec.row_count() > 0 {
+                out.push_str(&format!("\n{}\n", tr("Recordes do mês")));
+                for r in rec.iter() {
+                    out.push_str(&format!("★ {}\n", r));
+                }
+            }
+        });
+        out
+    }
+
+    fn refresh_diary(&mut self) -> AppResult<()> {
+        let rows: Vec<DiaryRow> = self
+            .db
+            .diary(200)?
+            .into_iter()
+            .map(|d| {
+                let mut text = d.notes.clone();
+                for (ex, n) in &d.exercise_notes {
+                    if !text.is_empty() {
+                        text.push('\n');
+                    }
+                    text.push_str(&format!("{}: {}", ex, n));
+                }
+                DiaryRow {
+                    id: d.session_id as i32,
+                    date: ss(capitalize(&fmt_date_time(d.started_at))),
+                    title: ss(&d.title),
+                    feeling: ss(d.feeling.map(crate::history::analytics::feeling_label).unwrap_or("")),
+                    text: ss(text),
+                }
+            })
+            .collect();
+        self.with_bridge(|b| b.set_diary(model(rows)));
+        Ok(())
+    }
+
+    fn detail_compare(&mut self) {
+        let Some(id) = self.detail_id else { return };
+        let list = self.db.comparable_sessions(id).unwrap_or_default();
+        if list.is_empty() {
+            self.toast(tr("Ainda não há outra sessão concluída para comparar."));
+            return;
+        }
+        let ids: Vec<Id> = list.iter().map(|s| s.id).collect();
+        let opts: Vec<String> = list
+            .iter()
+            .map(|s| format!("{} · {} — {}", fmt_date_short(s.started_at), s.plan_name, s.schedule_name))
+            .collect();
+        self.ask_choice(
+            ChoiceCtx::Compare(ids),
+            tr("Comparar com"),
+            tr("Sessões do mesmo dia da ficha aparecem primeiro."),
+            opts,
+            0,
+        );
+    }
+
+    fn refresh_compare(&mut self) -> AppResult<()> {
+        let Some((a, b)) = self.cmp else { return Ok(()) };
+        let unit = self.prefs.unit;
+        let sa = self.db.session_stats(a)?;
+        let sb = self.db.session_stats(b)?;
+        fn delta_i(a: i64, b: i64, f: &dyn Fn(i64) -> String) -> (String, i32) {
+            let d = b - a;
+            if d == 0 {
+                ("=".into(), 0)
+            } else if d > 0 {
+                (format!("↑ {}", f(d)), 1)
+            } else {
+                (format!("↓ {}", f(-d)), -1)
+            }
+        }
+        let mk = |label: &str, av: String, bv: String, (delta, trend): (String, i32)| CmpRow {
+            label: ss(label),
+            a: ss(av),
+            b: ss(bv),
+            delta: ss(delta),
+            trend,
+        };
+        let load = |g: i64| format_load_unit(g, unit);
+        let vol = |g: i64| fmt_volume(g, unit);
+        let num = |n: i64| n.to_string();
+        let mins = |ms: i64| fmt_minutes(ms);
+        let mut rows = vec![
+            mk(tr("Data"), fmt_date_short(sa.started_at), fmt_date_short(sb.started_at), (String::new(), 0)),
+            mk(
+                tr("Duração"),
+                sa.duration_ms.map(mins).unwrap_or_default(),
+                sb.duration_ms.map(mins).unwrap_or_default(),
+                match (sa.duration_ms, sb.duration_ms) {
+                    (Some(x), Some(y)) => {
+                        let (d, _) = delta_i(x / 60_000, y / 60_000, &|m| format!("{m} min"));
+                        (d, 0)
+                    }
+                    _ => (String::new(), 0),
+                },
+            ),
+            mk(tr("Séries"), num(sa.sets), num(sb.sets), delta_i(sa.sets, sb.sets, &num)),
+            mk(tr("Volume"), vol(sa.volume_g), vol(sb.volume_g), delta_i(sa.volume_g, sb.volume_g, &vol)),
+        ];
+        if sa.avg_rpe.is_some() || sb.avg_rpe.is_some() {
+            rows.push(mk(tr("RPE médio"), sa.avg_rpe.map(fmt_rpe).unwrap_or_default(), sb.avg_rpe.map(fmt_rpe).unwrap_or_default(), (String::new(), 0)));
+        }
+        let mut keys: Vec<String> = sb.exercises.iter().map(|e| e.key.clone()).collect();
+        for e in &sa.exercises {
+            if !keys.contains(&e.key) {
+                keys.push(e.key.clone());
+            }
+        }
+        let empty = crate::history::analytics::ExerciseStats {
+            key: String::new(),
+            name: String::new(),
+            sets: 0,
+            max_load_g: 0,
+            total_reps: 0,
+            volume_g: 0,
+            e1rm_g: 0,
+            avg_rpe: None,
+        };
+        let exercises: Vec<CmpEx> = keys
+            .iter()
+            .map(|k| {
+                let ea = sa.exercises.iter().find(|e| &e.key == k).unwrap_or(&empty);
+                let eb = sb.exercises.iter().find(|e| &e.key == k).unwrap_or(&empty);
+                let name = if eb.name.is_empty() { ea.name.clone() } else { eb.name.clone() };
+                CmpEx {
+                    name: ss(name),
+                    rows: model(vec![
+                        mk(tr("Séries"), num(ea.sets), num(eb.sets), delta_i(ea.sets, eb.sets, &num)),
+                        mk(tr("Carga máx."), load(ea.max_load_g), load(eb.max_load_g), delta_i(ea.max_load_g, eb.max_load_g, &load)),
+                        mk(tr("Repetições"), num(ea.total_reps), num(eb.total_reps), delta_i(ea.total_reps, eb.total_reps, &num)),
+                        mk(tr("Volume"), vol(ea.volume_g), vol(eb.volume_g), delta_i(ea.volume_g, eb.volume_g, &vol)),
+                        mk(tr("1RM est."), load(ea.e1rm_g), load(eb.e1rm_g), delta_i(ea.e1rm_g, eb.e1rm_g, &load)),
+                    ]),
+                }
+            })
+            .collect();
+        self.with_bridge(|bb| {
+            bb.set_cmp_a_title(ss(format!("{} · {}", fmt_date_short(sa.started_at), sa.title)));
+            bb.set_cmp_b_title(ss(format!("{} · {}", fmt_date_short(sb.started_at), sb.title)));
+            bb.set_cmp_rows(model(rows));
+            bb.set_cmp_exercises(model(exercises));
         });
         Ok(())
     }
@@ -2467,7 +2713,12 @@ impl Controller {
                             "Série {}{}: {}  (plan. {}{}){}",
                             s.set_number,
                             if s.kind == SetKind::Normal { String::new() } else { format!(" [{}]", s.kind.label()) },
-                            actual,
+                            format!(
+                                "{}{}{}",
+                                actual,
+                                s.rpe.map(|r| format!(" · RPE {}", fmt_rpe(r))).unwrap_or_default(),
+                                s.rir.map(|r| format!(" · RIR {}", r)).unwrap_or_default()
+                            ),
                             if s.planned_load_g > 0 { trf!("{} × ", format_load_unit(s.planned_load_g, unit)) } else { String::new() },
                             format_reps(s.planned_reps_min, s.planned_reps_max),
                             rest
@@ -2501,11 +2752,14 @@ impl Controller {
             ),
             None => trf!("{} · em andamento", capitalize(&cal::date_long(local_date_of(f.session.started_at)))),
         };
-        let summary = trf!(
+        let mut summary = trf!(
             "{} série(s) · volume {}",
             f.completed_sets(),
             fmt_volume(f.volume_g(), unit)
         );
+        if let Some(fl) = f.session.feeling {
+            summary.push_str(&trf!(" · treino: {}", crate::history::analytics::feeling_label(fl)));
+        }
         self.with_bridge(|b| {
             b.set_detail_title(ss(format!("{} — {}", f.session.plan_name, f.session.schedule_name)));
             b.set_detail_subtitle(ss(when));
@@ -2734,6 +2988,8 @@ impl Controller {
             b.set_local_backups(model(backup_rows));
             b.set_shortcut_slots(model(slots));
             b.set_set_mod_records(p.module_records);
+            b.set_set_effort(p.effort);
+            b.set_effort_enabled(p.effort);
             b.set_set_mod_heatmap(p.module_heatmap);
             b.set_set_mod_progression(p.module_progression);
             b.set_set_mod_gestures(p.module_gestures);
@@ -3159,6 +3415,7 @@ impl Controller {
             "week-view" => p.calendar_week_view = !p.calendar_week_view,
             "keep-screen" => p.keep_screen_on = !p.keep_screen_on,
             "confirm-finish" => p.confirm_finish = !p.confirm_finish,
+            "effort" => p.effort = !p.effort,
             "mod-records" => p.module_records = !p.module_records,
             "mod-heatmap" => p.module_heatmap = !p.module_heatmap,
             "mod-progression" => p.module_progression = !p.module_progression,
@@ -3291,6 +3548,44 @@ impl Controller {
                     _ => p.anim_speed = i.min(2),
                 }
                 self.save_prefs();
+            }
+            ChoiceCtx::Effort(set_id, field) => {
+                let r = self.db.get_session_set(set_id).and_then(|s| match field {
+                    "rpe" => {
+                        let v = if i <= 0 { None } else { crate::history::analytics::RPE_VALUES.get(i as usize - 1).copied() };
+                        self.db.set_set_effort(set_id, v, s.rir)
+                    }
+                    _ => {
+                        let v = if i <= 0 { None } else { Some(i as i64 - 1) };
+                        self.db.set_set_effort(set_id, s.rpe, v)
+                    }
+                });
+                if let Err(e) = r {
+                    self.toast(e.to_string());
+                }
+                let r = self.refresh_session();
+                self.report(r);
+            }
+            ChoiceCtx::Feeling => {
+                if let Some(sid) = self.session_id {
+                    let v = if i <= 0 { None } else { Some(i as i64) };
+                    if let Err(e) = self.db.set_session_feeling(sid, v) {
+                        self.toast(e.to_string());
+                    }
+                }
+                let r = self.refresh_session();
+                self.report(r);
+            }
+            ChoiceCtx::Compare(ids) => {
+                if let (Some(b), Some(a)) = (self.detail_id, ids.get(i.max(0) as usize).copied()) {
+                    // A = a sessão escolhida (normalmente a anterior), B = a sessão aberta.
+                    let (a, b) = match (self.db.get_session(a), self.db.get_session(b)) {
+                        (Ok(x), Ok(y)) if x.started_at > y.started_at => (b, a),
+                        _ => (a, b),
+                    };
+                    self.cmp = Some((a, b));
+                    self.navigate(P_COMPARE);
+                }
             }
             ChoiceCtx::Illustration => {
                 // 0 = automática; demais = ILLUSTRATIONS[i-1]
@@ -4061,6 +4356,14 @@ fn plan_group_info(list: &[PlanExercise], i: usize) -> (String, i32, bool, bool)
     }
 }
 
+fn fmt_rpe(v: f64) -> String {
+    if v.fract() == 0.0 {
+        format!("{}", v as i64)
+    } else {
+        format!("{:.1}", v).replace('.', &crate::i18n::decimal_sep().to_string())
+    }
+}
+
 fn ex_row(e: &Exercise, note: &str) -> ExRow {
     let detail = [e.muscle_focus.as_str(), e.exercise_type.as_str(), e.equipment.as_str(), e.movement_pattern.as_str()]
         .iter()
@@ -4152,6 +4455,9 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         drafts: HashMap::new(),
         repeat_prev: Default::default(),
         tools: ToolsState::default(),
+        cmp: None,
+        hist_limit: 100,
+        rep_month: (today.year(), today.month()),
         undo: None,
         focus_fresh: true,
         evo_chart: (300.0, 160.0),
@@ -4368,6 +4674,52 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     });
     cb!(b, ctrl, on_open_templates, |c| { c.open_templates(); });
     cb!(b, ctrl, on_open_tools, |c, se: i32| { c.open_tools(se as Id); });
+    cb!(b, ctrl, on_session_effort, |c, set_id: i32, f: SharedString| {
+        let field: &'static str = if f.as_str() == "rpe" { "rpe" } else { "rir" };
+        let cur = c.db.get_session_set(set_id as Id).ok();
+        let (title, text, opts, sel) = if field == "rpe" {
+            let mut o = vec![tr("Não informar").to_string()];
+            o.extend(crate::history::analytics::RPE_VALUES.iter().map(|v| fmt_rpe(*v)));
+            let sel = cur
+                .and_then(|s| s.rpe)
+                .and_then(|r| crate::history::analytics::RPE_VALUES.iter().position(|v| *v == r))
+                .map(|p| p as i32 + 1)
+                .unwrap_or(0);
+            (tr("RPE — esforço percebido"), tr("10 = esforço máximo; 8 = ainda daria para fazer cerca de 2 repetições."), o, sel)
+        } else {
+            let mut o = vec![tr("Não informar").to_string()];
+            o.extend((0..=5).map(|n| if n == 5 { tr("5 ou mais").to_string() } else { n.to_string() }));
+            let sel = cur.and_then(|s| s.rir).map(|r| r.min(5) as i32 + 1).unwrap_or(0);
+            (tr("RIR — repetições em reserva"), tr("Quantas repetições você ainda conseguiria fazer com boa técnica."), o, sel)
+        };
+        c.ask_choice(ChoiceCtx::Effort(set_id as Id, field), title, text, opts, sel);
+    });
+    cb!(b, ctrl, on_session_choose_feeling, |c| {
+        let mut opts = vec![tr("Não informar").to_string()];
+        opts.extend((1..=5).map(|f| crate::history::analytics::feeling_label(f).to_string()));
+        let sel = c.session_id.and_then(|s| c.db.get_session(s).ok()).and_then(|s| s.feeling).unwrap_or(0) as i32;
+        c.ask_choice(ChoiceCtx::Feeling, tr("Como foi o treino?"), tr("Fica no diário de treinamento junto das observações."), opts, sel);
+    });
+    cb!(b, ctrl, on_detail_compare, |c| { c.detail_compare(); });
+    cb!(b, ctrl, on_hist_more, |c| {
+        c.hist_limit += 100;
+        let r = c.refresh_history();
+        c.report(r);
+    });
+    cb!(b, ctrl, on_rep_shift, |c, d: i32| {
+        let (y, m) = c.rep_month;
+        let first = NaiveDate::from_ymd_opt(y, m, 1).unwrap_or_else(cal::today);
+        let n = cal::add_months(first, d);
+        c.rep_month = (n.year(), n.month());
+        let r = c.refresh_report();
+        c.report(r);
+    });
+    cb!(b, ctrl, on_rep_share, |c| {
+        let text = c.report_text();
+        if !c.platform.share_text(tr("Resumo do mês — EMPETO"), &text) {
+            c.toast(tr("Nenhum aplicativo disponível para compartilhar."));
+        }
+    });
     cb!(b, ctrl, on_tools_step, |c, f: SharedString, d: i32| { c.tools_step(&f, d); });
     cb!(b, ctrl, on_tools_edit, |c, f: SharedString| {
         let field: &'static str = match f.as_str() {

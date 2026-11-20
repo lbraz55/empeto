@@ -54,6 +54,11 @@
 | 8.3 (v1.1) Valores da sessão anterior | `refresh_session` (cartão + `repeat_prev`) | visual |
 | 8.5 (v1.1) Calculadora de anilhas | `calculators::plates_for`, `ui/screens/tools.slint` | `plates_exact_and_minimal`, `plates_impossible_and_limits` |
 | 8.6 (v1.1) Calculadora de aquecimento | `calculators::warmup_sets` | `warmup` |
+| 8.4 (v1.1) RPE/RIR | `set_set_effort`, `Prefs::effort`, chips na série | `effort_validation_and_immutability` |
+| 8.7 (v1.1) Comparação de sessões | `session_stats`, `ui/screens/compare.slint` | `stats_compare_report_diary` |
+| 8.8 (v1.1) Relatórios mensais | `month_report`, Histórico › Mensal | `stats_compare_report_diary` |
+| 8.9 (v1.1) Diário | `workout_session.feeling`, `diary`, Histórico › Diário | `stats_compare_report_diary` |
+| 12 (v1.1) Desempenho | índices (0007), paginação do histórico, busca otimizada | `tests/bench.rs` (manual) |
 | 9.4 Widget Android | `application/widget.rs`, `EmpetoWidget.java` | `widget::tests` + manual |
 
 ## Regras de negócio

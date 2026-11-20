@@ -76,6 +76,8 @@ pub struct Prefs {
     pub haptics: bool,
     /// Teclado numérico do app no modo foco (3.4); desligado = teclado do sistema.
     pub app_keypad: bool,
+    /// Registrar RPE/RIR nas séries (evolução 8.4) — opcional.
+    pub effort: bool,
     pub pre_alert: bool,
     pub pre_alert_seconds: i64,
     /// Alerta com app em segundo plano (notificação; requer POST_NOTIFICATIONS no Android 13+).
@@ -132,6 +134,7 @@ impl Default for Prefs {
             vibrate: true,
             haptics: true,
             app_keypad: true,
+            effort: false,
             pre_alert: true,
             pre_alert_seconds: 10,
             background_alert: true,
@@ -191,6 +194,7 @@ impl Prefs {
                 "alert.vibrate" => p.vibrate = bv,
                 "alert.haptics" => p.haptics = bv,
                 "ui.app_keypad" => p.app_keypad = bv,
+                "training.effort" => p.effort = bv,
                 "alert.pre_alert" => p.pre_alert = bv,
                 "alert.pre_alert_seconds" => p.pre_alert_seconds = iv.unwrap_or(10).clamp(3, 60),
                 "alert.background" => p.background_alert = bv,
@@ -259,6 +263,7 @@ impl Prefs {
             ("alert.vibrate", b(self.vibrate)),
             ("alert.haptics", b(self.haptics)),
             ("ui.app_keypad", b(self.app_keypad)),
+            ("training.effort", b(self.effort)),
             ("alert.pre_alert", b(self.pre_alert)),
             ("alert.pre_alert_seconds", self.pre_alert_seconds.to_string()),
             ("alert.background", b(self.background_alert)),

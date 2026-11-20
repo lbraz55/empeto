@@ -103,6 +103,11 @@ pub trait Platform {
         log::info!("abrir link: {url}");
         true
     }
+    /// Compartilha um texto pelo seletor do sistema (ACTION_SEND, sem permissão). Opcional para o usuário.
+    fn share_text(&self, subject: &str, text: &str) -> bool {
+        log::info!("compartilhar: {subject}\n{text}");
+        true
+    }
     /// Pede ao widget da tela inicial para reler o resumo (`application::widget`).
     fn update_widget(&self) {}
 }

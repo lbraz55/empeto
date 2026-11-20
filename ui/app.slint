@@ -1,3 +1,4 @@
+import { CompareScreen } from "screens/compare.slint";
 import { ToolsScreen } from "screens/tools.slint";
 import { ExerciseDetailScreen } from "screens/exercise_detail.slint";
 import { OnboardingScreen } from "screens/onboarding.slint";
@@ -87,6 +88,7 @@ export component AppWindow inherits Window {
         : Bridge.page == 17 ? @tr("Buscar")
         : Bridge.page == 19 ? @tr("Exercício")
         : Bridge.page == 22 ? @tr("Anilhas e aquecimento")
+        : Bridge.page == 23 ? @tr("Comparar sessões")
         : Bridge.page == 14 ? @tr("Sessão realizada")
         : Bridge.page == 15 ? @tr("Evolução")
         : Bridge.page == 20 ? (
@@ -208,6 +210,7 @@ export component AppWindow inherits Window {
                 if Bridge.page == 17: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; SearchScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 20: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; SettingsScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 19: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; ExerciseDetailScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 23: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; CompareScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 22: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; ToolsScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 18: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; OnboardingScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 21: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; ImportScreen { width: parent.width; height: parent.height; } }

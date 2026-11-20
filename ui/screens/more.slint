@@ -13,6 +13,11 @@ export component SessionDetailScreen inherits Scroll {
     }
     Label { text: Bridge.detail-subtitle; }
     if Bridge.detail-summary != "": Body { text: Bridge.detail-summary; }
+    Btn {
+        text: @tr("Comparar com outra sessão");
+        icon: Icons.swap;
+        clicked => { Bridge.detail-compare(); }
+    }
     for e in Bridge.detail-exercises: Card {
         Body {
             text: e.title;
@@ -460,6 +465,12 @@ export component SettingsScreen inherits Scroll {
             description: @tr("Botões grandes com vírgula, apagar e ±incremento. Desligado: usa o teclado do sistema.");
             checked: Bridge.set-app-keypad;
             toggled => { Bridge.pref-toggle("app-keypad"); }
+        }
+        ToggleRow {
+            text: @tr("Registrar esforço (RPE/RIR)");
+            description: @tr("Mostra RPE (1–10) e repetições em reserva em cada série. Preenchimento sempre opcional.");
+            checked: Bridge.set-effort;
+            toggled => { Bridge.pref-toggle("effort"); }
         }
         ToggleRow {
             text: @tr("Confirmar ao finalizar sessão");

@@ -17,11 +17,12 @@ fn row_session(r: &Row) -> rusqlite::Result<Session> {
         status: SessionStatus::parse(&r.get::<_, String>(7)?),
         notes: r.get(8)?,
         plan_snapshot_json: r.get(9)?,
+        feeling: r.get(10)?,
     })
 }
 
 const SESSION_COLS: &str =
-    "id, plan_id, schedule_id, plan_name, schedule_name, started_at, ended_at, status, notes, plan_snapshot_json";
+    "id, plan_id, schedule_id, plan_name, schedule_name, started_at, ended_at, status, notes, plan_snapshot_json, feeling";
 
 /// Desempenho mais recente de um exercício (para pré-preencher cargas).
 #[derive(Debug, Clone, PartialEq)]
@@ -129,7 +130,7 @@ impl Db {
             .collect::<Result<Vec<_>, _>>()?;
         let mut st = self.conn.prepare(
             "SELECT id, set_number, planned_reps_min, planned_reps_max, planned_load_g, actual_reps, actual_load_g, completed_at,
-                    rest_taken_s, set_kind
+                    rest_taken_s, set_kind, rpe, rir
              FROM session_set WHERE session_exercise_id = ?1 ORDER BY set_number",
         )?;
         for e in exercises.iter_mut() {
@@ -146,6 +147,8 @@ impl Db {
                         completed_at: r.get(7)?,
                         rest_taken_s: r.get(8)?,
                         kind: SetKind::parse(&r.get::<_, String>(9)?),
+                        rpe: r.get(10)?,
+                        rir: r.get(11)?,
                     })
                 })?
                 .collect::<Result<Vec<_>, _>>()?;
@@ -455,7 +458,7 @@ impl Db {
         self.conn
             .query_row(
                 "SELECT id, set_number, planned_reps_min, planned_reps_max, planned_load_g, actual_reps, actual_load_g,
-                        completed_at, rest_taken_s, set_kind FROM session_set WHERE id = ?1",
+                        completed_at, rest_taken_s, set_kind, rpe, rir FROM session_set WHERE id = ?1",
                 params![set_id],
                 |r| {
                     Ok(SessionSet {
@@ -469,6 +472,8 @@ impl Db {
                         completed_at: r.get(7)?,
                         rest_taken_s: r.get(8)?,
                         kind: SetKind::parse(&r.get::<_, String>(9)?),
+                        rpe: r.get(10)?,
+                        rir: r.get(11)?,
                     })
                 },
             )

@@ -239,6 +239,15 @@ impl Platform for AndroidPlatform {
         .unwrap_or(false)
     }
 
+    fn share_text(&self, subject: &str, text: &str) -> bool {
+        self.with_env(|env, act| {
+            let s = env.new_string(subject)?;
+            let t = env.new_string(text)?;
+            env.call_method(act, "shareText", "(Ljava/lang/String;Ljava/lang/String;)Z", &[JValue::Object(&s), JValue::Object(&t)])?.z()
+        })
+        .unwrap_or(false)
+    }
+
     fn update_widget(&self) {
         self.call_void("updateWidget", "()V", |_| Ok(vec![]));
     }

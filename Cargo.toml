@@ -1,6 +1,6 @@
 [package]
 name = "workout"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 description = "WORKOUT — organizador pessoal de treinos, offline-first (Android)"
 license = "GPL-3.0-only"

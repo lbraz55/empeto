@@ -4,7 +4,7 @@ export struct PlanRow { id: int, name: string, subtitle: string, active: bool, f
 export struct PlanExRow { id: int, name: string, detail: string, notes: string, suggestion: string, suggestion-detail: string, kinds: [string], group-label: string, group-pos: int, linked: bool, last: bool }
 export struct DayRow { id: int, name: string, subtitle: string, exercises: [PlanExRow] }
 export struct ExRow { id: int, name: string, detail: string, note: string, archived: bool, favorite: bool, custom: bool, art: string }
-export struct SetRow { id: int, number: int, planned: string, load: string, reps: string, done: bool, hint: string, kind: string }
+export struct SetRow { id: int, number: int, planned: string, load: string, reps: string, done: bool, hint: string, kind: string, rpe: string, rir: string }
 export struct SessionExRow {
     id: int,
     name: string,
@@ -35,6 +35,10 @@ export struct EvoPt { x: float, y: float, label: string }
 export struct SearchRow { kind: string, id: int, title: string, subtitle: string }
 export struct HistExRow { key: string, name: string, detail: string }
 export struct MapCol { index: int, header: string, sample: string, field: string }
+export struct CmpRow { label: string, a: string, b: string, delta: string, trend: int }
+export struct CmpEx { name: string, rows: [CmpRow] }
+export struct BarRow { label: string, value: string, frac: float }
+export struct DiaryRow { id: int, date: string, title: string, feeling: string, text: string }
 export struct ShortcutRow { code: string, label: string, icon: string }
 export struct BackupRow { index: int, title: string, subtitle: string, automatic: bool, valid: bool }
 export struct PlanPreview { name: string, detail: string, conflict: bool }
@@ -321,6 +325,8 @@ export global Bridge {
     in-out property <[HistRow]> hist-rows;
     in-out property <[HistExRow]> evo-exercises;
     callback hist-set-tab(int);
+    in-out property <bool> hist-has-more;
+    callback hist-more();
     callback hist-open(int);
     callback evo-open(string);
 
@@ -404,6 +410,27 @@ export global Bridge {
     callback data-restore();
     callback data-ics();
     callback show-diagnostics();
+
+    // ---------------- Análise e evolução (evolução 8.4, 8.7–8.9) ----------------
+    in-out property <bool> effort-enabled;
+    callback session-effort(int, string);
+    in-out property <string> session-feeling;
+    callback session-choose-feeling();
+    callback detail-compare();
+    in-out property <string> cmp-a-title;
+    in-out property <string> cmp-b-title;
+    in-out property <[CmpRow]> cmp-rows;
+    in-out property <[CmpEx]> cmp-exercises;
+    in-out property <string> rep-title;
+    in-out property <[CmpRow]> rep-rows;
+    in-out property <[BarRow]> rep-weeks;
+    in-out property <[BarRow]> rep-muscles;
+    in-out property <[string]> rep-records;
+    in-out property <bool> rep-empty;
+    callback rep-shift(int);
+    callback rep-share();
+    in-out property <[DiaryRow]> diary;
+    in-out property <bool> set-effort;
 
     // ---------------- Eficiência de treinamento (evolução 8.1–8.6) ----------------
     callback pe-cycle-kind(int, int);

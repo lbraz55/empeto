@@ -40,6 +40,9 @@ msgstr "Exercise"
 msgid "Anilhas e aquecimento"
 msgstr "Plates and warm-up"
 
+msgid "Comparar sessões"
+msgstr "Compare sessions"
+
 msgid "Sessão realizada"
 msgstr "Completed session"
 
@@ -319,6 +322,9 @@ msgstr "Back to original"
 msgid "Substituir"
 msgstr "Replace"
 
+msgid "Verde/↑ = maior em B; vermelho/↓ = menor em B. Mais nem sempre é melhor: use como referência."
+msgstr "Green/↑ = higher in B; red/↓ = lower in B. More is not always better: use it as a reference."
+
 msgid "Personalizado"
 msgstr "Custom"
 
@@ -487,8 +493,11 @@ msgstr "Add to device calendar"
 msgid "Sessões"
 msgstr "Sessions"
 
-msgid "Evolução por exercício"
-msgstr "Progress by exercise"
+msgid "Mensal"
+msgstr "Monthly"
+
+msgid "Diário"
+msgstr "Diary"
 
 msgid "Seu histórico aparecerá após o primeiro treino"
 msgstr "Your history will appear after your first workout"
@@ -499,6 +508,9 @@ msgstr "No session has been completed yet. Start a workout and finish it to see 
 msgid "Ver fichas"
 msgstr "See plans"
 
+msgid "Carregar mais"
+msgstr "Load more"
+
 msgid "Sem dados de evolução"
 msgstr "No progress data"
 
@@ -507,6 +519,39 @@ msgstr "Progress appears after you log sets in completed sessions."
 
 msgid "Evolução de "
 msgstr "Progress of "
+
+msgid "Mês anterior"
+msgstr "Previous month"
+
+msgid "Próximo mês"
+msgstr "Next month"
+
+msgid "Nenhum treino neste mês"
+msgstr "No workouts this month"
+
+msgid "O relatório aparece quando houver sessões concluídas no mês escolhido."
+msgstr "The report appears when there are completed sessions in the chosen month."
+
+msgid "SESSÕES POR SEMANA"
+msgstr "SESSIONS PER WEEK"
+
+msgid "SÉRIES POR GRUPO MUSCULAR"
+msgstr "SETS PER MUSCLE GROUP"
+
+msgid "RECORDES DO MÊS"
+msgstr "RECORDS THIS MONTH"
+
+msgid "Compartilhar resumo"
+msgstr "Share summary"
+
+msgid "Seu diário está vazio"
+msgstr "Your diary is empty"
+
+msgid "Durante a sessão, toque em \"Como foi o treino?\" e em \"Observações da sessão\". Ao finalizar, o registro aparece aqui."
+msgstr "During the session, tap \"How was the workout?\" and \"Session notes\". When you finish, the entry appears here."
+
+msgid "Comparar com outra sessão"
+msgstr "Compare with another session"
 
 msgid "Obs.: "
 msgstr "Note: "
@@ -678,6 +723,12 @@ msgstr "App number pad in focus mode"
 
 msgid "Botões grandes com vírgula, apagar e ±incremento. Desligado: usa o teclado do sistema."
 msgstr "Large buttons with decimal separator, delete and ±increment. Off: uses the system keyboard."
+
+msgid "Registrar esforço (RPE/RIR)"
+msgstr "Log effort (RPE/RIR)"
+
+msgid "Mostra RPE (1–10) e repetições em reserva em cada série. Preenchimento sempre opcional."
+msgstr "Shows RPE (1–10) and reps in reserve on each set. Always optional to fill in."
 
 msgid "Confirmar ao finalizar sessão"
 msgstr "Confirm when finishing a session"
@@ -1192,9 +1243,6 @@ msgstr ", custom"
 msgid ", arquivado"
 msgstr ", archived"
 
-msgid "Carregar mais"
-msgstr "Load more"
-
 msgid ". Toque para mudar o tipo."
 msgstr ". Tap to change the type."
 
@@ -1233,6 +1281,9 @@ msgstr "Repeat previous session values"
 
 msgid "TÉCNICA E OBSERVAÇÕES"
 msgstr "TECHNIQUE AND NOTES"
+
+msgid "Como foi o treino?"
+msgstr "How was the workout?"
 
 msgid "Observações da sessão"
 msgstr "Session notes"
@@ -1702,6 +1753,63 @@ msgstr "{} exercise(s) · {} set(s) · volume {}{}"
 msgid "{} sessão(ões) · última em {}"
 msgstr "{} session(s) · last on {}"
 
+msgid "Treinos realizados"
+msgstr "Workouts done"
+
+msgid "Dias com treino"
+msgstr "Training days"
+
+msgid "Duração total"
+msgstr "Total duration"
+
+msgid "Duração média"
+msgstr "Average duration"
+
+msgid "Exercícios diferentes"
+msgstr "Different exercises"
+
+msgid "Séries registradas"
+msgstr "Sets logged"
+
+msgid "Volume total"
+msgstr "Total volume"
+
+msgid "RPE médio"
+msgstr "Average RPE"
+
+msgid "Avaliação média"
+msgstr "Average rating"
+
+msgid "Semana de {}"
+msgstr "Week of {}"
+
+msgid "{} série(s)"
+msgstr "{} set(s)"
+
+msgid "{} — {} ({} × {}, {})"
+msgstr "{} — {} ({} × {}, {})"
+
+msgid "Séries por grupo muscular"
+msgstr "Sets per muscle group"
+
+msgid "Recordes do mês"
+msgstr "Records this month"
+
+msgid "Ainda não há outra sessão concluída para comparar."
+msgstr "There is no other completed session to compare yet."
+
+msgid "Comparar com"
+msgstr "Compare with"
+
+msgid "Sessões do mesmo dia da ficha aparecem primeiro."
+msgstr "Sessions of the same plan day come first."
+
+msgid "Data"
+msgstr "Date"
+
+msgid "Duração"
+msgstr "Duration"
+
 msgid "Substituiu {} (só nesta sessão)"
 msgstr "Replaced {} (this session only)"
 
@@ -1728,6 +1836,9 @@ msgstr "{} · in progress"
 
 msgid "{} série(s) · volume {}"
 msgstr "{} set(s) · volume {}"
+
+msgid " · treino: {}"
+msgstr " · workout: {}"
 
 msgid "{} reps"
 msgstr "{} reps"
@@ -2052,6 +2163,33 @@ msgstr "Remove exercise"
 
 msgid "Remover este exercício da ficha? O histórico não é afetado."
 msgstr "Remove this exercise from the plan? History is not affected."
+
+msgid "Não informar"
+msgstr "Don't record"
+
+msgid "RPE — esforço percebido"
+msgstr "RPE — perceived exertion"
+
+msgid "10 = esforço máximo; 8 = ainda daria para fazer cerca de 2 repetições."
+msgstr "10 = maximum effort; 8 = about 2 more reps were possible."
+
+msgid "5 ou mais"
+msgstr "5 or more"
+
+msgid "RIR — repetições em reserva"
+msgstr "RIR — reps in reserve"
+
+msgid "Quantas repetições você ainda conseguiria fazer com boa técnica."
+msgstr "How many more reps you could still do with good technique."
+
+msgid "Fica no diário de treinamento junto das observações."
+msgstr "It goes into the training diary together with the notes."
+
+msgid "Resumo do mês — EMPETO"
+msgstr "Monthly summary — EMPETO"
+
+msgid "Nenhum aplicativo disponível para compartilhar."
+msgstr "No app available to share."
 
 msgid "Tipo da série: {}"
 msgstr "Set type: {}"
@@ -2491,6 +2629,33 @@ msgstr "Cycling"
 msgid "Genérica"
 msgstr "Generic"
 
+msgid "Muito ruim"
+msgstr "Very bad"
+
+msgid "Ruim"
+msgstr "Bad"
+
+msgid "Bom"
+msgstr "Good"
+
+msgid "Excelente"
+msgstr "Excellent"
+
+msgid "RPE deve estar entre 1 e 10 (de meio em meio ponto)."
+msgstr "RPE must be between 1 and 10 (in half-point steps)."
+
+msgid "RIR deve estar entre 0 e 10."
+msgstr "RIR must be between 0 and 10."
+
+msgid "Sessão não encontrada."
+msgstr "Session not found."
+
+msgid "Avaliação inválida."
+msgstr "Invalid rating."
+
+msgid "Mês inválido."
+msgstr "Invalid month."
+
 msgid "maior carga"
 msgstr "heaviest load"
 
@@ -2742,9 +2907,6 @@ msgstr "There is already a session in progress. Finish or discard it before star
 
 msgid "Este dia não tem exercícios. Adicione exercícios antes de iniciar."
 msgstr "This day has no exercises. Add exercises before starting."
-
-msgid "Sessão não encontrada."
-msgstr "Session not found."
 
 msgid "A sessão já foi concluída."
 msgstr "The session is already completed."

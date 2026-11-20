@@ -1,5 +1,6 @@
 //! Histórico: sessões concluídas e evolução por exercício (RF-14, RF-15).
 
+pub mod analytics;
 pub mod records;
 
 use crate::domain::*;
@@ -60,6 +61,16 @@ pub struct HistoryExercise {
 
 impl Db {
     pub fn list_session_summaries(&self, from_ms: Option<i64>, to_ms: Option<i64>) -> AppResult<Vec<SessionSummary>> {
+        self.list_session_summaries_limit(from_ms, to_ms, None)
+    }
+
+    /// Quantidade de sessões concluídas (sem carregar o histórico).
+    pub fn count_completed_sessions(&self) -> AppResult<i64> {
+        Ok(self.conn.query_row("SELECT COUNT(*) FROM workout_session WHERE status = 'completed'", [], |r| r.get(0))?)
+    }
+
+    /// Como `list_session_summaries`, mas só as `limit` mais recentes (12.1: não carregar o histórico inteiro).
+    pub fn list_session_summaries_limit(&self, from_ms: Option<i64>, to_ms: Option<i64>, limit: Option<usize>) -> AppResult<Vec<SessionSummary>> {
         let mut st = self.conn.prepare(
             "SELECT s.id, s.plan_name, s.schedule_name, s.started_at, s.ended_at,
                     (SELECT COUNT(*) FROM session_exercise e WHERE e.session_id = s.id
@@ -71,10 +82,10 @@ impl Db {
                         WHERE e.session_id = s.id AND ss.completed_at IS NOT NULL)
              FROM workout_session s
              WHERE s.status = 'completed' AND s.started_at >= ?1 AND s.started_at < ?2
-             ORDER BY s.started_at DESC",
+             ORDER BY s.started_at DESC LIMIT ?3",
         )?;
         let v = st
-            .query_map(params![from_ms.unwrap_or(i64::MIN), to_ms.unwrap_or(i64::MAX)], |r| {
+            .query_map(params![from_ms.unwrap_or(i64::MIN), to_ms.unwrap_or(i64::MAX), limit.map(|l| l as i64).unwrap_or(-1)], |r| {
                 Ok(SessionSummary {
                     id: r.get(0)?,
                     plan_name: r.get(1)?,

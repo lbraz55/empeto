@@ -40,6 +40,9 @@ msgstr "Ejercicio"
 msgid "Anilhas e aquecimento"
 msgstr "Discos y calentamiento"
 
+msgid "Comparar sessões"
+msgstr "Comparar sesiones"
+
 msgid "Sessão realizada"
 msgstr "Sesión realizada"
 
@@ -319,6 +322,9 @@ msgstr "Volver al original"
 msgid "Substituir"
 msgstr "Sustituir"
 
+msgid "Verde/↑ = maior em B; vermelho/↓ = menor em B. Mais nem sempre é melhor: use como referência."
+msgstr "Verde/↑ = mayor en B; rojo/↓ = menor en B. Más no siempre es mejor: úsalo como referencia."
+
 msgid "Personalizado"
 msgstr "Personalizado"
 
@@ -487,8 +493,11 @@ msgstr "Añadir a la agenda del dispositivo"
 msgid "Sessões"
 msgstr "Sesiones"
 
-msgid "Evolução por exercício"
-msgstr "Evolución por ejercicio"
+msgid "Mensal"
+msgstr "Mensual"
+
+msgid "Diário"
+msgstr "Diario"
 
 msgid "Seu histórico aparecerá após o primeiro treino"
 msgstr "Tu historial aparecerá después del primer entrenamiento"
@@ -499,6 +508,9 @@ msgstr "Aún no se ha completado ninguna sesión. Inicia un entrenamiento y fina
 msgid "Ver fichas"
 msgstr "Ver rutinas"
 
+msgid "Carregar mais"
+msgstr "Cargar más"
+
 msgid "Sem dados de evolução"
 msgstr "Sin datos de evolución"
 
@@ -507,6 +519,39 @@ msgstr "La evolución aparece después de registrar series en sesiones completad
 
 msgid "Evolução de "
 msgstr "Evolución de "
+
+msgid "Mês anterior"
+msgstr "Mes anterior"
+
+msgid "Próximo mês"
+msgstr "Mes siguiente"
+
+msgid "Nenhum treino neste mês"
+msgstr "Ningún entrenamiento este mes"
+
+msgid "O relatório aparece quando houver sessões concluídas no mês escolhido."
+msgstr "El informe aparece cuando hay sesiones completadas en el mes elegido."
+
+msgid "SESSÕES POR SEMANA"
+msgstr "SESIONES POR SEMANA"
+
+msgid "SÉRIES POR GRUPO MUSCULAR"
+msgstr "SERIES POR GRUPO MUSCULAR"
+
+msgid "RECORDES DO MÊS"
+msgstr "RÉCORDS DEL MES"
+
+msgid "Compartilhar resumo"
+msgstr "Compartir resumen"
+
+msgid "Seu diário está vazio"
+msgstr "Tu diario está vacío"
+
+msgid "Durante a sessão, toque em \"Como foi o treino?\" e em \"Observações da sessão\". Ao finalizar, o registro aparece aqui."
+msgstr "Durante la sesión, toca \"¿Cómo fue el entrenamiento?\" y \"Notas de la sesión\". Al finalizar, el registro aparece aquí."
+
+msgid "Comparar com outra sessão"
+msgstr "Comparar con otra sesión"
 
 msgid "Obs.: "
 msgstr "Nota: "
@@ -678,6 +723,12 @@ msgstr "Teclado numérico de la app en modo enfoque"
 
 msgid "Botões grandes com vírgula, apagar e ±incremento. Desligado: usa o teclado do sistema."
 msgstr "Botones grandes con coma, borrar y ±incremento. Desactivado: usa el teclado del sistema."
+
+msgid "Registrar esforço (RPE/RIR)"
+msgstr "Registrar esfuerzo (RPE/RIR)"
+
+msgid "Mostra RPE (1–10) e repetições em reserva em cada série. Preenchimento sempre opcional."
+msgstr "Muestra RPE (1–10) y repeticiones en reserva en cada serie. Rellenarlo siempre es opcional."
 
 msgid "Confirmar ao finalizar sessão"
 msgstr "Confirmar al finalizar la sesión"
@@ -1192,9 +1243,6 @@ msgstr ", personalizado"
 msgid ", arquivado"
 msgstr ", archivado"
 
-msgid "Carregar mais"
-msgstr "Cargar más"
-
 msgid ". Toque para mudar o tipo."
 msgstr ". Toca para cambiar el tipo."
 
@@ -1233,6 +1281,9 @@ msgstr "Repetir valores de la sesión anterior"
 
 msgid "TÉCNICA E OBSERVAÇÕES"
 msgstr "TÉCNICA Y NOTAS"
+
+msgid "Como foi o treino?"
+msgstr "¿Cómo fue el entrenamiento?"
 
 msgid "Observações da sessão"
 msgstr "Notas de la sesión"
@@ -1702,6 +1753,63 @@ msgstr "{} ejercicio(s) · {} serie(s) · volumen {}{}"
 msgid "{} sessão(ões) · última em {}"
 msgstr "{} sesión(es) · última el {}"
 
+msgid "Treinos realizados"
+msgstr "Entrenamientos realizados"
+
+msgid "Dias com treino"
+msgstr "Días con entrenamiento"
+
+msgid "Duração total"
+msgstr "Duración total"
+
+msgid "Duração média"
+msgstr "Duración media"
+
+msgid "Exercícios diferentes"
+msgstr "Ejercicios distintos"
+
+msgid "Séries registradas"
+msgstr "Series registradas"
+
+msgid "Volume total"
+msgstr "Volumen total"
+
+msgid "RPE médio"
+msgstr "RPE medio"
+
+msgid "Avaliação média"
+msgstr "Valoración media"
+
+msgid "Semana de {}"
+msgstr "Semana del {}"
+
+msgid "{} série(s)"
+msgstr "{} serie(s)"
+
+msgid "{} — {} ({} × {}, {})"
+msgstr "{} — {} ({} × {}, {})"
+
+msgid "Séries por grupo muscular"
+msgstr "Series por grupo muscular"
+
+msgid "Recordes do mês"
+msgstr "Récords del mes"
+
+msgid "Ainda não há outra sessão concluída para comparar."
+msgstr "Aún no hay otra sesión completada para comparar."
+
+msgid "Comparar com"
+msgstr "Comparar con"
+
+msgid "Sessões do mesmo dia da ficha aparecem primeiro."
+msgstr "Las sesiones del mismo día de la rutina aparecen primero."
+
+msgid "Data"
+msgstr "Fecha"
+
+msgid "Duração"
+msgstr "Duración"
+
 msgid "Substituiu {} (só nesta sessão)"
 msgstr "Sustituyó {} (solo en esta sesión)"
 
@@ -1728,6 +1836,9 @@ msgstr "{} · en curso"
 
 msgid "{} série(s) · volume {}"
 msgstr "{} serie(s) · volumen {}"
+
+msgid " · treino: {}"
+msgstr " · entrenamiento: {}"
 
 msgid "{} reps"
 msgstr "{} reps"
@@ -2052,6 +2163,33 @@ msgstr "Quitar ejercicio"
 
 msgid "Remover este exercício da ficha? O histórico não é afetado."
 msgstr "¿Quitar este ejercicio de la rutina? El historial no se ve afectado."
+
+msgid "Não informar"
+msgstr "No indicar"
+
+msgid "RPE — esforço percebido"
+msgstr "RPE — esfuerzo percibido"
+
+msgid "10 = esforço máximo; 8 = ainda daria para fazer cerca de 2 repetições."
+msgstr "10 = esfuerzo máximo; 8 = aún se podrían hacer unas 2 repeticiones."
+
+msgid "5 ou mais"
+msgstr "5 o más"
+
+msgid "RIR — repetições em reserva"
+msgstr "RIR — repeticiones en reserva"
+
+msgid "Quantas repetições você ainda conseguiria fazer com boa técnica."
+msgstr "Cuántas repeticiones más podrías hacer con buena técnica."
+
+msgid "Fica no diário de treinamento junto das observações."
+msgstr "Queda en el diario de entrenamiento junto con las notas."
+
+msgid "Resumo do mês — EMPETO"
+msgstr "Resumen del mes — EMPETO"
+
+msgid "Nenhum aplicativo disponível para compartilhar."
+msgstr "No hay ninguna app disponible para compartir."
 
 msgid "Tipo da série: {}"
 msgstr "Tipo de serie: {}"
@@ -2491,6 +2629,33 @@ msgstr "Bicicleta"
 msgid "Genérica"
 msgstr "Genérica"
 
+msgid "Muito ruim"
+msgstr "Muy malo"
+
+msgid "Ruim"
+msgstr "Malo"
+
+msgid "Bom"
+msgstr "Bueno"
+
+msgid "Excelente"
+msgstr "Excelente"
+
+msgid "RPE deve estar entre 1 e 10 (de meio em meio ponto)."
+msgstr "El RPE debe estar entre 1 y 10 (de medio en medio punto)."
+
+msgid "RIR deve estar entre 0 e 10."
+msgstr "El RIR debe estar entre 0 y 10."
+
+msgid "Sessão não encontrada."
+msgstr "Sesión no encontrada."
+
+msgid "Avaliação inválida."
+msgstr "Valoración no válida."
+
+msgid "Mês inválido."
+msgstr "Mes no válido."
+
 msgid "maior carga"
 msgstr "mayor carga"
 
@@ -2742,9 +2907,6 @@ msgstr "Ya hay una sesión en curso. Finalízala o descártala antes de iniciar 
 
 msgid "Este dia não tem exercícios. Adicione exercícios antes de iniciar."
 msgstr "Este día no tiene ejercicios. Añade ejercicios antes de iniciar."
-
-msgid "Sessão não encontrada."
-msgstr "Sesión no encontrada."
 
 msgid "A sessão já foi concluída."
 msgstr "La sesión ya se completó."

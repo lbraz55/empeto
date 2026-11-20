@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.7.0 — 2026-11-20 (schema do banco: 7) — Análise e evolução (Fase 4 do documento de evolução v1.1)
+- **RPE/RIR** (opcional, Configurações › Treinamento): esforço percebido (1–10, meios pontos) e repetições em
+  reserva por série; aparecem no detalhe da sessão, na comparação e no relatório (RPE médio).
+- **Comparação de sessões**: no detalhe de uma sessão, "Comparar com outra sessão" mostra lado a lado data,
+  duração, séries, volume e, por exercício, séries, carga máxima, repetições, volume e 1RM estimada, com as
+  diferenças destacadas (seta + cor). Sessões do mesmo dia da ficha aparecem primeiro.
+- **Relatório mensal** (Histórico › Mensal): treinos, dias com treino, duração total/média, exercícios diferentes,
+  séries, volume, recordes, RPE e avaliação médios, sessões por semana e séries por grupo muscular. Agregações no
+  SQLite. "Compartilhar resumo" envia um texto pelo seletor do Android (opcional).
+- **Diário de treinamento** (Histórico › Diário): "Como foi o treino?" (muito ruim … excelente) durante a sessão,
+  junto das observações da sessão e dos exercícios.
+- **Desempenho**: benchmark com 100/1.000/10.000 sessões (`tests/bench.rs`, resultados em docs/DESEMPENHO.md);
+  busca global 13× mais rápida com muitos dados; histórico carregado de 100 em 100; novos índices.
+- Migração 0007 (`session_set.rpe/rir`, `workout_session.feeling` imutável após concluir, índices).
+
 ## 0.6.0 — 2026-11-20 (schema do banco: 6) — Eficiência de treinamento (Fase 3 do documento de evolução v1.1)
 - **Valores da sessão anterior**: cartão "SESSÃO ANTERIOR · data" com carga × repetições de cada série do mesmo
   exercício, e ação "Repetir valores da sessão anterior". Nada é preenchido sem pedido: "Sugerir carga da última

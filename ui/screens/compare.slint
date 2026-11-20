@@ -1,0 +1,84 @@
+import { Theme, Icons } from "../theme.slint";
+import { Bridge, CmpRow } from "../bridge.slint";
+import { Card, Label, Body, Title, SectionTitle, Scroll } from "../components/widgets.slint";
+
+// Comparação de sessões (documento de evolução v1.1, 8.7): lado a lado, com as diferenças destacadas.
+// Só leitura: os registros originais não mudam.
+component CmpLine inherits HorizontalLayout {
+    in property <CmpRow> r;
+    spacing: 6px;
+    Text {
+        text: root.r.label;
+        color: Theme.muted;
+        font-size: Theme.fs-s;
+        width: 30%;
+        wrap: word-wrap;
+    }
+    Text {
+        text: root.r.a;
+        color: Theme.text;
+        font-size: Theme.fs-s;
+        width: 24%;
+        horizontal-alignment: right;
+    }
+    Text {
+        text: root.r.b;
+        color: Theme.text;
+        font-size: Theme.fs-s;
+        font-weight: 700;
+        width: 24%;
+        horizontal-alignment: right;
+    }
+    Text {
+        text: root.r.delta;
+        // Seta + cor semântica: a informação não depende só da cor.
+        color: root.r.trend > 0 ? Theme.success : root.r.trend < 0 ? Theme.danger : Theme.muted;
+        font-size: Theme.fs-s;
+        font-weight: 700;
+        horizontal-alignment: right;
+        horizontal-stretch: 1;
+    }
+}
+
+export component CompareScreen inherits Scroll {
+    Card {
+        HorizontalLayout {
+            spacing: 6px;
+            Text { text: ""; width: 30%; }
+            Text {
+                text: "A";
+                color: Theme.muted;
+                font-size: Theme.fs-s;
+                font-weight: 700;
+                width: 24%;
+                horizontal-alignment: right;
+            }
+            Text {
+                text: "B";
+                color: Theme.text;
+                font-size: Theme.fs-s;
+                font-weight: 800;
+                width: 24%;
+                horizontal-alignment: right;
+            }
+            Text {
+                text: "Δ";
+                color: Theme.muted;
+                font-size: Theme.fs-s;
+                horizontal-alignment: right;
+                horizontal-stretch: 1;
+            }
+        }
+        Label { text: "A: " + Bridge.cmp-a-title; }
+        Label { text: "B: " + Bridge.cmp-b-title; }
+        for r in Bridge.cmp-rows: CmpLine { r: r; }
+    }
+    for e in Bridge.cmp-exercises: Card {
+        Body {
+            text: e.name;
+            font-weight: 700;
+        }
+        for r in e.rows: CmpLine { r: r; }
+    }
+    Label { text: @tr("Verde/↑ = maior em B; vermelho/↓ = menor em B. Mais nem sempre é melhor: use como referência."); }
+}
