@@ -99,6 +99,8 @@ enum TextCtx {
 enum InfoCtx {
     NotifPermission { then_enable: bool },
     ActiveSession,
+    /// Sessão aberta encontrada ao iniciar o app (fechamento inesperado, bateria etc.).
+    RecoverSession,
     Template(&'static str),
     Plain,
 }
@@ -2569,6 +2571,22 @@ impl Controller {
         }
     }
 
+    /// 8.12: ao abrir o app com uma sessão ainda aberta, pergunta se deseja continuar ou descartar.
+    /// Nada é concluído automaticamente; as séries já registradas estão salvas no banco.
+    fn offer_session_recovery(&mut self) {
+        let Some(sid) = self.session_id else { return };
+        let Ok(f) = self.db.get_session_full(sid) else { return };
+        let text = format!(
+            "Encontramos a sessão \"{} — {}\", iniciada em {}, que não foi finalizada (o app pode ter sido fechado ou o aparelho desligado).\n\n{} de {} série(s) registradas estão salvas. Deseja continuar de onde parou?",
+            f.session.plan_name,
+            f.session.schedule_name,
+            fmt_date_time(f.session.started_at),
+            f.completed_sets(),
+            f.total_sets()
+        );
+        self.show_info(InfoCtx::RecoverSession, "Sessão interrompida", &text, "Continuar", "Descartar…");
+    }
+
     fn open_templates(&mut self) {
         let opts = crate::training::templates::TEMPLATES
             .iter()
@@ -3452,7 +3470,7 @@ impl Controller {
                 self.awaiting_permission = true;
                 self.platform.request_notification_permission();
             }
-            Some(InfoCtx::ActiveSession) => self.open_session(),
+            Some(InfoCtx::ActiveSession) | Some(InfoCtx::RecoverSession) => self.open_session(),
             Some(InfoCtx::Template(code)) => match self.db.create_from_template(code) {
                 Ok(id) => {
                     self.plan_id = Some(id);
@@ -3468,6 +3486,15 @@ impl Controller {
     fn info_alt(&mut self) {
         let ctx = self.info;
         self.close_dialog();
+        if let Some(InfoCtx::RecoverSession) = ctx {
+            self.ask_confirm(
+                ConfirmAction::DiscardSession,
+                "Descartar sessão",
+                "Descartar a sessão interrompida? As séries registradas nela não irão para o histórico. Para guardá-las, escolha Cancelar e finalize a sessão.",
+                "Descartar",
+            );
+            return;
+        }
         if let Some(InfoCtx::NotifPermission { .. }) = ctx {
             self.prefs.notif_permission_asked = true;
             let _ = self.prefs.save(&self.db);
@@ -3654,6 +3681,7 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         c.auto_backup();
         c.refresh_timer();
         c.navigate(P_HOME);
+        c.offer_session_recovery();
         if let Some(err) = open_error {
             c.show_info(
                 InfoCtx::Plain,

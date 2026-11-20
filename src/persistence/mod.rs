@@ -23,7 +23,8 @@ fn configure(conn: &Connection) -> AppResult<()> {
     conn.execute_batch(
         "PRAGMA foreign_keys = ON;
          PRAGMA journal_mode = WAL;
-         PRAGMA synchronous = NORMAL;
+         -- FULL: cada série registrada sobrevive a queda de energia/bateria (8.12).
+         PRAGMA synchronous = FULL;
          PRAGMA busy_timeout = 3000;",
     )?;
     Ok(())

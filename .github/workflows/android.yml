@@ -59,6 +59,9 @@ jobs:
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
             echo "KEYSTORE=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+          else
+            # Sem a chave fixa cada execução gera uma chave nova e o APK NÃO instala por cima da versão anterior.
+            echo "::warning title=APK sem chave de release::Cadastre KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS e KEY_PASSWORD nos Secrets. Sem eles o APK é assinado com uma chave temporária e não atualiza instalações existentes."
           fi
       - name: Gerar APK
         env:

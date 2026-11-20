@@ -545,3 +545,35 @@ fn rest_taken_is_recorded_and_frozen() {
     assert_eq!(db.get_session_full(sid).unwrap().exercises[0].sets[0].rest_taken_s, Some(95));
     assert!(db.set_rest_taken(set, 10).is_err());
 }
+
+/// 8.12 (documento de evolução v1.1): sessão interrompida (app fechado, bateria acabou) é
+/// recuperada ao reabrir o banco, com as séries já registradas, sem duplicar e sem concluir sozinha.
+#[test]
+fn interrupted_session_is_recovered_after_reopen() {
+    let dir = std::env::temp_dir().join(format!("empeto-recovery-{}", now_ms()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("workout.db");
+    let (sid, recorded) = {
+        let mut db = Db::open(&path).unwrap();
+        let (_plan, a, _b) = sample_plan(&db);
+        let sid = db.start_session(a).unwrap();
+        let sets = db.get_session_full(sid).unwrap().exercises[0].sets.clone();
+        db.record_set(sets[0].id, 10, 40_000).unwrap();
+        db.record_set(sets[1].id, 9, 42_500).unwrap();
+        (sid, vec![(sets[0].id, 10, 40_000), (sets[1].id, 9, 42_500)])
+        // `db` sai de escopo sem finalizar a sessão: simula o fechamento inesperado.
+    };
+    let mut db = Db::open(&path).unwrap();
+    assert_eq!(db.active_session_id().unwrap(), Some(sid), "sessão aberta é encontrada");
+    let f = db.get_session_full(sid).unwrap();
+    assert_eq!(f.session.status, SessionStatus::InProgress, "não é concluída automaticamente");
+    for (id, reps, load) in recorded {
+        let s = f.exercises[0].sets.iter().find(|s| s.id == id).unwrap();
+        assert_eq!((s.actual_reps, s.actual_load_g), (Some(reps), Some(load)));
+    }
+    // Não duplica: não é possível abrir outra sessão enquanto esta existir.
+    let day = f.session.schedule_id.unwrap();
+    assert!(db.start_session(day).is_err());
+    assert_eq!(db.list_session_summaries(None, None).unwrap().len(), 0);
+    let _ = std::fs::remove_dir_all(&dir);
+}

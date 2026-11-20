@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 — 2026-11-20 (schema do banco: 4) — Estabilização (Fase 0 do documento de evolução v1.1)
+- Recuperação de sessão interrompida: ao abrir o app com uma sessão não finalizada, o EMPETO pergunta se
+  deseja continuar ou descartar (nada é concluído automaticamente; as séries registradas estão salvas).
+- Banco com `synchronous=FULL`: cada série registrada sobrevive a desligamento repentino/bateria.
+- CI: aviso explícito quando os Secrets da chave de assinatura de release não estão configurados
+  (sem eles o APK não instala por cima da versão anterior).
+- Teste de integração `interrupted_session_is_recovered_after_reopen`.
+
 ## 0.3.0 — 2026-11-19 (schema do banco: 4) — EMPETO Fases 5 e 6
 - Fase 5 — Personalização:
   - Atalhos personalizáveis na Home (até 4, códigos estáveis, sem duplicados, restaurar padrão).

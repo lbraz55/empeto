@@ -43,6 +43,11 @@ implementação seguiu exatamente essas recomendações; todas podem ser revista
   há tarefa em segundo plano, que exigiria `RECEIVE_BOOT_COMPLETED`/agendamentos).
 - **Widget** atualiza quando o app atualiza a Home (`updatePeriodMillis=0`): sem serviço em segundo plano.
 - **Gestos** são atalhos: nunca a única forma de fazer algo.
+- **Durabilidade**: SQLite em WAL com `synchronous=FULL` — um pouco mais lento na escrita, mas uma série
+  registrada não se perde com queda de energia. Sessão aberta ao iniciar o app gera a pergunta
+  "continuar ou descartar" (sem concluir sozinha).
+- **Assinatura**: releases devem ser assinadas sempre com a mesma chave (Secrets `KEYSTORE_BASE64`,
+  `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`). A keystore nunca vai para o repositório.
 - **Sem backup em nuvem do Android** (`allowBackup=false`, regras de extração vazias).
 
 ## ABIs do APK
