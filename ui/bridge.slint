@@ -39,6 +39,7 @@ export struct CmpRow { label: string, a: string, b: string, delta: string, trend
 export struct CmpEx { name: string, rows: [CmpRow] }
 export struct BarRow { label: string, value: string, frac: float }
 export struct DiaryRow { id: int, date: string, title: string, feeling: string, text: string }
+export struct FaqRow { q: string, a: string }
 export struct ShortcutRow { code: string, label: string, icon: string }
 export struct BackupRow { index: int, title: string, subtitle: string, automatic: bool, valid: bool }
 export struct PlanPreview { name: string, detail: string, conflict: bool }
@@ -410,6 +411,12 @@ export global Bridge {
     callback data-restore();
     callback data-ics();
     callback show-diagnostics();
+
+    // ---------------- Ajuda (evolução 10) ----------------
+    in-out property <[FaqRow]> faq;
+    in-out property <int> faq-open: -1;
+    in-out property <string> support-email;
+    callback contact-email();
 
     // ---------------- Atualizações (evolução 7.1/7.2) ----------------
     in-out property <bool> upd-supported;

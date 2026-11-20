@@ -239,6 +239,22 @@ impl Platform for AndroidPlatform {
         .unwrap_or(false)
     }
 
+    fn compose_email(&self, to: &str, subject: &str, body: &str) -> bool {
+        self.with_env(|env, act| {
+            let a = env.new_string(to)?;
+            let s = env.new_string(subject)?;
+            let b = env.new_string(body)?;
+            env.call_method(
+                act,
+                "composeEmail",
+                "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z",
+                &[JValue::Object(&a), JValue::Object(&s), JValue::Object(&b)],
+            )?
+            .z()
+        })
+        .unwrap_or(false)
+    }
+
     fn share_text(&self, subject: &str, text: &str) -> bool {
         self.with_env(|env, act| {
             let s = env.new_string(subject)?;

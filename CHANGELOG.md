@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.0 — 2026-11-20 (schema do banco: 7) — Organização e publicação (Fase 6 do documento de evolução v1.1)
+- **Ajuda e suporte** no app (Configurações): 10 perguntas frequentes e botão "Fale conosco por e-mail"
+  (iempetofaq@gmail.com, assunto "Suporte EMPETO"), que só abre o app de e-mail — nada é enviado sozinho.
+- **README** novo e visual: logo, slogan, capturas de tela, GIF das boas-vindas, funcionalidades, download,
+  FAQ resumido, permissões, tecnologias e links para a documentação.
+- Novos guias: [Instalação](docs/INSTALACAO.md), [Desenvolvimento e reutilização](docs/DESENVOLVIMENTO.md),
+  [FAQ](docs/FAQ.md), [Licenças](docs/LICENCAS.md) + inventário gerado das dependências
+  ([LICENCAS-TERCEIROS.md](docs/LICENCAS-TERCEIROS.md), `scripts/licenses.py`).
+- Diagrama de arquitetura (Mermaid) em docs/ARQUITETURA.md; capturas em docs/images.
+
 ## 0.8.0 — 2026-11-20 (schema do banco: 7) — Integrações e distribuição (Fase 5 do documento de evolução v1.1)
 - **Verificação de atualizações** (Configurações › Sobre › Atualizações): consulta o `empeto-update.json` da
   Release oficial no GitHub sob demanda ou automaticamente no máximo 1x/semana (desligável). Mostra versão

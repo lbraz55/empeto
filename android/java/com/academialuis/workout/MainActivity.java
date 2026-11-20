@@ -422,6 +422,21 @@ public class MainActivity extends NativeActivity {
         }
     }
 
+    /** Abre o app de e-mail com os campos preenchidos (suporte, evolução 10.2). Não envia nada sozinho. */
+    public boolean composeEmail(String to, String subject, String body) {
+        try {
+            Intent i = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"));
+            i.putExtra(Intent.EXTRA_EMAIL, new String[]{to});
+            i.putExtra(Intent.EXTRA_SUBJECT, subject);
+            i.putExtra(Intent.EXTRA_TEXT, body);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** Compartilha um texto (relatório mensal) pelo seletor do sistema. Nada é enviado sem a escolha do usuário. */
     public boolean shareText(String subject, String text) {
         try {

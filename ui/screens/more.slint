@@ -330,6 +330,12 @@ export component SettingsScreen inherits Scroll {
             clicked => { Bridge.settings-open(10); }
         }
         CategoryRow {
+            icon: Icons.note;
+            text: @tr("Ajuda e suporte");
+            description: @tr("Perguntas frequentes e contato por e-mail");
+            clicked => { Bridge.settings-open(11); }
+        }
+        CategoryRow {
             icon: Icons.info;
             text: @tr("Sobre");
             description: @tr("Versão, privacidade e limitações");
@@ -700,6 +706,42 @@ export component SettingsScreen inherits Scroll {
             icon: Icons.upload;
             kind: "danger";
             clicked => { Bridge.data-restore(); }
+        }
+    }
+    if Bridge.settings-section == 11: VerticalLayout {
+        spacing: 8px;
+        SectionTitle { text: @tr("PERGUNTAS FREQUENTES"); }
+        for f[i] in Bridge.faq: Card {
+            clickable: true;
+            accessible-role: button;
+            accessible-label: f.q;
+            accessible-expanded: Bridge.faq-open == i;
+            clicked => { Bridge.faq-open = Bridge.faq-open == i ? -1 : i; }
+            HorizontalLayout {
+                spacing: 8px;
+                Text {
+                    text: f.q;
+                    color: Theme.text;
+                    font-size: Theme.fs-m;
+                    font-weight: 700;
+                    wrap: word-wrap;
+                    horizontal-stretch: 1;
+                }
+                Icon {
+                    cmd: Bridge.faq-open == i ? Icons.up : Icons.down;
+                    size: 20px;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+            if Bridge.faq-open == i: Body { text: f.a; }
+        }
+        SectionTitle { text: @tr("CONTATO"); }
+        Label { text: @tr("Sugestões, dúvidas ou problemas: escreva para ") + Bridge.support-email + @tr(". O app só abre seu aplicativo de e-mail — nada é enviado automaticamente."); }
+        Btn {
+            text: @tr("Fale conosco por e-mail");
+            icon: Icons.upload;
+            kind: "primary";
+            clicked => { Bridge.contact-email(); }
         }
     }
     if Bridge.settings-section == 7: VerticalLayout {

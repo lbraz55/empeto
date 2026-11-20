@@ -3061,6 +3061,11 @@ impl Controller {
             b.set_about_text(ss(about));
         });
         self.refresh_update_ui();
+        let faq: Vec<FaqRow> = crate::application::faq::FAQ.iter().map(|(q, a)| FaqRow { q: ss(tr(q)), a: ss(tr(a)) }).collect();
+        self.with_bridge(|b| {
+            b.set_faq(model(faq));
+            b.set_support_email(ss(crate::application::faq::SUPPORT_EMAIL));
+        });
         Ok(())
     }
 
@@ -4943,6 +4948,22 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     });
     cb!(b, ctrl, on_detail_compare, |c| { c.detail_compare(); });
     cb!(b, ctrl, on_upd_check, |c| { c.start_update_check(true); });
+    cb!(b, ctrl, on_contact_email, |c| {
+        use crate::application::faq::*;
+        let body = trf!(
+            "\n\n—\nVersão do app: {}\n(Escreva acima sua dúvida, sugestão ou o problema encontrado.)",
+            c.platform.app_version()
+        );
+        if !c.platform.compose_email(SUPPORT_EMAIL, tr("Suporte EMPETO"), &body) {
+            c.show_info(
+                InfoCtx::Plain,
+                tr("Nenhum app de e-mail encontrado"),
+                &trf!("Envie sua mensagem para {} com o assunto \"{}\".", SUPPORT_EMAIL, tr("Suporte EMPETO")),
+                tr("OK"),
+                "",
+            );
+        }
+    });
     cb!(b, ctrl, on_upd_download, |c| { c.update_download(); });
     cb!(b, ctrl, on_upd_install, |c| { c.update_install(); });
     cb!(b, ctrl, on_hist_more, |c| {

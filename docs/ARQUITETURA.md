@@ -1,5 +1,37 @@
 # Arquitetura
 
+```mermaid
+flowchart TB
+    subgraph UI["Interface — Slint (ui/)"]
+        screens["Telas e componentes<br/>@tr(...) traduzido"]
+        bridge["Bridge (contrato)"]
+    end
+    subgraph RUST["Rust (src/)"]
+        app["app — controlador"]
+        domain["domain — regras, cronômetro, calculadoras"]
+        services["training · history · calendar · import_export<br/>application · exercise_media · updater · i18n"]
+        persistence["persistence — migrações"]
+    end
+    subgraph DATA["Dados no aparelho"]
+        db[("SQLite<br/>workout.db")]
+        backups[("backups/*.zip")]
+    end
+    subgraph ANDROID["Android — Java/JNI (android/)"]
+        main["MainActivity<br/>notificações, arquivos, e-mail, instalador"]
+        widget["EmpetoWidget"]
+    end
+    gh["GitHub Release<br/>(somente atualizações)"]
+
+    screens <--> bridge <--> app
+    app --> domain
+    app --> services --> persistence --> db
+    services --> backups
+    app <-->|"platform (JNI)"| main
+    services -->|"widget.txt"| widget
+    main -.->|HTTPS opcional| gh
+```
+
+
 ```
 ┌──────────────── UI (Slint) ────────────────┐
 │ ui/app.slint · screens/* · dialogs · Bridge │  propriedades + callbacks

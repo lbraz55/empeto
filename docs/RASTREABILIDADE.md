@@ -63,6 +63,9 @@
 | 7.1 (v1.1) Verificação de atualizações | `src/updater`, `scripts/update-metadata.py`, Sobre › Atualizações | `updater::tests` |
 | 7.2 (v1.1) Instalação e segurança | `MainActivity.updateDownload/verifyApk/installApk`, `UpdateInstallReceiver` | `parse_evaluate_and_safety` + manual |
 | 13 (v1.1) Permissões | manifesto (INTERNET, REQUEST_INSTALL_PACKAGES, sem cleartext) | `android_manifest_is_minimal` |
+| 10.1 (v1.1) FAQ no app | `application::faq`, Configurações › Ajuda e suporte | visual |
+| 10.2 (v1.1) Contato por e-mail | `Platform::compose_email` → `MainActivity.composeEmail` (ACTION_SENDTO) | manual (aparelho) |
+| 11 (v1.1) Repositório | README, docs/INSTALACAO, DESENVOLVIMENTO, FAQ, LICENCAS, images, diagrama | — |
 | 9.4 Widget Android | `application/widget.rs`, `EmpetoWidget.java` | `widget::tests` + manual |
 
 ## Regras de negócio

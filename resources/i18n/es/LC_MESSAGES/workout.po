@@ -73,6 +73,9 @@ msgstr "Accesos directos de Inicio"
 msgid "Backups"
 msgstr "Copias de seguridad"
 
+msgid "Ajuda e suporte"
+msgstr "Ayuda y soporte"
+
 msgid "Sobre"
 msgstr "Acerca de"
 
@@ -628,6 +631,9 @@ msgstr "Espacio usado, importar, exportar y hojas de cálculo"
 msgid "Backups no aparelho, automático semanal e restauração"
 msgstr "Copias en el dispositivo, copia automática semanal y restauración"
 
+msgid "Perguntas frequentes e contato por e-mail"
+msgstr "Preguntas frecuentes y contacto por correo"
+
 msgid "Versão, privacidade e limitações"
 msgstr "Versión, privacidad y limitaciones"
 
@@ -903,6 +909,21 @@ msgstr "Guardar copia en archivo…"
 
 msgid "Restaurar de um arquivo…"
 msgstr "Restaurar desde un archivo…"
+
+msgid "PERGUNTAS FREQUENTES"
+msgstr "PREGUNTAS FRECUENTES"
+
+msgid "CONTATO"
+msgstr "CONTACTO"
+
+msgid "Sugestões, dúvidas ou problemas: escreva para "
+msgstr "Sugerencias, dudas o problemas: escribe a "
+
+msgid ". O app só abre seu aplicativo de e-mail — nada é enviado automaticamente."
+msgstr ". La app solo abre tu app de correo — no se envía nada automáticamente."
+
+msgid "Fale conosco por e-mail"
+msgstr "Contáctanos por correo"
 
 msgid "Versão "
 msgstr "Versión "
@@ -2299,6 +2320,18 @@ msgstr "Cuántas repeticiones más podrías hacer con buena técnica."
 msgid "Fica no diário de treinamento junto das observações."
 msgstr "Queda en el diario de entrenamiento junto con las notas."
 
+msgid "\n\n—\nVersão do app: {}\n(Escreva acima sua dúvida, sugestão ou o problema encontrado.)"
+msgstr "\n\n—\nVersión de la app: {}\n(Escribe arriba tu duda, sugerencia o el problema encontrado.)"
+
+msgid "Suporte EMPETO"
+msgstr "Soporte EMPETO"
+
+msgid "Nenhum app de e-mail encontrado"
+msgstr "No se encontró ninguna app de correo"
+
+msgid "Envie sua mensagem para {} com o assunto \"{}\"."
+msgstr "Envía tu mensaje a {} con el asunto \"{}\"."
+
 msgid "Resumo do mês — EMPETO"
 msgstr "Resumen del mes — EMPETO"
 
@@ -2454,6 +2487,66 @@ msgstr "Normal"
 
 msgid "Lenta"
 msgstr "Lenta"
+
+msgid "Como criar minha primeira ficha?"
+msgstr "¿Cómo creo mi primera rutina?"
+
+msgid "Em Treinos, toque em \"Nova ficha\" (ou em \"Modelos\" para começar de um modelo pronto). Dê um nome, escolha se os dias seguem os dias da semana ou uma sequência A/B/C, adicione os dias e, em cada dia, os exercícios com séries, repetições, carga e descanso."
+msgstr "En Entrenamientos, toca \"Nueva rutina\" (o \"Plantillas\" para empezar con una plantilla). Ponle un nombre, elige si los días siguen los días de la semana o una secuencia A/B/C, añade los días y, en cada día, los ejercicios con series, repeticiones, carga y descanso."
+
+msgid "Como iniciar um treino?"
+msgstr "¿Cómo inicio un entrenamiento?"
+
+msgid "Na Home, toque em \"Iniciar\" no cartão do treino de hoje — ou abra a ficha em Treinos e toque em \"Iniciar\" no dia desejado. Só existe uma sessão em andamento por vez."
+msgstr "En Inicio, toca \"Iniciar\" en la tarjeta del entrenamiento de hoy — o abre la rutina en Entrenamientos y toca \"Iniciar\" en el día que quieras. Solo hay una sesión en curso a la vez."
+
+msgid "Como registrar carga e repetições?"
+msgstr "¿Cómo registro carga y repeticiones?"
+
+msgid "Na sessão, ajuste carga e repetições de cada série e toque no ✓. \"Repetir anterior\" e \"Planejado\" preenchem os campos com um toque, e o modo foco mostra uma série por vez com teclado numérico grande. Errou? Use \"Desfazer\" no aviso."
+msgstr "En la sesión, ajusta la carga y las repeticiones de cada serie y toca ✓. \"Repetir anterior\" y \"Planificado\" rellenan los campos con un toque, y el modo enfoque muestra una serie a la vez con un teclado numérico grande. ¿Te equivocaste? Usa \"Deshacer\" en el aviso."
+
+msgid "Como funciona o cronômetro?"
+msgstr "¿Cómo funciona el cronómetro?"
+
+msgid "O descanso pode começar sozinho ao registrar uma série (Configurações › Cronômetro) ou pelo botão Cronômetro. Ele continua correto com a tela bloqueada ou o app em segundo plano; se você permitir notificações, o aviso de fim de descanso aparece mesmo fora do app."
+msgstr "El descanso puede empezar solo al registrar una serie (Ajustes › Cronómetro) o con el botón Cronómetro. Sigue siendo exacto con la pantalla bloqueada o la app en segundo plano; si permites notificaciones, el aviso de fin del descanso aparece incluso fuera de la app."
+
+msgid "Como restaurar um backup?"
+msgstr "¿Cómo restauro una copia de seguridad?"
+
+msgid "Em Configurações › Backups, toque em \"Restaurar\" em um backup do aparelho ou em \"Restaurar de um arquivo…\" para um backup salvo fora dele. O app valida o arquivo antes e guarda uma cópia dos dados atuais caso algo falhe."
+msgstr "En Ajustes › Copias de seguridad, toca \"Restaurar\" en una copia del dispositivo o \"Restaurar desde un archivo…\" para una copia guardada fuera de él. La app valida el archivo antes y guarda una copia de los datos actuales por si algo falla."
+
+msgid "Onde ficam armazenados meus dados?"
+msgstr "¿Dónde se guardan mis datos?"
+
+msgid "Somente neste aparelho, na área privada do app (banco SQLite). Não há conta nem nuvem. Desinstalar o app apaga os dados — por isso salve de vez em quando um backup fora do aparelho."
+msgstr "Solo en este dispositivo, en el área privada de la app (base de datos SQLite). No hay cuenta ni nube. Desinstalar la app borra los datos — por eso guarda de vez en cuando una copia fuera del dispositivo."
+
+msgid "O aplicativo funciona sem internet?"
+msgstr "¿La app funciona sin internet?"
+
+msgid "Sim. Tudo funciona offline: fichas, sessões, cronômetro, histórico, ilustrações, relatórios e backups. A internet só é usada, se você permitir, para verificar atualizações, e quando você abre um link de vídeo ou o atalho do WellHub."
+msgstr "Sí. Todo funciona sin conexión: rutinas, sesiones, cronómetro, historial, ilustraciones, informes y copias de seguridad. Internet solo se usa, si lo permites, para comprobar actualizaciones, y cuando abres un enlace de vídeo o el acceso de WellHub."
+
+msgid "Como atualizar o EMPETO?"
+msgstr "¿Cómo actualizo EMPETO?"
+
+msgid "Em Configurações › Sobre › Atualizações, toque em \"Verificar agora\" (ou deixe a verificação automática semanal ligada). Se houver versão nova, toque em \"Baixar e instalar\" e confirme na tela do Android. Seus dados são mantidos."
+msgstr "En Ajustes › Acerca de › Actualizaciones, toca \"Comprobar ahora\" (o deja activada la comprobación automática semanal). Si hay una versión nueva, toca \"Descargar e instalar\" y confirma en la pantalla de Android. Tus datos se conservan."
+
+msgid "Como utilizar ilustrações e vídeos?"
+msgstr "¿Cómo uso las ilustraciones y los vídeos?"
+
+msgid "Cada exercício tem uma ilustração própria, disponível sem internet. Em Exercícios › (exercício) › Editar você pode escolher outra ilustração e colar um link de vídeo (https) — ele abre no navegador ou no app de vídeo do aparelho."
+msgstr "Cada ejercicio tiene su propia ilustración, disponible sin internet. En Ejercicios › (ejercicio) › Editar puedes elegir otra ilustración y pegar un enlace de vídeo (https) — se abre en el navegador o en la app de vídeo del dispositivo."
+
+msgid "Como enviar sugestões ou relatar problemas?"
+msgstr "¿Cómo envío sugerencias o informo problemas?"
+
+msgid "Toque em \"Fale conosco por e-mail\" logo abaixo. O app abre seu aplicativo de e-mail com o destinatário e o assunto preenchidos; nada é enviado sem você. Se puder, conte a versão do app (Configurações › Sobre) e o que aconteceu."
+msgstr "Toca \"Contáctanos por correo\" abajo. La app abre tu app de correo con el destinatario y el asunto rellenados; no se envía nada sin ti. Si puedes, indica la versión de la app (Ajustes › Acerca de) y qué pasó."
 
 msgid "Bipe curto"
 msgstr "Pitido corto"

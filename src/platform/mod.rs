@@ -103,6 +103,12 @@ pub trait Platform {
         log::info!("abrir link: {url}");
         true
     }
+    /// Abre o app de e-mail com destinatário, assunto e corpo preenchidos (ACTION_SENDTO mailto:).
+    /// Nada é enviado automaticamente. Devolve false se não houver app de e-mail.
+    fn compose_email(&self, to: &str, subject: &str, body: &str) -> bool {
+        log::info!("e-mail para {to}: {subject}\n{body}");
+        true
+    }
     /// Compartilha um texto pelo seletor do sistema (ACTION_SEND, sem permissão). Opcional para o usuário.
     fn share_text(&self, subject: &str, text: &str) -> bool {
         log::info!("compartilhar: {subject}\n{text}");
