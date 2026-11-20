@@ -1,6 +1,7 @@
 //! Validação do teclado numérico próprio (documento EMPETO, 3.4).
 //! O teclado só edita o texto de rascunho; nada é gravado antes da confirmação.
 
+use crate::i18n::tr;
 use super::{format_load, parse_load, LoadUnit, MAX_LOAD_G};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -29,10 +30,10 @@ pub fn apply_key(current: &str, key: &str, kind: FieldKind, unit: LoadUnit) -> S
             if kind == FieldKind::Reps || cur.contains(',') {
                 return cur;
             }
-            if cur.is_empty() { "0,".to_string() } else { format!("{cur},") }
+            if cur.is_empty() { "0,".to_string() } else { format!("{},", cur) }
         }
         d if d.len() == 1 && d.chars().all(|c| c.is_ascii_digit()) => {
-            if cur == "0" { d.to_string() } else { format!("{cur}{d}") }
+            if cur == "0" { d.to_string() } else { format!("{}{}", cur, d) }
         }
         _ => return cur,
     };
@@ -84,11 +85,11 @@ pub fn to_values(load: &str, reps: &str, unit: LoadUnit) -> Result<(i64, i64), S
     let load_g = parse_load(load.trim().trim_end_matches(','), unit).map_err(|e| e.to_string())?;
     let reps = reps.trim();
     if reps.is_empty() {
-        return Err("Informe as repetições realizadas.".into());
+        return Err(tr("Informe as repetições realizadas.").into());
     }
     let r: i64 = reps.parse().map_err(|_| "Repetições inválidas.".to_string())?;
     if !(0..=MAX_REPS).contains(&r) {
-        return Err("Repetições devem estar entre 0 e 1000.".into());
+        return Err(tr("Repetições devem estar entre 0 e 1000.").into());
     }
     Ok((load_g, r))
 }

@@ -1,6 +1,7 @@
 //! Modelos de fichas (documento EMPETO, 4.6): catálogo local e versionado.
 //! Criar a partir de um modelo gera uma ficha nova e independente; alterar a ficha não altera o modelo.
 
+use crate::i18n::tr;
 use crate::domain::*;
 use crate::persistence::Db;
 use rusqlite::{params, OptionalExtension};
@@ -164,11 +165,11 @@ pub struct TemplatePreview {
 /// Valida a estrutura do modelo (nomes, séries, faixas, descanso).
 pub fn validate(t: &Template) -> AppResult<()> {
     if t.days.is_empty() {
-        return validation("Modelo sem dias.");
+        return validation(tr("Modelo sem dias."));
     }
     for d in t.days {
         if d.exercises.is_empty() {
-            return validation(format!("O dia \"{}\" do modelo não tem exercícios.", d.name));
+            return validation(trf!("O dia \"{}\" do modelo não tem exercícios.", d.name));
         }
         for e in d.exercises {
             Target { sets: e.sets, reps_min: e.reps.0, reps_max: e.reps.1, load_g: 0 }.validated()?;
@@ -180,23 +181,23 @@ pub fn validate(t: &Template) -> AppResult<()> {
 
 impl Db {
     pub fn template_preview(&self, code: &str) -> AppResult<TemplatePreview> {
-        let t = find(code).ok_or_else(|| AppError::NotFound("Modelo não encontrado.".into()))?;
+        let t = find(code).ok_or_else(|| AppError::NotFound(tr("Modelo não encontrado.").into()))?;
         validate(t)?;
         let mut missing = Vec::new();
-        let mut text = format!("{}\n", t.description);
+        let mut text = trf!("{}\n", tr(t.description));
         for d in t.days {
-            text.push_str(&format!("\n{}\n", d.name));
+            text.push_str(&trf!("\n{}\n", tr(d.name)));
             for e in d.exercises {
                 let exists = self.find_exercise_by_name(e.name)?.map(|x| !x.archived).unwrap_or(false);
                 if !exists && !missing.contains(&e.name.to_string()) {
                     missing.push(e.name.to_string());
                 }
-                text.push_str(&format!(
+                text.push_str(&trf!(
                     "  • {} — {} × {}{}\n",
                     e.name,
                     e.sets,
                     format_reps(e.reps.0, e.reps.1),
-                    if exists { "" } else { " (será adicionado à biblioteca)" }
+                    if exists { "" } else { tr(" (será adicionado à biblioteca)") }
                 ));
             }
         }
@@ -206,12 +207,12 @@ impl Db {
     /// Cria uma ficha nova a partir do modelo, em uma transação. Exercícios ausentes (renomeados
     /// ou excluídos da biblioteca) são criados como personalizados; arquivados são reativados.
     pub fn create_from_template(&mut self, code: &str) -> AppResult<Id> {
-        let t = find(code).ok_or_else(|| AppError::NotFound("Modelo não encontrado.".into()))?;
+        let t = find(code).ok_or_else(|| AppError::NotFound(tr("Modelo não encontrado.").into()))?;
         validate(t)?;
-        let mut name = t.name.to_string();
+        let mut name = tr(t.name).to_string();
         let mut n = 2;
         while self.find_plan_by_name(&name)?.is_some() {
-            name = format!("{} ({n})", t.name);
+            name = trf!("{} ({})", tr(t.name), n);
             n += 1;
         }
         let now = now_ms();
@@ -219,13 +220,13 @@ impl Db {
         tx.execute(
             "INSERT INTO workout_plan(name, description, schedule_type, active, created_at, updated_at)
              VALUES (?1, ?2, ?3, 1, ?4, ?4)",
-            params![name, format!("Criada a partir do modelo {} (v{TEMPLATES_VERSION}). {}", t.name, t.description), t.schedule.as_str(), now],
+            params![name, trf!("Criada a partir do modelo {} (v{}). {}", tr(t.name), TEMPLATES_VERSION, tr(t.description)), t.schedule.as_str(), now],
         )?;
         let plan = tx.last_insert_rowid();
         for (di, d) in t.days.iter().enumerate() {
             tx.execute(
                 "INSERT INTO plan_schedule(plan_id, name, weekdays, sequence_order) VALUES (?1, ?2, ?3, ?4)",
-                params![plan, d.name, d.weekdays as i64, di as i64],
+                params![plan, tr(d.name), d.weekdays as i64, di as i64],
             )?;
             let day = tx.last_insert_rowid();
             for (pos, e) in d.exercises.iter().enumerate() {

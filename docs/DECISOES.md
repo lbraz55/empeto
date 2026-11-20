@@ -43,6 +43,13 @@ implementação seguiu exatamente essas recomendações; todas podem ser revista
   há tarefa em segundo plano, que exigiria `RECEIVE_BOOT_COMPLETED`/agendamentos).
 - **Widget** atualiza quando o app atualiza a Home (`updatePeriodMillis=0`): sem serviço em segundo plano.
 - **Gestos** são atalhos: nunca a única forma de fazer algo.
+- **Idioma automático** ("Seguir o sistema"): português para aparelhos em português, espanhol para qualquer
+  variante de espanhol e inglês para os demais idiomas. Datas continuam no formato dia/mês/ano em todos os idiomas.
+- **Dados não são traduzidos**: nomes da biblioteca inicial de exercícios, grupos musculares e equipamentos são
+  dados do usuário (podem ser editados) e ficam como estão. Os cabeçalhos das planilhas exportadas continuam em
+  português, porque são parte do formato de arquivo documentado (FORMATO_ARQUIVOS.md).
+- **Fonte**: além de Pequena/Média/Grande do documento, foi mantida a opção Extragrande para não piorar a
+  experiência de quem já usava a maior escala (preferências não são alteradas silenciosamente).
 - **Durabilidade**: SQLite em WAL com `synchronous=FULL` — um pouco mais lento na escrita, mas uma série
   registrada não se perde com queda de energia. Sessão aberta ao iniciar o app gera a pergunta
   "continuar ou descartar" (sem concluir sozinha).

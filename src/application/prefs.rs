@@ -106,8 +106,12 @@ pub struct Prefs {
     pub module_backup_reminder: bool,
     pub calendar_week_view: bool,
     // Interface
-    /// 0 normal, 1 grande, 2 extragrande (6.4).
+    /// Tamanho da fonte (evolução 4.2): 0 pequena, 1 média (padrão), 2 grande, 3 extragrande.
     pub text_size: i32,
+    /// Idioma da interface (evolução 4.1): "system", "pt-BR", "en" ou "es".
+    pub language: String,
+    /// Boas-vindas concluídas ou ignoradas (evolução 3.2).
+    pub onboarding_done: bool,
     pub theme_mode: ThemeMode,
     /// 0 compacta, 1 padrão, 2 espaçosa (6.3).
     pub density: i32,
@@ -151,7 +155,9 @@ impl Default for Prefs {
             module_decorative_anim: true,
             module_backup_reminder: true,
             calendar_week_view: false,
-            text_size: 0,
+            text_size: 1,
+            language: "system".into(),
+            onboarding_done: false,
             theme_mode: ThemeMode::System,
             density: 1,
             anim_mode: AnimMode::System,
@@ -173,6 +179,7 @@ impl Prefs {
         let mut p = Prefs::default();
         let mut legacy_large = false;
         let mut has_text_size = false;
+        let mut old_text_size: Option<i32> = None;
         for (k, v) in db.all_prefs()? {
             let bv = v == "1";
             let iv = v.parse::<i64>().ok();
@@ -211,10 +218,19 @@ impl Prefs {
                 "calendar.week_view" => p.calendar_week_view = bv,
                 // Compatibilidade com versões até 0.1.4 (liga/desliga "texto grande").
                 "ui.large_text" => legacy_large = bv,
-                "ui.text_size" => {
+                // Escala antiga (até 0.3.x): 0 normal, 1 grande, 2 extragrande → nova escala +1.
+                "ui.text_size" => old_text_size = Some(iv.unwrap_or(0).clamp(0, 2) as i32),
+                "ui.font_size" => {
                     has_text_size = true;
-                    p.text_size = iv.unwrap_or(0).clamp(0, 2) as i32
+                    p.text_size = iv.unwrap_or(1).clamp(0, 3) as i32
                 }
+                "ui.language" => {
+                    p.language = match v.as_str() {
+                        "pt-BR" | "en" | "es" => v.clone(),
+                        _ => "system".into(),
+                    }
+                }
+                "onboarding.done" => p.onboarding_done = bv,
                 "ui.theme" => p.theme_mode = ThemeMode::parse(&v),
                 "ui.density" => p.density = iv.unwrap_or(1).clamp(0, 2) as i32,
                 "ui.anim_mode" => p.anim_mode = AnimMode::parse(&v),
@@ -224,8 +240,12 @@ impl Prefs {
                 _ => {}
             }
         }
-        if !has_text_size && legacy_large {
-            p.text_size = 1;
+        if !has_text_size {
+            if let Some(t) = old_text_size {
+                p.text_size = t + 1;
+            } else if legacy_large {
+                p.text_size = 2;
+            }
         }
         Ok(p)
     }
@@ -268,7 +288,9 @@ impl Prefs {
             ("module.decorative_anim", b(self.module_decorative_anim)),
             ("module.backup_reminder", b(self.module_backup_reminder)),
             ("calendar.week_view", b(self.calendar_week_view)),
-            ("ui.text_size", self.text_size.to_string()),
+            ("ui.font_size", self.text_size.to_string()),
+            ("ui.language", self.language.clone()),
+            ("onboarding.done", b(self.onboarding_done)),
             ("ui.theme", self.theme_mode.as_str().into()),
             ("ui.density", self.density.to_string()),
             ("ui.anim_mode", self.anim_mode.as_str().into()),
@@ -298,7 +320,9 @@ mod tests {
         p.pre_alert_seconds = 7;
         p.theme_mode = ThemeMode::Light;
         p.density = 0;
-        p.text_size = 2;
+        p.text_size = 3;
+        p.language = "es".into();
+        p.onboarding_done = true;
         p.anim_mode = AnimMode::Reduced;
         p.save(&db).unwrap();
         assert_eq!(Prefs::load(&db).unwrap(), p);
@@ -308,8 +332,11 @@ mod tests {
     fn legacy_large_text_maps_to_grande() {
         let db = Db::open_in_memory().unwrap();
         db.set_pref("ui.large_text", "1").unwrap();
-        assert_eq!(Prefs::load(&db).unwrap().text_size, 1);
-        db.set_pref("ui.text_size", "2").unwrap();
-        assert_eq!(Prefs::load(&db).unwrap().text_size, 2);
+        assert_eq!(Prefs::load(&db).unwrap().text_size, 2); // grande
+        db.set_pref("ui.text_size", "2").unwrap(); // extragrande na escala antiga
+        assert_eq!(Prefs::load(&db).unwrap().text_size, 3);
+        db.set_pref("ui.font_size", "0").unwrap(); // nova chave prevalece
+        assert_eq!(Prefs::load(&db).unwrap().text_size, 0);
+        assert_eq!(Prefs::default().text_size, 1); // média é o padrão
     }
 }

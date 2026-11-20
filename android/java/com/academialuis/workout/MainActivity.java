@@ -484,6 +484,20 @@ public class MainActivity extends NativeActivity {
         return m != android.content.res.Configuration.UI_MODE_NIGHT_NO;
     }
 
+    /** Idioma do sistema no formato BCP 47 (ex.: pt-BR). */
+    public String localeTag() {
+        try {
+            return getResources().getConfiguration().getLocales().get(0).toLanguageTag();
+        } catch (Throwable t) {
+            return java.util.Locale.getDefault().toLanguageTag();
+        }
+    }
+
+    /** Escala de fonte escolhida nas configurações do Android. */
+    public float fontScale() {
+        return getResources().getConfiguration().fontScale;
+    }
+
     public boolean animatorsEnabled() {
         return android.animation.ValueAnimator.areAnimatorsEnabled();
     }

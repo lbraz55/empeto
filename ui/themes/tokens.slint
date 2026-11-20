@@ -21,10 +21,17 @@ export global Theme {
     out property <color> pressed: surface3;
     out property <color> selection: dark ? #555555 : #C8C8C8;
     out property <color> scrim: #000000;
+    // Cores semânticas (evolução 4.3): só onde o significado importa — sucesso, alerta e erro.
+    // Tons sóbrios com contraste AA nos dois temas; o restante da interface continua monocromático.
+    out property <color> success: dark ? #7BC48A : #2E7D3E;
+    out property <color> warning: dark ? #E0B25C : #8A5A00;
+    out property <color> danger: dark ? #EF8A80 : #B3261E;
 
     // ---- Tipografia (6.4): 0 normal, 1 grande, 2 extragrande ----
-    in-out property <int> text-size: 0;
-    out property <float> k: text-size == 2 ? 1.4 : text-size == 1 ? 1.2 : 1.0;
+    // 0 pequena, 1 média, 2 grande, 3 extragrande; multiplicado pela escala de fonte do Android.
+    in-out property <int> text-size: 1;
+    in-out property <float> font-scale: 1.0;
+    out property <float> k: (text-size == 3 ? 1.4 : text-size == 2 ? 1.2 : text-size == 0 ? 0.9 : 1.0) * font-scale;
     out property <length> fs-xs: 12px * k;
     out property <length> fs-s: 14px * k;
     out property <length> fs-m: 16px * k;

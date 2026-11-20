@@ -11,10 +11,10 @@ export component SessionProgress inherits HorizontalLayout {
     height: 34px;
     for e[i] in root.exercises: seg := Rectangle {
         property <float> frac: e.sets.length == 0 ? 0 : e.done-sets / e.sets.length;
-        property <string> state: e.done-sets == 0 ? "não iniciado" : e.done-sets >= e.sets.length ? "concluído" : "parcial";
+        property <string> state: e.done-sets == 0 ? @tr("não iniciado") : e.done-sets >= e.sets.length ? @tr("concluído") : @tr("parcial");
         horizontal-stretch: 1;
         accessible-role: button;
-        accessible-label: "Exercício " + (i + 1) + ", " + e.name + ": " + self.state + ", " + e.done-sets + " de " + e.sets.length + " séries";
+        accessible-label: @tr("Exercício ") + (i + 1) + ", " + e.name + ": " + self.state + ", " + e.done-sets + @tr(" de ") + e.sets.length + @tr(" séries");
         accessible-action-default => { root.select(i); }
         TouchArea {
             clicked => { root.select(i); }
@@ -22,6 +22,7 @@ export component SessionProgress inherits HorizontalLayout {
         Rectangle {
             y: (parent.height - self.height) / 2;
             height: i == root.current ? 14px : 10px;
+            animate height { duration: Theme.anim-fast; }
             border-radius: self.height / 2;
             border-width: 1.5px;
             border-color: i == root.current ? Theme.text : Theme.border-strong;
@@ -30,6 +31,8 @@ export component SessionProgress inherits HorizontalLayout {
             Rectangle {
                 x: 0;
                 width: parent.width * seg.frac;
+                // Atualização do indicador de progresso (evolução 3.3).
+                animate width { duration: Theme.anim-page; easing: ease-out; }
                 height: parent.height;
                 background: Theme.text;
             }

@@ -29,14 +29,14 @@ export component SessionDetailScreen inherits Scroll {
             font-size: Theme.fs-s;
             wrap: word-wrap;
         }
-        if e.notes != "": Label { text: "Obs.: " + e.notes; }
+        if e.notes != "": Label { text: @tr("Obs.: ") + e.notes; }
     }
     if Bridge.detail-notes != "": Card {
-        SectionTitle { text: "OBSERVAÇÕES DA SESSÃO"; }
+        SectionTitle { text: @tr("OBSERVAÇÕES DA SESSÃO"); }
         Body { text: Bridge.detail-notes; }
     }
     Label {
-        text: "Registro histórico: alterações posteriores na ficha não modificam esta sessão.";
+        text: @tr("Registro histórico: alterações posteriores na ficha não modificam esta sessão.");
         color: Theme.faint;
     }
 }
@@ -67,19 +67,19 @@ export component EvolutionScreen inherits Scroll {
         font-size: Theme.fs-xl;
     }
     Segmented {
-        items: ["30 dias", "90 dias", "1 ano", "Tudo"];
+        items: [@tr("30 dias"), @tr("90 dias"), @tr("1 ano"), @tr("Tudo")];
         selected: Bridge.evo-period;
         select(i) => { Bridge.evo-set-period(i); }
     }
     Segmented {
-        items: ["Carga máx.", "Volume", "1RM est.", "Reps"];
+        items: [@tr("Carga máx."), @tr("Volume"), @tr("1RM est."), @tr("Reps")];
         selected: Bridge.evo-metric;
         select(i) => { Bridge.evo-set-metric(i); }
     }
     if !Bridge.evo-has-data: EmptyState {
         icon: Icons.chart;
-        title: "Sem registros no período";
-        text: "Não há séries deste exercício no período escolhido. Selecione um período maior.";
+        title: @tr("Sem registros no período");
+        text: @tr("Não há séries deste exercício no período escolhido. Selecione um período maior.");
     }
     if Bridge.evo-has-data: Card {
 
@@ -167,7 +167,7 @@ export component EvolutionScreen inherits Scroll {
             }
         }
         Text {
-            text: "Toque em um ponto para ver data e valor. Linha clara: tendência (com 3 sessões ou mais). Eixo vertical começa em 0 para não exagerar pequenas variações.";
+            text: @tr("Toque em um ponto para ver data e valor. Linha clara: tendência (com 3 sessões ou mais). Eixo vertical começa em 0 para não exagerar pequenas variações.");
             color: Theme.faint;
             font-size: Theme.fs-xs;
             wrap: word-wrap;
@@ -182,12 +182,12 @@ export component EvolutionScreen inherits Scroll {
     }
     if Bridge.evo-summary != "": Body { text: Bridge.evo-summary; }
     if Bridge.evo-bests != "": Card {
-        SectionTitle { text: "MELHORES MARCAS"; }
+        SectionTitle { text: @tr("MELHORES MARCAS"); }
         Body { text: Bridge.evo-bests; }
         for r in Bridge.evo-records: Label { text: "★ " + r; }
     }
     if Bridge.evo-metric == 2: Label {
-        text: "1RM estimada pela fórmula de Epley — apenas indicativa, não é recomendação de treino.";
+        text: @tr("1RM estimada pela fórmula de Epley — apenas indicativa, não é recomendação de treino.");
         color: Theme.faint;
     }
     for r in Bridge.evo-rows: Rectangle {
@@ -272,113 +272,113 @@ export component SettingsScreen inherits Scroll {
         spacing: 8px;
         CategoryRow {
             icon: Icons.bell;
-            text: "Sons e alertas";
-            description: "Fim do descanso, início de série, pré-alerta, vibração";
+            text: @tr("Sons e alertas");
+            description: @tr("Fim do descanso, início de série, pré-alerta, vibração");
             clicked => { Bridge.settings-open(1); }
         }
         CategoryRow {
             icon: Icons.timer;
-            text: "Cronômetro";
-            description: "Duração padrão, ajuste, modo manual/automático";
+            text: @tr("Cronômetro");
+            description: @tr("Duração padrão, ajuste, modo manual/automático");
             clicked => { Bridge.settings-open(2); }
         }
         CategoryRow {
             icon: Icons.dumbbell;
-            text: "Treinamento";
-            description: "Unidade de carga, incremento, valores padrão";
+            text: @tr("Treinamento");
+            description: @tr("Unidade de carga, incremento, valores padrão");
             clicked => { Bridge.settings-open(3); }
         }
         CategoryRow {
             icon: Icons.calendar;
-            text: "Calendário";
-            description: "Início da semana e visualização";
+            text: @tr("Calendário");
+            description: @tr("Início da semana e visualização");
             clicked => { Bridge.settings-open(4); }
         }
         CategoryRow {
             icon: Icons.eye;
-            text: "Interface";
-            description: "Tema, texto, densidade, animações";
+            text: @tr("Interface");
+            description: @tr("Idioma, tema, texto, densidade, animações");
             clicked => { Bridge.settings-open(5); }
         }
         CategoryRow {
             icon: Icons.home;
-            text: "Atalhos da Home";
-            description: "Escolha até 4 atalhos de acesso rápido";
+            text: @tr("Atalhos da Home");
+            description: @tr("Escolha até 4 atalhos de acesso rápido");
             clicked => { Bridge.settings-open(9); }
         }
         CategoryRow {
             icon: Icons.list;
-            text: "Recursos opcionais";
-            description: "Ligue ou desligue módulos sem perder dados";
+            text: @tr("Recursos opcionais");
+            description: @tr("Ligue ou desligue módulos sem perder dados");
             clicked => { Bridge.settings-open(8); }
         }
         CategoryRow {
             icon: Icons.database;
-            text: "Dados e armazenamento";
-            description: "Espaço usado, importar, exportar e planilhas";
+            text: @tr("Dados e armazenamento");
+            description: @tr("Espaço usado, importar, exportar e planilhas");
             clicked => { Bridge.settings-open(6); }
         }
         CategoryRow {
             icon: Icons.copy;
-            text: "Backups";
-            description: "Backups no aparelho, automático semanal e restauração";
+            text: @tr("Backups");
+            description: @tr("Backups no aparelho, automático semanal e restauração");
             clicked => { Bridge.settings-open(10); }
         }
         CategoryRow {
             icon: Icons.info;
-            text: "Sobre";
-            description: "Versão, privacidade e limitações";
+            text: @tr("Sobre");
+            description: @tr("Versão, privacidade e limitações");
             clicked => { Bridge.settings-open(7); }
         }
     }
     if Bridge.settings-section == 1: VerticalLayout {
         spacing: 2px;
         ToggleRow {
-            text: "Sons";
-            description: "Respeita o volume de notificações do sistema.";
+            text: @tr("Sons");
+            description: @tr("Respeita o volume de notificações do sistema.");
             checked: Bridge.set-sound;
             toggled => { Bridge.pref-toggle("sound"); }
         }
         ValueRow {
-            text: "Som do fim do descanso";
+            text: @tr("Som do fim do descanso");
             value: Bridge.set-tone-rest;
             clicked => { Bridge.pref-choose("tone-rest"); }
         }
         ValueRow {
-            text: "Som do início de série";
+            text: @tr("Som do início de série");
             value: Bridge.set-tone-start;
-            description: "Usado na contagem de preparação (Cronômetro).";
+            description: @tr("Usado na contagem de preparação (Cronômetro).");
             clicked => { Bridge.pref-choose("tone-start"); }
         }
         ValueRow {
-            text: "Som do pré-alerta";
+            text: @tr("Som do pré-alerta");
             value: Bridge.set-tone-pre;
             clicked => { Bridge.pref-choose("tone-pre"); }
         }
         ToggleRow {
-            text: "Vibração";
+            text: @tr("Vibração");
             checked: Bridge.set-vibrate;
             toggled => { Bridge.pref-toggle("vibrate"); }
         }
         ToggleRow {
-            text: "Vibração em ações";
-            description: "Toque curto ao registrar série e ao desfazer. Não vibra em toda interação.";
+            text: @tr("Vibração em ações");
+            description: @tr("Toque curto ao registrar série e ao desfazer. Não vibra em toda interação.");
             checked: Bridge.set-haptics;
             toggled => { Bridge.pref-toggle("haptics"); }
         }
         ToggleRow {
-            text: "Pré-alerta";
-            description: "Aviso alguns segundos antes do fim do descanso.";
+            text: @tr("Pré-alerta");
+            description: @tr("Aviso alguns segundos antes do fim do descanso.");
             checked: Bridge.set-pre-alert;
             toggled => { Bridge.pref-toggle("pre-alert"); }
         }
         StepperRow {
-            text: "Antecedência do pré-alerta";
+            text: @tr("Antecedência do pré-alerta");
             value: Bridge.set-pre-alert-s;
             step(d) => { Bridge.pref-step("pre-alert-s", d); }
         }
         ToggleRow {
-            text: "Alerta com app em segundo plano";
+            text: @tr("Alerta com app em segundo plano");
             description: Bridge.notif-status;
             checked: Bridge.set-background;
             toggled => { Bridge.pref-toggle("background"); }
@@ -386,12 +386,12 @@ export component SettingsScreen inherits Scroll {
         HorizontalLayout {
             spacing: 8px;
             Btn {
-                text: "Testar";
+                text: @tr("Testar");
                 icon: Icons.bell;
                 clicked => { Bridge.test-alert(); }
             }
             Btn {
-                text: "Notificações";
+                text: @tr("Notificações");
                 clicked => { Bridge.notif-settings(); }
             }
         }
@@ -399,30 +399,30 @@ export component SettingsScreen inherits Scroll {
     if Bridge.settings-section == 2: VerticalLayout {
         spacing: 2px;
         StepperRow {
-            text: "Duração padrão do descanso";
-            description: "Usada quando o exercício não define descanso.";
+            text: @tr("Duração padrão do descanso");
+            description: @tr("Usada quando o exercício não define descanso.");
             value: Bridge.set-timer-default;
             step(d) => { Bridge.pref-step("timer-default", d); }
         }
         StepperRow {
-            text: "Passo do ajuste (+/−)";
+            text: @tr("Passo do ajuste (+/−)");
             value: Bridge.set-adjust-step;
             step(d) => { Bridge.pref-step("adjust-step", d); }
         }
         ToggleRow {
-            text: "Iniciar descanso automaticamente";
-            description: "Modo automático: ao registrar uma série, o cronômetro começa com o descanso do exercício. Desligado = modo manual.";
+            text: @tr("Iniciar descanso automaticamente");
+            description: @tr("Modo automático: ao registrar uma série, o cronômetro começa com o descanso do exercício. Desligado = modo manual.");
             checked: Bridge.set-auto-rest;
             toggled => { Bridge.pref-toggle("auto-rest"); }
         }
         ToggleRow {
-            text: "Contagem de preparação ao fim do descanso";
-            description: "Ação opcional: após o descanso, conta alguns segundos e toca o alerta de início de série. A série nunca é concluída automaticamente.";
+            text: @tr("Contagem de preparação ao fim do descanso");
+            description: @tr("Ação opcional: após o descanso, conta alguns segundos e toca o alerta de início de série. A série nunca é concluída automaticamente.");
             checked: Bridge.set-rest-end-prepare;
             toggled => { Bridge.pref-toggle("rest-end-prepare"); }
         }
         StepperRow {
-            text: "Duração da preparação";
+            text: @tr("Duração da preparação");
             value: Bridge.set-prepare-s;
             step(d) => { Bridge.pref-step("prepare-s", d); }
         }
@@ -430,39 +430,39 @@ export component SettingsScreen inherits Scroll {
     if Bridge.settings-section == 3: VerticalLayout {
         spacing: 2px;
         ValueRow {
-            text: "Unidade de carga";
+            text: @tr("Unidade de carga");
             value: Bridge.set-unit;
             clicked => { Bridge.pref-choose("unit"); }
         }
         ValueRow {
-            text: "Incremento de carga (+/−)";
+            text: @tr("Incremento de carga (+/−)");
             value: Bridge.set-load-step;
             clicked => { Bridge.pref-choose("load-step"); }
         }
         ToggleRow {
-            text: "Sugerir carga da última sessão";
-            description: "Pré-preenche a carga com o último valor realizado; desligado usa a carga-alvo da ficha.";
+            text: @tr("Sugerir carga da última sessão");
+            description: @tr("Pré-preenche a carga com o último valor realizado; desligado usa a carga-alvo da ficha.");
             checked: Bridge.set-prefill-last;
             toggled => { Bridge.pref-toggle("prefill-last"); }
         }
         StepperRow {
-            text: "Séries padrão (novo exercício)";
+            text: @tr("Séries padrão (novo exercício)");
             value: Bridge.set-default-sets;
             step(d) => { Bridge.pref-step("default-sets", d); }
         }
         StepperRow {
-            text: "Repetições padrão";
+            text: @tr("Repetições padrão");
             value: Bridge.set-default-reps;
             step(d) => { Bridge.pref-step("default-reps", d); }
         }
         ToggleRow {
-            text: "Teclado numérico do app no modo foco";
-            description: "Botões grandes com vírgula, apagar e ±incremento. Desligado: usa o teclado do sistema.";
+            text: @tr("Teclado numérico do app no modo foco");
+            description: @tr("Botões grandes com vírgula, apagar e ±incremento. Desligado: usa o teclado do sistema.");
             checked: Bridge.set-app-keypad;
             toggled => { Bridge.pref-toggle("app-keypad"); }
         }
         ToggleRow {
-            text: "Confirmar ao finalizar sessão";
+            text: @tr("Confirmar ao finalizar sessão");
             checked: Bridge.set-confirm-finish;
             toggled => { Bridge.pref-toggle("confirm-finish"); }
         }
@@ -470,47 +470,52 @@ export component SettingsScreen inherits Scroll {
     if Bridge.settings-section == 4: VerticalLayout {
         spacing: 2px;
         ToggleRow {
-            text: "Semana começa na segunda-feira";
-            description: "Desligado: começa no domingo.";
+            text: @tr("Semana começa na segunda-feira");
+            description: @tr("Desligado: começa no domingo.");
             checked: Bridge.set-week-monday;
             toggled => { Bridge.pref-toggle("week-monday"); }
         }
         ToggleRow {
-            text: "Abrir calendário na visão semanal";
+            text: @tr("Abrir calendário na visão semanal");
             checked: Bridge.set-week-view;
             toggled => { Bridge.pref-toggle("week-view"); }
         }
-        Label { text: "O calendário é interno ao app e não pede acesso à agenda do aparelho. Para levar seus treinos a outro calendário, use Dados e armazenamento › Exportar calendário (.ics)."; }
+        Label { text: @tr("O calendário é interno ao app e não pede acesso à agenda do aparelho. Para levar seus treinos a outro calendário, use Dados e armazenamento › Exportar calendário (.ics)."); }
     }
     if Bridge.settings-section == 5: VerticalLayout {
         spacing: 2px;
         ValueRow {
-            text: "Tema";
+            text: @tr("Idioma");
+            value: Bridge.set-language;
+            clicked => { Bridge.pref-choose("language"); }
+        }
+        ValueRow {
+            text: @tr("Tema");
             value: Bridge.set-theme;
             clicked => { Bridge.pref-choose("theme"); }
         }
         ValueRow {
-            text: "Tamanho do texto";
+            text: @tr("Tamanho do texto");
             value: Bridge.set-text-size;
             clicked => { Bridge.pref-choose("text-size"); }
         }
         ValueRow {
-            text: "Densidade";
+            text: @tr("Densidade");
             value: Bridge.set-density;
             clicked => { Bridge.pref-choose("density"); }
         }
         ValueRow {
-            text: "Animações";
+            text: @tr("Animações");
             value: Bridge.set-anim;
             clicked => { Bridge.pref-choose("anim"); }
         }
         ValueRow {
-            text: "Velocidade das animações";
+            text: @tr("Velocidade das animações");
             value: Bridge.set-anim-speed;
             clicked => { Bridge.pref-choose("anim-speed"); }
         }
         ToggleRow {
-            text: "Manter tela ligada durante a sessão";
+            text: @tr("Manter tela ligada durante a sessão");
             checked: Bridge.set-keep-screen;
             toggled => { Bridge.pref-toggle("keep-screen"); }
         }
@@ -518,99 +523,99 @@ export component SettingsScreen inherits Scroll {
     if Bridge.settings-section == 6: VerticalLayout {
         spacing: 10px;
         Card {
-            SectionTitle { text: "ESPAÇO USADO NO APARELHO"; }
-            StorageLine { label: "Banco de dados"; value: Bridge.storage-db; }
-            StorageLine { label: "Backups locais"; value: Bridge.storage-backups; }
-            StorageLine { label: "Arquivos temporários"; value: Bridge.storage-temp; }
+            SectionTitle { text: @tr("ESPAÇO USADO NO APARELHO"); }
+            StorageLine { label: @tr("Banco de dados"); value: Bridge.storage-db; }
+            StorageLine { label: @tr("Backups locais"); value: Bridge.storage-backups; }
+            StorageLine { label: @tr("Arquivos temporários"); value: Bridge.storage-temp; }
             Rectangle { height: 1px; background: Theme.border; }
-            StorageLine { label: "Total"; value: Bridge.storage-total; strong: true; }
+            StorageLine { label: @tr("Total"); value: Bridge.storage-total; strong: true; }
             Label { text: Bridge.data-info; }
         }
         Btn {
-            text: "Limpar arquivos temporários";
+            text: @tr("Limpar arquivos temporários");
             icon: Icons.trash;
             clicked => { Bridge.storage-clear-temp(); }
         }
-        SectionTitle { text: "PLANILHAS"; }
+        SectionTitle { text: @tr("PLANILHAS"); }
         Btn {
-            text: "Importar planilha (XLSX)";
+            text: @tr("Importar planilha (XLSX)");
             icon: Icons.upload;
             clicked => { Bridge.data-import(); }
         }
         Btn {
-            text: "Exportar planilha…";
+            text: @tr("Exportar planilha…");
             icon: Icons.download;
             clicked => { Bridge.data-export(); }
         }
         Btn {
-            text: "Baixar modelo de importação";
+            text: @tr("Baixar modelo de importação");
             icon: Icons.download;
             clicked => { Bridge.data-template(); }
         }
-        SectionTitle { text: "BACKUP"; }
-        Label { text: "Backups completos (fichas, sessões, exercícios e preferências) agora ficam em Configurações › Backups, com backup automático semanal no aparelho."; }
+        SectionTitle { text: @tr("BACKUP"); }
+        Label { text: @tr("Backups completos (fichas, sessões, exercícios e preferências) agora ficam em Configurações › Backups, com backup automático semanal no aparelho."); }
         Btn {
-            text: "Abrir backups";
+            text: @tr("Abrir backups");
             icon: Icons.copy;
             clicked => { Bridge.settings-open(10); }
         }
-        SectionTitle { text: "CALENDÁRIO"; }
+        SectionTitle { text: @tr("CALENDÁRIO"); }
         Btn {
-            text: "Exportar calendário (.ics)";
+            text: @tr("Exportar calendário (.ics)");
             icon: Icons.calendar;
             clicked => { Bridge.data-ics(); }
         }
     }
     if Bridge.settings-section == 8: VerticalLayout {
         spacing: 2px;
-        Label { text: "Desligar um recurso só esconde a função: nenhum dado é apagado. Ao religar, tudo volta como estava."; }
+        Label { text: @tr("Desligar um recurso só esconde a função: nenhum dado é apagado. Ao religar, tudo volta como estava."); }
         ToggleRow {
-            text: "Recordes pessoais";
-            description: "Aviso ao bater uma marca, cartão na Home e melhores marcas na Evolução";
+            text: @tr("Recordes pessoais");
+            description: @tr("Aviso ao bater uma marca, cartão na Home e melhores marcas na Evolução");
             checked: Bridge.set-mod-records;
             toggled => { Bridge.pref-toggle("mod-records"); }
         }
         ToggleRow {
-            text: "Mapa de intensidade do calendário";
-            description: "Opção de colorir os dias pelo volume treinado";
+            text: @tr("Mapa de intensidade do calendário");
+            description: @tr("Opção de colorir os dias pelo volume treinado");
             checked: Bridge.set-mod-heatmap;
             toggled => { Bridge.pref-toggle("mod-heatmap"); }
         }
         ToggleRow {
-            text: "Sugestão de progressão";
-            description: "Sugere aumentar a carga no editor da ficha (nunca altera sozinho)";
+            text: @tr("Sugestão de progressão");
+            description: @tr("Sugere aumentar a carga no editor da ficha (nunca altera sozinho)");
             checked: Bridge.set-mod-progression;
             toggled => { Bridge.pref-toggle("mod-progression"); }
         }
         ToggleRow {
-            text: "Gestos";
-            description: "Deslizar no modo foco (série) e no calendário (período). Os botões continuam disponíveis";
+            text: @tr("Gestos");
+            description: @tr("Deslizar no modo foco (série) e no calendário (período). Os botões continuam disponíveis");
             checked: Bridge.set-mod-gestures;
             toggled => { Bridge.pref-toggle("mod-gestures"); }
         }
         ToggleRow {
-            text: "Animações decorativas";
-            description: "Efeitos que não informam nada (pulso do recorde, entrada de telas vazias)";
+            text: @tr("Animações decorativas");
+            description: @tr("Efeitos que não informam nada (pulso do recorde, entrada de telas vazias)");
             checked: Bridge.set-mod-decorative;
             toggled => { Bridge.pref-toggle("mod-decorative"); }
         }
         ToggleRow {
-            text: "Lembrete de cópia externa do backup";
-            description: "Cartão na Home quando faz mais de 30 dias sem salvar um backup fora do aparelho";
+            text: @tr("Lembrete de cópia externa do backup");
+            description: @tr("Cartão na Home quando faz mais de 30 dias sem salvar um backup fora do aparelho");
             checked: Bridge.set-mod-backup-reminder;
             toggled => { Bridge.pref-toggle("mod-backup-reminder"); }
         }
     }
     if Bridge.settings-section == 9: VerticalLayout {
         spacing: 2px;
-        Label { text: "Os atalhos aparecem no topo da Home. Toque em uma posição para trocar; escolher um atalho que já está em outra posição troca os dois de lugar."; }
+        Label { text: @tr("Os atalhos aparecem no topo da Home. Toque em uma posição para trocar; escolher um atalho que já está em outra posição troca os dois de lugar."); }
         for slot[i] in Bridge.shortcut-slots: ValueRow {
-            text: "Posição " + (i + 1);
+            text: @tr("Posição ") + (i + 1);
             value: slot;
             clicked => { Bridge.shortcut-slot(i); }
         }
         Btn {
-            text: "Restaurar atalhos padrão";
+            text: @tr("Restaurar atalhos padrão");
             icon: Icons.reset;
             clicked => { Bridge.shortcuts-reset(); }
         }
@@ -618,25 +623,25 @@ export component SettingsScreen inherits Scroll {
     if Bridge.settings-section == 10: VerticalLayout {
         spacing: 10px;
         Card {
-            SectionTitle { text: "BACKUPS NO APARELHO"; }
+            SectionTitle { text: @tr("BACKUPS NO APARELHO"); }
             Body { text: Bridge.backups-info; }
         }
         ToggleRow {
-            text: "Backup automático semanal";
-            description: "Ao abrir o app, se o último tiver 7 dias ou mais. Mantém os 4 mais recentes.";
+            text: @tr("Backup automático semanal");
+            description: @tr("Ao abrir o app, se o último tiver 7 dias ou mais. Mantém os 4 mais recentes.");
             checked: Bridge.set-auto-backup;
             toggled => { Bridge.pref-toggle("auto-backup"); }
         }
         Btn {
-            text: "Criar backup agora";
+            text: @tr("Criar backup agora");
             icon: Icons.plus;
             kind: "primary";
             clicked => { Bridge.backup-local-create(); }
         }
         if Bridge.local-backups.length == 0: EmptyState {
             icon: Icons.copy;
-            title: "Nenhum backup no aparelho";
-            text: "Crie um backup agora ou aguarde o backup automático semanal.";
+            title: @tr("Nenhum backup no aparelho");
+            text: @tr("Crie um backup agora ou aguarde o backup automático semanal.");
         }
         for bk in Bridge.local-backups: Card {
             HorizontalLayout {
@@ -649,38 +654,38 @@ export component SettingsScreen inherits Scroll {
                     horizontal-stretch: 1;
                     wrap: word-wrap;
                 }
-                Badge { text: bk.automatic ? "Automático" : "Manual"; }
+                Badge { text: bk.automatic ? @tr("Automático") : @tr("Manual"); }
             }
             Label { text: bk.subtitle; }
             HorizontalLayout {
                 spacing: 6px;
                 if bk.valid: Btn {
-                    text: "Restaurar";
+                    text: @tr("Restaurar");
                     compact: true;
                     clicked => { Bridge.backup-local-restore(bk.index); }
                 }
                 if bk.valid: Btn {
-                    text: "Salvar cópia";
+                    text: @tr("Salvar cópia");
                     compact: true;
                     clicked => { Bridge.backup-local-export(bk.index); }
                 }
                 Btn {
-                    text: "Excluir";
+                    text: @tr("Excluir");
                     compact: true;
                     kind: "danger";
                     clicked => { Bridge.backup-local-delete(bk.index); }
                 }
             }
         }
-        SectionTitle { text: "BACKUP EM ARQUIVO"; }
-        Label { text: "Backups no aparelho não protegem contra perda, troca ou desinstalação do app. Salve uma cópia fora dele (com senha opcional) ou restaure um arquivo salvo antes."; }
+        SectionTitle { text: @tr("BACKUP EM ARQUIVO"); }
+        Label { text: @tr("Backups no aparelho não protegem contra perda, troca ou desinstalação do app. Salve uma cópia fora dele (com senha opcional) ou restaure um arquivo salvo antes."); }
         Btn {
-            text: "Salvar backup em arquivo…";
+            text: @tr("Salvar backup em arquivo…");
             icon: Icons.download;
             clicked => { Bridge.data-backup(); }
         }
         Btn {
-            text: "Restaurar de um arquivo…";
+            text: @tr("Restaurar de um arquivo…");
             icon: Icons.upload;
             kind: "danger";
             clicked => { Bridge.data-restore(); }
@@ -690,14 +695,19 @@ export component SettingsScreen inherits Scroll {
         spacing: 10px;
         BrandLogoVertical { }
         Text {
-            text: "Versão " + Bridge.app-version;
+            text: @tr("Versão ") + Bridge.app-version;
             color: Theme.muted;
             font-size: Theme.fs-s;
             horizontal-alignment: center;
         }
         Body { text: Bridge.about-text; }
         Btn {
-            text: "Diagnóstico técnico";
+            text: @tr("Rever as boas-vindas");
+            icon: Icons.play;
+            clicked => { Bridge.onboarding-restart(); }
+        }
+        Btn {
+            text: @tr("Diagnóstico técnico");
             icon: Icons.info;
             clicked => { Bridge.show-diagnostics(); }
         }
@@ -706,22 +716,22 @@ export component SettingsScreen inherits Scroll {
 
 // RF-16 / RN-09 / RN-10: prévia e mapeamento antes de gravar.
 export component ImportScreen inherits Scroll {
-    Label { text: "Arquivo: " + Bridge.imp-file; }
+    Label { text: @tr("Arquivo: ") + Bridge.imp-file; }
     if Bridge.imp-multi-sheet: ValueRow {
-        text: "Aba";
+        text: @tr("Aba");
         value: Bridge.imp-sheet;
         clicked => { Bridge.imp-choose-sheet(); }
     }
-    if Bridge.imp-all-sheets: Label { text: "Todas as abas: as colunas de cada aba são reconhecidas automaticamente. Para ajustar o mapeamento manualmente, escolha uma aba por vez."; }
-    if !Bridge.imp-all-sheets: SectionTitle { text: "MAPEAMENTO DE COLUNAS"; }
-    if !Bridge.imp-all-sheets: Label { text: "Toque em uma coluna para mudar o campo correspondente. \"Exercício\" é obrigatório."; }
+    if Bridge.imp-all-sheets: Label { text: @tr("Todas as abas: as colunas de cada aba são reconhecidas automaticamente. Para ajustar o mapeamento manualmente, escolha uma aba por vez."); }
+    if !Bridge.imp-all-sheets: SectionTitle { text: @tr("MAPEAMENTO DE COLUNAS"); }
+    if !Bridge.imp-all-sheets: Label { text: @tr("Toque em uma coluna para mudar o campo correspondente. \"Exercício\" é obrigatório."); }
     for c in Bridge.imp-columns: ValueRow {
         text: c.header;
         description: c.sample;
         value: c.field;
         clicked => { Bridge.imp-map(c.index); }
     }
-    SectionTitle { text: "PRÉVIA"; }
+    SectionTitle { text: @tr("PRÉVIA"); }
     Body { text: Bridge.imp-summary; }
     for p in Bridge.imp-plans: Card {
         HorizontalLayout {
@@ -730,43 +740,48 @@ export component ImportScreen inherits Scroll {
                 text: p.name;
                 font-weight: 700;
             }
-            if p.conflict: Badge { text: "Já existe"; }
+            if p.conflict: Badge { text: @tr("Já existe"); }
         }
         Label { text: p.detail; }
     }
     if Bridge.imp-has-conflicts: ToggleRow {
-        text: "Substituir fichas existentes com o mesmo nome";
+        text: @tr("Substituir fichas existentes com o mesmo nome");
         description: Bridge.imp-replace
-            ? "A ficha existente será apagada e recriada. Sessões do histórico são mantidas."
-            : "Desligado: a ficha importada é criada com o sufixo \"(importada)\"; nada é sobrescrito.";
+            ? @tr("A ficha existente será apagada e recriada. Sessões do histórico são mantidas.")
+            : @tr("Desligado: a ficha importada é criada com o sufixo \"(importada)\"; nada é sobrescrito.");
         checked: Bridge.imp-replace;
         toggled => { Bridge.imp-set-replace(!Bridge.imp-replace); }
     }
     if Bridge.imp-errors.length > 0: Card {
-        SectionTitle { text: "ERROS (" + Bridge.imp-errors.length + ")"; }
-        for e in Bridge.imp-errors: Body { text: "✕ " + e; }
+        SectionTitle { text: @tr("ERROS (") + Bridge.imp-errors.length + ")"; }
+        for e in Bridge.imp-errors: Text {
+            text: "✕ " + e;
+            color: Theme.danger;
+            font-size: Theme.fs-m;
+            wrap: word-wrap;
+        }
     }
     if Bridge.imp-warnings.length > 0: Card {
-        SectionTitle { text: "AVISOS (" + Bridge.imp-warnings.length + ")"; }
+        SectionTitle { text: @tr("AVISOS (") + Bridge.imp-warnings.length + ")"; }
         for w in Bridge.imp-warnings: Label {
             text: "! " + w;
-            color: Theme.text;
+            color: Theme.warning;
         }
     }
     if Bridge.imp-warnings.length > 0: ToggleRow {
-        text: "Conferi os avisos acima";
-        description: "Necessário para confirmar a importação.";
+        text: @tr("Conferi os avisos acima");
+        description: @tr("Necessário para confirmar a importação.");
         checked: Bridge.imp-reviewed;
         toggled => { Bridge.imp-set-reviewed(!Bridge.imp-reviewed); }
     }
     HorizontalLayout {
         spacing: 8px;
         Btn {
-            text: "Cancelar";
+            text: @tr("Cancelar");
             clicked => { Bridge.imp-cancel(); }
         }
         Btn {
-            text: "Importar";
+            text: @tr("Importar");
             icon: Icons.check;
             kind: "primary";
             enabled: Bridge.imp-can-import && (Bridge.imp-warnings.length == 0 || Bridge.imp-reviewed);

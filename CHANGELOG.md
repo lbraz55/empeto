@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.4.0 — 2026-11-20 (schema do banco: 4) — Identidade e experiência inicial (Fase 1 do documento de evolução v1.1)
+- **Idiomas**: português (Brasil), inglês e espanhol, com opção "Seguir o sistema" (Configurações › Interface ›
+  Idioma). Catálogo único em `resources/i18n/<idioma>/LC_MESSAGES/workout.po`, usado pela interface Slint (`@tr`)
+  e pelo Rust (`tr`/`trf!`). Nomes de exercícios, fichas e anotações nunca são traduzidos.
+  `scripts/i18n.py check` (no CI) exige tradução de todas as frases.
+- **Boas-vindas**: 4 etapas (apresentação, tour, personalização de idioma/tema/texto/animações, primeiros passos),
+  com "Pular", "Criar minha primeira ficha" e "Conhecer o aplicativo primeiro". Aparece só no primeiro acesso
+  (quem atualiza com dados não vê); pode ser refeita em Configurações › Sobre.
+- **Abertura**: logo EMPETO no fundo da janela (Android 8–11) e SplashScreen do sistema (Android 12+), com
+  esmaecimento curto no app; não atrasa a inicialização e respeita animações desativadas.
+- **Tamanho da fonte**: Pequena, Média (padrão), Grande e Extragrande, multiplicado pela escala de fonte do Android.
+  Preferência antiga migrada automaticamente (nova chave `ui.font_size`).
+- **Temas**: cores semânticas sóbrias (sucesso, alerta, erro) como tokens, usadas só onde têm significado.
+- **Animações**: indicador deslizante nas abas, barra de progresso animada, confirmação visual ao concluir série,
+  entrada em cascata dos cartões da Home (decorativa, desligável).
+- Números no formato do idioma (separador decimal e de milhar).
+
 ## 0.3.1 — 2026-11-20 (schema do banco: 4) — Estabilização (Fase 0 do documento de evolução v1.1)
 - Recuperação de sessão interrompida: ao abrir o app com uma sessão não finalizada, o EMPETO pergunta se
   deseja continuar ou descartar (nada é concluído automaticamente; as séries registradas estão salvas).

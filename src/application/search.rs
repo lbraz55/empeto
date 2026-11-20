@@ -1,6 +1,7 @@
 //! Busca global (documento EMPETO, 8.2): serviço central que consulta os módulos responsáveis
 //! (biblioteca, fichas, histórico). A interface nunca consulta o banco diretamente.
 
+use crate::i18n::tr;
 use crate::calendar::local_date_of;
 use crate::domain::*;
 use crate::persistence::Db;
@@ -17,9 +18,9 @@ pub enum HitKind {
 impl HitKind {
     pub fn label(self) -> &'static str {
         match self {
-            HitKind::Exercise => "Exercício",
-            HitKind::Plan => "Ficha",
-            HitKind::Session => "Sessão",
+            HitKind::Exercise => tr("Exercício"),
+            HitKind::Plan => tr("Ficha"),
+            HitKind::Session => tr("Sessão"),
         }
     }
 }
@@ -53,7 +54,7 @@ pub fn search(db: &Db, query: &str) -> AppResult<Vec<SearchHit>> {
                 kind: HitKind::Plan,
                 id: p.plan.id,
                 title: p.plan.name.clone(),
-                subtitle: format!("{} dia(s){}", p.days.len(), if p.plan.favorite { " · favorita" } else { "" }),
+                subtitle: trf!("{} dia(s){}", p.days.len(), if p.plan.favorite { tr(" · favorita") } else { "" }),
             });
         }
         if out.iter().filter(|h| h.kind == HitKind::Plan).count() >= PER_KIND {
@@ -85,7 +86,7 @@ pub fn search(db: &Db, query: &str) -> AppResult<Vec<SearchHit>> {
                 kind: HitKind::Session,
                 id: s.id,
                 title: format!("{} — {}", s.plan_name, s.schedule_name),
-                subtitle: format!("{:02}/{:02}/{} · {} série(s)", d.day(), d.month(), d.year(), s.sets),
+                subtitle: trf!("{:02}/{:02}/{} · {} série(s)", d.day(), d.month(), d.year(), s.sets),
             });
             n += 1;
             if n >= PER_KIND {

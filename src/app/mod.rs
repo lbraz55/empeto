@@ -2,6 +2,7 @@
 
 mod format;
 
+use crate::i18n::{tr, Lang};
 use crate::application::prefs::{AnimMode, Prefs, RestEndAction, ThemeMode, TONE_NAMES};
 use crate::calendar::{self as cal, date_key, local_date_of, local_time_of, parse_date_key};
 use crate::domain::timer::{Clock, TimerEvent, TimerPhase, TimerState, TimerStatus};
@@ -43,6 +44,7 @@ const P_SETTINGS: i32 = 20;
 const P_IMPORT: i32 = 21;
 const P_FOCUS: i32 = 16;
 const P_SEARCH: i32 = 17;
+const P_ONBOARDING: i32 = 18;
 
 const XLSX_MIMES: &[&str] = &[
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -83,6 +85,7 @@ enum ChoiceCtx {
     ImportMap(usize),
     ExportKind,
     Template,
+    Language,
     Shortcut(usize),
 }
 
@@ -109,7 +112,8 @@ enum InfoCtx {
 enum FileOp {
     ImportXlsx,
     Restore,
-    Save(String),
+    /// (mensagem já traduzida, é um backup salvo pelo usuário fora do app?)
+    Save(String, bool),
 }
 
 #[derive(Debug, Clone, Default)]
@@ -226,7 +230,7 @@ impl Controller {
         self.undo = Some(op);
         self.with_bridge(|b| {
             b.set_toast(ss(&m));
-            b.set_toast_action(ss("Desfazer"));
+            b.set_toast_action(ss(tr("Desfazer")));
         });
         self.toast_ticks = 20; // 5 s
     }
@@ -244,7 +248,7 @@ impl Controller {
             b.set_toast_action(ss(""));
         });
         if op.expired(now_ms()) {
-            self.toast("Não é mais possível desfazer.");
+            self.toast(tr("Não é mais possível desfazer."));
             return;
         }
         match op.revert(&mut self.db) {
@@ -259,9 +263,9 @@ impl Controller {
                     let r = self.refresh_session();
                     self.report(r);
                 }
-                self.toast(format!("Desfeito: {}", op.label.to_lowercase()));
+                self.toast(trf!("Desfeito: {}", op.label.to_lowercase()));
             }
-            Err(e) => self.toast(format!("Não foi possível desfazer: {e}")),
+            Err(e) => self.toast(trf!("Não foi possível desfazer: {}", e)),
         }
     }
 
@@ -407,6 +411,15 @@ impl Controller {
             return;
         }
         let page = self.page();
+        if page == P_ONBOARDING {
+            let step = self.with_bridge(|b| b.get_onboarding_step());
+            if step > 0 {
+                self.with_bridge(|b| b.set_onboarding_step(step - 1));
+            } else {
+                self.onboarding_finish("explore");
+            }
+            return;
+        }
         if page == P_SETTINGS && self.with_bridge(|b| b.get_settings_section()) > 0 {
             self.with_bridge(|b| b.set_settings_section(0));
             return;
@@ -496,15 +509,15 @@ impl Controller {
             let f = self.db.get_session_full(sid)?;
             cards.push(card(
                 "session",
-                "SESSÃO EM ANDAMENTO",
+                tr("SESSÃO EM ANDAMENTO"),
                 format!("{} — {}", f.session.plan_name, f.session.schedule_name),
-                format!(
+                trf!(
                     "{} de {} séries · iniciada às {}",
                     f.completed_sets(),
                     f.total_sets(),
                     local_time_of(f.session.started_at)
                 ),
-                "Continuar",
+                tr("Continuar"),
                 sid,
             ));
         }
@@ -512,21 +525,21 @@ impl Controller {
         let planned = cal::planned_on(today, today, &plans, &next, &done_plan_ids);
         if planned.is_empty() {
             let l2 = if plans.is_empty() {
-                "Crie sua primeira ficha em Treinos.".to_string()
+                tr("Crie sua primeira ficha em Treinos.").to_string()
             } else {
-                "Nenhum treino planejado para hoje. Toque para escolher uma ficha.".to_string()
+                tr("Nenhum treino planejado para hoje. Toque para escolher uma ficha.").to_string()
             };
-            let l1 = if done_today.is_empty() { "Dia livre".to_string() } else { "Treino do dia concluído".to_string() };
-            cards.push(card("plans", "TREINO DE HOJE", l1, l2, "Treinos", 0));
+            let l1 = if done_today.is_empty() { tr("Dia livre").to_string() } else { tr("Treino do dia concluído").to_string() };
+            cards.push(card("plans", tr("TREINO DE HOJE"), l1, l2, tr("Treinos"), 0));
         } else {
             for p in &planned {
                 let done = done_today.iter().any(|s| s.schedule_name == p.day_name && s.plan_name == p.plan_name);
                 cards.push(card(
                     "today",
-                    if p.from_sequence { "TREINO DE HOJE · PRÓXIMO DA SEQUÊNCIA" } else { "TREINO DE HOJE" },
+                    if p.from_sequence { tr("TREINO DE HOJE · PRÓXIMO DA SEQUÊNCIA") } else { tr("TREINO DE HOJE") },
                     format!("{} — {}", p.plan_name, p.day_name),
-                    format!("{} exercício(s){}", p.exercises, if done { " · já realizado hoje" } else { "" }),
-                    "Iniciar",
+                    trf!("{} exercício(s){}", p.exercises, if done { tr(" · já realizado hoje") } else { "" }),
+                    tr("Iniciar"),
                     p.day_id,
                 ));
             }
@@ -537,10 +550,10 @@ impl Controller {
             let names = favs.iter().map(|p| p.plan.name.clone()).collect::<Vec<_>>();
             cards.push(card(
                 "favorite",
-                "ACESSO RÁPIDO · FICHAS FAVORITAS",
+                tr("ACESSO RÁPIDO · FICHAS FAVORITAS"),
                 names.iter().take(3).cloned().collect::<Vec<_>>().join(" · "),
-                if favs.len() > 3 { format!("+{} favorita(s)", favs.len() - 3) } else { "Toque para abrir".into() },
-                "Abrir",
+                if favs.len() > 3 { trf!("+{} favorita(s)", favs.len() - 3) } else { tr("Toque para abrir").into() },
+                tr("Abrir"),
                 first.plan.id,
             ));
         }
@@ -551,7 +564,7 @@ impl Controller {
             for p in cal::planned_on(d, today, &plans, &next, &[]) {
                 upcoming.push(format!(
                     "{} {:02}/{:02} — {} ({})",
-                    WEEKDAY_SHORT[cal::weekday_index(d) as usize],
+                    tr(WEEKDAY_SHORT[cal::weekday_index(d) as usize]),
                     d.day(),
                     d.month(),
                     p.day_name,
@@ -566,14 +579,14 @@ impl Controller {
             .filter_map(|p| {
                 let did = next.get(&p.plan.id)?;
                 let d = p.days.iter().find(|d| d.day.id == *did)?;
-                Some(format!("Próximo da sequência: {} ({})", d.day.name, p.plan.name))
+                Some(trf!("Próximo da sequência: {} ({})", d.day.name, p.plan.name))
             })
             .collect();
         if !upcoming.is_empty() || !seq_names.is_empty() {
             let mut lines: Vec<String> = upcoming.into_iter().take(3).collect();
             lines.extend(seq_names.into_iter().take(2));
             let first = lines.remove(0);
-            cards.push(card("calendar", "PRÓXIMOS TREINOS", first, lines.join("\n"), "Calendário", 0));
+            cards.push(card("calendar", tr("PRÓXIMOS TREINOS"), first, lines.join("\n"), tr("Calendário"), 0));
         }
 
         let all = self.db.list_session_summaries(None, None)?;
@@ -581,16 +594,16 @@ impl Controller {
             let dur = last.ended_at.map(|e| format!(" · {}", fmt_minutes(e - last.started_at))).unwrap_or_default();
             cards.push(card(
                 "last",
-                "ÚLTIMA SESSÃO",
+                tr("ÚLTIMA SESSÃO"),
                 format!("{} — {}", last.plan_name, last.schedule_name),
-                format!(
+                trf!(
                     "{} · {} exercício(s) · {} série(s){}",
                     fmt_date_time(last.started_at),
                     last.exercises,
                     last.sets,
                     dur
                 ),
-                "Detalhes",
+                tr("Detalhes"),
                 last.id,
             ));
         }
@@ -600,16 +613,16 @@ impl Controller {
             if let Some(r) = recs.first() {
                 cards.push(card(
                     "records",
-                    "RECORDES RECENTES",
+                    tr("RECORDES RECENTES"),
                     format!("★ {} — {}", r.exercise_name, r.kinds[0].label()),
-                    format!(
+                    trf!(
                         "{} × {} em {}{}",
                         format_load_unit(r.load_g, self.prefs.unit),
                         r.reps,
                         fmt_date_short(r.at_ms),
-                        if recs.len() > 1 { format!(" · {} recorde(s) em 30 dias", recs.len()) } else { String::new() }
+                        if recs.len() > 1 { trf!(" · {} recorde(s) em 30 dias", recs.len()) } else { String::new() }
                     ),
-                    "Evolução",
+                    tr("Evolução"),
                     0,
                 ));
             }
@@ -627,14 +640,14 @@ impl Controller {
         let sets: i64 = week.iter().map(|s| s.sets).sum();
         cards.push(card(
             "week",
-            "SESSÕES NA SEMANA",
-            format!("{} sessão(ões) concluída(s)", week.len()),
+            tr("SESSÕES NA SEMANA"),
+            trf!("{} sessão(ões) concluída(s)", week.len()),
             if planned_week > 0 {
-                format!("{} planejada(s) por dia da semana · {} séries registradas", planned_week, sets)
+                trf!("{} planejada(s) por dia da semana · {} séries registradas", planned_week, sets)
             } else {
-                format!("{} séries registradas", sets)
+                trf!("{} séries registradas", sets)
             },
-            "Histórico",
+            tr("Histórico"),
             0,
         ));
 
@@ -645,16 +658,16 @@ impl Controller {
                 let local = storage::list_local_backups(&self.platform.data_dir());
                 cards.push(card(
                     "backup",
-                    "LEMBRETE · CÓPIA DO BACKUP",
+                    tr("LEMBRETE · CÓPIA DO BACKUP"),
                     match last_ext {
-                        Some(t) => format!("Última cópia salva por você fora do app: {}", fmt_date_short(t)),
-                        None => "Nenhuma cópia salva fora do app por aqui".to_string(),
+                        Some(t) => trf!("Última cópia salva por você fora do app: {}", fmt_date_short(t)),
+                        None => tr("Nenhuma cópia salva fora do app por aqui").to_string(),
                     },
-                    format!(
+                    trf!(
                         "{} backup(s) no aparelho. Eles não protegem contra perda ou desinstalação: salve uma cópia fora do aparelho.",
                         local.len()
                     ),
-                    "Backups",
+                    tr("Backups"),
                     0,
                 ));
             }
@@ -707,9 +720,9 @@ impl Controller {
                 let org = match p.plan.schedule_type {
                     ScheduleType::Weekday => {
                         let mask = p.days.iter().fold(0u8, |m, d| m | d.day.weekdays);
-                        if mask == 0 { "Dias da semana".to_string() } else { weekdays_text(mask) }
+                        if mask == 0 { tr("Dias da semana").to_string() } else { weekdays_text(mask) }
                     }
-                    ScheduleType::Sequence => format!(
+                    ScheduleType::Sequence => trf!(
                         "Sequência {}",
                         p.days.iter().map(|d| d.day.name.clone()).collect::<Vec<_>>().join(" → ")
                     ),
@@ -717,7 +730,7 @@ impl Controller {
                 PlanRow {
                     id: p.plan.id as i32,
                     name: ss(&p.plan.name),
-                    subtitle: ss(format!("{} dia(s) · {} exercício(s) · {}", p.days.len(), n, org)),
+                    subtitle: ss(trf!("{} dia(s) · {} exercício(s) · {}", p.days.len(), n, org)),
                     active: p.plan.active,
                     favorite: p.plan.favorite,
                 }
@@ -728,17 +741,17 @@ impl Controller {
     }
 
     fn new_plan(&mut self) {
-        let mut name = "Nova ficha".to_string();
+        let mut name = tr("Nova ficha").to_string();
         let mut i = 2;
         while self.db.find_plan_by_name(&name).ok().flatten().is_some() {
-            name = format!("Nova ficha {i}");
+            name = trf!("Nova ficha {}", i);
             i += 1;
         }
         match self.db.create_plan(&name, "", ScheduleType::Weekday) {
             Ok(id) => {
                 self.plan_id = Some(id);
                 self.navigate(P_EDITOR);
-                self.toast("Ficha criada. Dê um nome e adicione os dias de treino.");
+                self.toast(tr("Ficha criada. Dê um nome e adicione os dias de treino."));
             }
             Err(e) => self.toast(e.to_string()),
         }
@@ -786,12 +799,12 @@ impl Controller {
                 let subtitle = match p.plan.schedule_type {
                     ScheduleType::Weekday => {
                         if d.day.weekdays == 0 {
-                            "Sem dia da semana definido — toque em editar".to_string()
+                            tr("Sem dia da semana definido — toque em editar").to_string()
                         } else {
                             weekdays_text(d.day.weekdays)
                         }
                     }
-                    ScheduleType::Sequence => format!("Posição {} na sequência", d.day.sequence_order + 1),
+                    ScheduleType::Sequence => trf!("Posição {} na sequência", d.day.sequence_order + 1),
                 };
                 DayRow {
                     id: d.day.id as i32,
@@ -805,7 +818,7 @@ impl Controller {
                                 name: ss(&e.exercise.name),
                                 detail: ss(target_text(&e.target, e.rest_seconds, unit)),
                                 notes: ss(&e.notes),
-                                suggestion: ss(sugg.get(&e.id).map(|s| format!(
+                                suggestion: ss(sugg.get(&e.id).map(|s| trf!(
                                     "Sugestão: aumentar de {} para {}",
                                     format_load_unit(s.current_load_g, unit),
                                     format_load_unit(s.suggested_load_g, unit)
@@ -834,7 +847,7 @@ impl Controller {
         let st = if weekday { ScheduleType::Weekday } else { ScheduleType::Sequence };
         match self.db.update_plan(id, name, desc, st) {
             Ok(()) => {
-                self.toast("Ficha salva.");
+                self.toast(tr("Ficha salva."));
                 self.report_refresh_editor();
             }
             Err(e) => self.toast(e.to_string()),
@@ -860,10 +873,10 @@ impl Controller {
         if let Ok(Some(_)) = self.db.active_session_id() {
             self.show_info(
                 InfoCtx::ActiveSession,
-                "Sessão em andamento",
-                "Já existe uma sessão em andamento. Continue-a ou finalize/descarte antes de iniciar outra.",
-                "Abrir sessão",
-                "Fechar",
+                tr("Sessão em andamento"),
+                tr("Já existe uma sessão em andamento. Continue-a ou finalize/descarte antes de iniciar outra."),
+                tr("Abrir sessão"),
+                tr("Fechar"),
             );
             return;
         }
@@ -892,12 +905,12 @@ impl Controller {
             None => {
                 let n = self.db.list_days(plan_id).map(|v| v.len()).unwrap_or(0);
                 let letter = (b'A' + (n as u8 % 26)) as char;
-                (format!("Treino {letter}"), 0)
+                (trf!("Treino {}", letter), 0)
             }
         };
         self.day_ctx = Some((day, mask));
         self.with_bridge(|b| {
-            b.set_day_title(ss(if day.is_some() { "Editar dia" } else { "Novo dia de treino" }));
+            b.set_day_title(ss(if day.is_some() { tr("Editar dia") } else { tr("Novo dia de treino") }));
             b.set_day_name(ss(&name));
             b.set_day_show_weekdays(weekday_plan);
             b.set_day_weekdays(model((0..7).map(|i| mask & (1 << i) != 0).collect()));
@@ -955,7 +968,7 @@ impl Controller {
             reps_max: self.prefs.default_reps,
             load_g: 0,
         };
-        self.fill_pe_form("Adicionar exercício", "", defaults, self.prefs.timer_default_seconds, "", false);
+        self.fill_pe_form(tr("Adicionar exercício"), "", defaults, self.prefs.timer_default_seconds, "", false);
         self.open_library(true);
     }
 
@@ -963,7 +976,7 @@ impl Controller {
         match self.db.get_plan_exercise(id) {
             Ok(pe) => {
                 self.pe = Some(PeCtx { day_id: pe.schedule_id, plan_ex_id: Some(id), exercise_id: Some(pe.exercise.id) });
-                self.fill_pe_form("Editar exercício", &pe.exercise.name, pe.target, pe.rest_seconds, &pe.notes, true);
+                self.fill_pe_form(tr("Editar exercício"), &pe.exercise.name, pe.target, pe.rest_seconds, &pe.notes, true);
                 self.with_bridge(|b| b.set_dialog(ss("plan-ex")));
             }
             Err(e) => self.toast(e.to_string()),
@@ -973,8 +986,8 @@ impl Controller {
     fn pe_save(&mut self, sets: &str, reps: &str, load: &str, rest: &str, notes: &str) {
         let Some(ctx) = self.pe.clone() else { return };
         let r = (|| -> AppResult<()> {
-            let Some(ex_id) = ctx.exercise_id else { return validation("Escolha o exercício.") };
-            let sets: i64 = sets.trim().parse().map_err(|_| AppError::Validation("Séries: informe um número.".into()))?;
+            let Some(ex_id) = ctx.exercise_id else { return validation(tr("Escolha o exercício.")) };
+            let sets: i64 = sets.trim().parse().map_err(|_| AppError::Validation(tr("Séries: informe um número.").into()))?;
             let (rmin, rmax) = parse_reps(reps)?;
             let load_g = parse_load(load, self.prefs.unit)?;
             let rest = if rest.trim().is_empty() { 0 } else { parse_rest(rest)? };
@@ -1029,9 +1042,9 @@ impl Controller {
             .filter(|x| **x)
             .count() as i32;
         let count = if page.items.len() < page.total {
-            format!("Mostrando {} de {} exercício(s)", page.items.len(), page.total)
+            trf!("Mostrando {} de {} exercício(s)", page.items.len(), page.total)
         } else {
-            format!("{} exercício(s)", page.total)
+            trf!("{} exercício(s)", page.total)
         };
         let has_more = page.items.len() < page.total;
         let rows: Vec<ExRow> = page.items.iter().map(|e| ex_row(e, "")).collect();
@@ -1050,14 +1063,14 @@ impl Controller {
             self.lib_pick = false;
             self.with_bridge(|b| b.set_lib_mode(ss("browse")));
             let r = if id == base {
-                validation("Escolha um exercício diferente.")
+                validation(tr("Escolha um exercício diferente."))
             } else {
                 self.db
-                    .add_alternative(base, id, "Cadastrada pelo usuário")
-                    .and_then(|_| self.db.add_alternative(id, base, "Cadastrada pelo usuário"))
+                    .add_alternative(base, id, tr("Cadastrada pelo usuário"))
+                    .and_then(|_| self.db.add_alternative(id, base, tr("Cadastrada pelo usuário")))
             };
             match r {
-                Ok(()) => self.toast("Alternativa cadastrada (vale nos dois sentidos)."),
+                Ok(()) => self.toast(tr("Alternativa cadastrada (vale nos dois sentidos).")),
                 Err(e) => self.toast(e.to_string()),
             }
             let r = self.refresh_library();
@@ -1088,7 +1101,7 @@ impl Controller {
         let e = id.and_then(|i| self.db.get_exercise(i).ok()).unwrap_or_default();
         self.exf_id = id;
         self.with_bridge(|b| {
-            b.set_exf_title(ss(if id.is_some() { "Editar exercício" } else { "Novo exercício" }));
+            b.set_exf_title(ss(if id.is_some() { tr("Editar exercício") } else { tr("Novo exercício") }));
             b.set_exf_name(ss(&e.name));
             b.set_exf_muscle(ss(&e.muscle_focus));
             b.set_exf_type(ss(&e.exercise_type));
@@ -1125,7 +1138,7 @@ impl Controller {
                 if self.lib_pick && self.exf_id.is_none() {
                     self.lib_item(id);
                 } else {
-                    self.toast("Exercício salvo.");
+                    self.toast(tr("Exercício salvo."));
                 }
             }
             Err(e) => self.toast(e.to_string()),
@@ -1140,14 +1153,14 @@ impl Controller {
             "type" => b.get_lib_type(),
             _ => b.get_lib_pattern(),
         });
-        let mut opts = vec!["Todos".to_string()];
+        let mut opts = vec![tr("Todos").to_string()];
         opts.extend(values.iter().cloned());
         let sel = values.iter().position(|v| v.as_str() == current.as_str()).map(|i| i as i32 + 1).unwrap_or(0);
         let title = match field {
-            "muscle" => "Grupo muscular",
-            "equipment" => "Equipamento",
-            "type" => "Tipo de exercício",
-            _ => "Padrão de movimento",
+            "muscle" => tr("Grupo muscular"),
+            "equipment" => tr("Equipamento"),
+            "type" => tr("Tipo de exercício"),
+            _ => tr("Padrão de movimento"),
         };
         self.ask_choice(ChoiceCtx::LibFilter(field, values), title, "", opts, sel);
     }
@@ -1165,7 +1178,7 @@ impl Controller {
                     self.platform.keep_screen_on(true);
                 }
             }
-            _ => self.toast("Nenhuma sessão em andamento."),
+            _ => self.toast(tr("Nenhuma sessão em andamento.")),
         }
     }
 
@@ -1201,7 +1214,7 @@ impl Controller {
                         }
                     };
                     let hint = match prev {
-                        Some((_, Some(r), Some(l))) => format!(
+                        Some((_, Some(r), Some(l))) => trf!(
                             "Última vez: {} × {} ({})",
                             format_load_unit(*l, unit),
                             r,
@@ -1212,9 +1225,9 @@ impl Controller {
                     SetRow {
                         id: s.id as i32,
                         number: s.set_number as i32,
-                        planned: ss(format!(
+                        planned: ss(trf!(
                             "plan. {}{}",
-                            if s.planned_load_g > 0 { format!("{} × ", format_load_unit(s.planned_load_g, unit)) } else { String::new() },
+                            if s.planned_load_g > 0 { trf!("{} × ", format_load_unit(s.planned_load_g, unit)) } else { String::new() },
                             format_reps(s.planned_reps_min, s.planned_reps_max)
                         )),
                         load: ss(load),
@@ -1225,19 +1238,19 @@ impl Controller {
                 })
                 .collect();
             let planned = match e.sets.first() {
-                Some(s) => format!(
+                Some(s) => trf!(
                     "{} série(s) · {} reps{}{}",
                     e.sets.len(),
                     format_reps(s.planned_reps_min, s.planned_reps_max),
                     if s.planned_load_g > 0 { format!(" · {}", format_load_unit(s.planned_load_g, unit)) } else { String::new() },
-                    if e.rest_seconds > 0 { format!(" · descanso {}", format_duration_s(e.rest_seconds)) } else { String::new() }
+                    if e.rest_seconds > 0 { trf!(" · descanso {}", format_duration_s(e.rest_seconds)) } else { String::new() }
                 ),
-                None => "Sem séries".to_string(),
+                None => tr("Sem séries").to_string(),
             };
             let substitution = match e.substitution {
                 SubstitutionType::None => String::new(),
-                SubstitutionType::Temporary => format!("Substitui {} · só nesta sessão", e.original_name),
-                SubstitutionType::Permanent => format!("Substitui {} · ficha atualizada", e.original_name),
+                SubstitutionType::Temporary => trf!("Substitui {} · só nesta sessão", e.original_name),
+                SubstitutionType::Permanent => trf!("Substitui {} · ficha atualizada", e.original_name),
             };
             rows.push(SessionExRow {
                 id: e.id as i32,
@@ -1267,7 +1280,7 @@ impl Controller {
             b.set_session_active(true);
             b.set_session_title(ss(&f.session.schedule_name));
             b.set_session_subtitle(ss(&f.session.plan_name));
-            b.set_session_progress(ss(format!("{} · {}/{} séries", f.session.plan_name, done, total)));
+            b.set_session_progress(ss(trf!("{} · {}/{} séries", f.session.plan_name, done, total)));
             b.set_session_notes(ss(&f.session.notes));
             b.set_session_unit(ss(unit.as_str()));
             if b.get_session_index() >= n {
@@ -1307,8 +1320,8 @@ impl Controller {
                 .exercises
                 .iter()
                 .find_map(|e| e.sets.iter().find(|s| s.id == set_id).map(|s| (e.clone(), s.clone())))
-                .ok_or_else(|| AppError::NotFound("Série não encontrada.".into()))?;
-            Ok((format!("{} — após a série {}", ex.performed_name, set.set_number), ex.rest_seconds))
+                .ok_or_else(|| AppError::NotFound(tr("Série não encontrada.").into()))?;
+            Ok((trf!("{} — após a série {}", ex.performed_name, set.set_number), ex.rest_seconds))
         })();
         match r {
             Ok((context, rest)) => {
@@ -1322,13 +1335,13 @@ impl Controller {
                 let r = self.refresh_session();
                 self.report(r);
                 let record = self.check_record(set_id);
-                let mut msg = if was_done { "Série atualizada.".to_string() } else { "Série registrada.".to_string() };
+                let mut msg = if was_done { tr("Série atualizada.").to_string() } else { tr("Série registrada.").to_string() };
                 if !was_done && self.prefs.auto_start_rest {
                     let secs = if rest > 0 { rest } else { self.prefs.timer_default_seconds };
                     self.start_rest(secs, &context);
                     self.timer.linked_set = Some(set_id);
                     self.save_timer();
-                    msg = format!("Série registrada. Descanso de {} iniciado.", format_duration_s(secs));
+                    msg = trf!("Série registrada. Descanso de {} iniciado.", format_duration_s(secs));
                 } else if !was_done {
                     if !self.timer.is_running() {
                         self.timer.status = TimerStatus::Idle;
@@ -1340,10 +1353,10 @@ impl Controller {
                     self.refresh_timer();
                 }
                 if let Some(rec) = record {
-                    msg = format!("★ Novo recorde: {rec}. {msg}");
+                    msg = trf!("★ Novo recorde: {}. {}", rec, msg);
                 }
                 if let Some(b) = before {
-                    self.toast_undo(msg, UndoOp::new(UndoKind::RecordSet { set_id, before: b }, "Registro da série"));
+                    self.toast_undo(msg, UndoOp::new(UndoKind::RecordSet { set_id, before: b }, tr("Registro da série")));
                 } else {
                     self.toast(msg);
                 }
@@ -1363,7 +1376,7 @@ impl Controller {
         }
         let kinds = self.db.records_for_set(set_id).ok()?;
         let text = kinds.iter().map(|k| k.label()).collect::<Vec<_>>().join(", ");
-        self.with_bridge(|b| b.set_focus_record(ss(if text.is_empty() { String::new() } else { format!("Novo recorde: {text}") })));
+        self.with_bridge(|b| b.set_focus_record(ss(if text.is_empty() { String::new() } else { trf!("Novo recorde: {}", text) })));
         if text.is_empty() { None } else { Some(text) }
     }
 
@@ -1394,7 +1407,7 @@ impl Controller {
 
     fn open_focus(&mut self) {
         let Some(e) = self.current_session_exercise() else {
-            self.toast("Nenhuma sessão em andamento.");
+            self.toast(tr("Nenhuma sessão em andamento."));
             return;
         };
         self.focus_set = Self::first_open_set(&e);
@@ -1430,7 +1443,7 @@ impl Controller {
         if e.sets.is_empty() {
             self.with_bridge(|b| {
                 b.set_focus_exercise(ss(&e.performed_name));
-                b.set_focus_set_label(ss("Sem séries — adicione na tela da sessão"));
+                b.set_focus_set_label(ss(tr("Sem séries — adicione na tela da sessão")));
             });
             return;
         }
@@ -1441,13 +1454,13 @@ impl Controller {
         let (load, reps) = self.focus_draft(&set);
         let idx = self.with_bridge(|b| b.get_session_index());
         let count = self.with_bridge(|b| b.get_session_exercises().row_count()) as i32;
-        let planned = format!(
+        let planned = trf!(
             "Planejado: {}{} reps",
-            if set.planned_load_g > 0 { format!("{} × ", format_load_unit(set.planned_load_g, unit)) } else { String::new() },
+            if set.planned_load_g > 0 { trf!("{} × ", format_load_unit(set.planned_load_g, unit)) } else { String::new() },
             format_reps(set.planned_reps_min, set.planned_reps_max)
         );
         let hint = match self.db.last_execution_values(set.id).ok().flatten() {
-            Some((l, r)) => format!("Última vez: {} × {}", format_load_unit(l, unit), r),
+            Some((l, r)) => trf!("Última vez: {} × {}", format_load_unit(l, unit), r),
             None => String::new(),
         };
         let meta = [e.muscle_focus.as_str(), e.exercise_type.as_str(), e.equipment.as_str()]
@@ -1457,7 +1470,7 @@ impl Controller {
             .collect::<Vec<_>>()
             .join(" · ");
         let done_text = match (set.actual_load_g, set.actual_reps) {
-            (Some(l), Some(r)) => format!("{} × {}", format_load_unit(l, unit), r),
+            (Some(l), Some(r)) => trf!("{} × {}", format_load_unit(l, unit), r),
             _ => String::new(),
         };
         let has_prev = self.db.previous_set_values(set.id).ok().flatten().is_some();
@@ -1467,7 +1480,7 @@ impl Controller {
         self.with_bridge(|b| {
             b.set_focus_exercise(ss(&e.performed_name));
             b.set_focus_meta(ss(meta));
-            b.set_focus_set_label(ss(format!("Série {} de {}", set.set_number, n)));
+            b.set_focus_set_label(ss(trf!("Série {} de {}", set.set_number, n)));
             b.set_focus_planned(ss(planned));
             b.set_focus_load(ss(&load));
             b.set_focus_reps(ss(&reps));
@@ -1579,7 +1592,7 @@ impl Controller {
         let original = if e.substitution == SubstitutionType::None {
             e.performed_name.clone()
         } else {
-            format!("{} (original: {})", e.performed_name, e.original_name)
+            trf!("{} (original: {})", e.performed_name, e.original_name)
         };
         self.with_bridge(|b| {
             b.set_sub_original(ss(original));
@@ -1605,7 +1618,7 @@ impl Controller {
         let Some(se) = self.sub_se else { return };
         let id = self.with_bridge(|b| b.get_sub_selected_id()) as Id;
         if id <= 0 {
-            self.toast("Escolha o exercício substituto.");
+            self.toast(tr("Escolha o exercício substituto."));
             return;
         }
         match self.db.substitute_exercise(se, id, permanent) {
@@ -1614,9 +1627,9 @@ impl Controller {
                 let r = self.refresh_session();
                 self.report(r);
                 self.toast(if permanent {
-                    "Substituído. A ficha foi atualizada para as próximas sessões."
+                    tr("Substituído. A ficha foi atualizada para as próximas sessões.")
                 } else {
-                    "Substituído somente nesta sessão. A ficha não mudou."
+                    tr("Substituído somente nesta sessão. A ficha não mudou.")
                 });
             }
             Err(e) => self.toast(e.to_string()),
@@ -1634,7 +1647,7 @@ impl Controller {
                 self.stack.clear();
                 self.stack.push(P_HIST);
                 self.open_detail(sid);
-                self.toast("Sessão finalizada e salva no histórico.");
+                self.toast(tr("Sessão finalizada e salva no histórico."));
             }
             Err(e) => self.toast(e.to_string()),
         }
@@ -1712,10 +1725,10 @@ impl Controller {
             let _ = self.prefs.save(&self.db);
             self.show_info(
                 InfoCtx::NotifPermission { then_enable: true },
-                "Alerta com a tela bloqueada",
-                "Para avisar o fim do descanso quando o app estiver em segundo plano ou com a tela bloqueada, o EMPETO precisa enviar notificações. Sem essa permissão, o cronômetro continua funcionando normalmente na tela (e a vibração, se ativada).",
-                "Permitir",
-                "Agora não",
+                tr("Alerta com a tela bloqueada"),
+                tr("Para avisar o fim do descanso quando o app estiver em segundo plano ou com a tela bloqueada, o EMPETO precisa enviar notificações. Sem essa permissão, o cronômetro continua funcionando normalmente na tela (e a vibração, se ativada)."),
+                tr("Permitir"),
+                tr("Agora não"),
             );
         }
     }
@@ -1751,7 +1764,7 @@ impl Controller {
                         self.timer.pre_alert_ms = 0;
                         self.timer.restart(now);
                     } else if self.page() != P_TIMER {
-                        self.toast("Descanso encerrado.");
+                        self.toast(tr("Descanso encerrado."));
                     }
                 }
                 TimerEvent::Finished(TimerPhase::Prepare) => {
@@ -1762,7 +1775,7 @@ impl Controller {
                         self.platform.vibrate(300);
                     }
                     if self.page() != P_TIMER {
-                        self.toast("Hora de iniciar a série.");
+                        self.toast(tr("Hora de iniciar a série."));
                     }
                     // Volta à fase de descanso para o próximo uso, sem iniciar nada.
                     self.timer.phase = TimerPhase::Rest;
@@ -1788,13 +1801,13 @@ impl Controller {
             TimerStatus::Finished => "finished",
         };
         let phase = match t.phase {
-            TimerPhase::Rest => "Descanso",
-            TimerPhase::Prepare => "Preparação — próxima série",
+            TimerPhase::Rest => tr("Descanso"),
+            TimerPhase::Prepare => tr("Preparação — próxima série"),
         };
         let notice = if self.platform.is_android() && self.prefs.background_alert && !self.platform.notifications_allowed() {
-            "Notificações desativadas: com o app em segundo plano o alerta pode não aparecer. O cronômetro continua correto ao voltar."
+            tr("Notificações desativadas: com o app em segundo plano o alerta pode não aparecer. O cronômetro continua correto ao voltar.")
         } else if self.platform.is_android() && !self.prefs.background_alert {
-            "Alerta em segundo plano desativado nas preferências."
+            tr("Alerta em segundo plano desativado nas preferências.")
         } else {
             ""
         };
@@ -1803,7 +1816,7 @@ impl Controller {
         let ring = ring_path(if t.status == TimerStatus::Idle { 1.0 } else { 1.0 - progress });
         let ctx = t.context.clone();
         let duration = format_duration_s(t.duration_ms / 1000);
-        let step = format!("{} s", self.prefs.timer_adjust_step);
+        let step = trf!("{} s", self.prefs.timer_adjust_step);
         self.with_bridge(|b| {
             b.set_timer_display(ss(&display));
             b.set_timer_status(ss(status));
@@ -1825,22 +1838,22 @@ impl Controller {
             let rem = self.timer.remaining(now);
             let end_boot = now.boot_ms + rem;
             let title = match self.timer.phase {
-                TimerPhase::Rest => "Descanso encerrado",
-                TimerPhase::Prepare => "Hora de iniciar a série",
+                TimerPhase::Rest => tr("Descanso encerrado"),
+                TimerPhase::Prepare => tr("Hora de iniciar a série"),
             };
-            let text = if self.timer.context.is_empty() { "Toque para abrir o EMPETO".to_string() } else { self.timer.context.clone() };
+            let text = if self.timer.context.is_empty() { tr("Toque para abrir o EMPETO").to_string() } else { self.timer.context.clone() };
             self.platform.schedule_alarm(ALARM_END, end_boot, title, &text, self.prefs.sound_enabled, self.prefs.vibrate);
             if self.timer.pre_alert_ms > 0 && rem > self.timer.pre_alert_ms + 1000 {
                 self.platform.schedule_alarm(
                     ALARM_PRE,
                     end_boot - self.timer.pre_alert_ms,
-                    &format!("Faltam {} s de descanso", self.timer.pre_alert_ms / 1000),
+                    &trf!("Faltam {} s de descanso", self.timer.pre_alert_ms / 1000),
                     &text,
                     self.prefs.sound_enabled,
                     self.prefs.vibrate,
                 );
             }
-            self.platform.show_countdown(now.wall_ms + rem, "Descanso em andamento", &text);
+            self.platform.show_countdown(now.wall_ms + rem, tr("Descanso em andamento"), &text);
         }
     }
 
@@ -1863,7 +1876,7 @@ impl Controller {
                     self.timer.status = TimerStatus::Finished;
                 }
                 self.save_timer();
-                self.toast("O descanso terminou enquanto o app estava em segundo plano.");
+                self.toast(tr("O descanso terminou enquanto o app estava em segundo plano."));
             }
             self.refresh_timer();
             let p = self.page();
@@ -1918,7 +1931,7 @@ impl Controller {
                 done: !done.is_empty(),
                 heat: vol.get(d).map(|v| *v as f32 / max_vol as f32).unwrap_or(0.0),
                 heat_text: ss(match vol.get(d) {
-                    Some(v) => format!("{} sessão(ões), volume {}", done.len(), fmt_volume(*v, unit)),
+                    Some(v) => trf!("{} sessão(ões), volume {}", done.len(), fmt_volume(*v, unit)),
                     None => String::new(),
                 }),
             });
@@ -1929,7 +1942,7 @@ impl Controller {
         } else {
             cal::month_title(self.cal_month.year(), self.cal_month.month())
         };
-        let labels: Vec<SharedString> = dates.iter().take(7).map(|d| ss(WEEKDAY_SHORT[cal::weekday_index(*d) as usize])).collect();
+        let labels: Vec<SharedString> = dates.iter().take(7).map(|d| ss(tr(WEEKDAY_SHORT[cal::weekday_index(*d) as usize]))).collect();
         self.with_bridge(|b| {
             b.set_cal_title(ss(title));
             b.set_cal_weekday_labels(model(labels));
@@ -1949,7 +1962,7 @@ impl Controller {
                     .map(|s| CalEntry {
                         kind: ss("done"),
                         title: ss(format!("{} — {}", s.plan_name, s.schedule_name)),
-                        subtitle: ss(format!(
+                        subtitle: ss(trf!(
                             "{} · {} exercício(s) · {} série(s)",
                             local_time_of(s.started_at),
                             s.exercises,
@@ -1963,10 +1976,10 @@ impl Controller {
                 v.extend(planned.iter().map(|p| CalEntry {
                     kind: ss("planned"),
                     title: ss(format!("{} — {}", p.plan_name, p.day_name)),
-                    subtitle: ss(format!(
+                    subtitle: ss(trf!(
                         "{} exercício(s){}",
                         p.exercises,
-                        if p.from_sequence { " · próximo da sequência" } else { "" }
+                        if p.from_sequence { tr(" · próximo da sequência") } else { "" }
                     )),
                     session_id: 0,
                     day_id: p.day_id as i32,
@@ -2008,9 +2021,9 @@ impl Controller {
             let (a, b) = cal::day_bounds_ms(self.cal_selected);
             (a, b, true)
         };
-        let title = if e.kind == "done" { format!("Treino realizado: {}", e.title) } else { format!("Treino: {}", e.title) };
+        let title = if e.kind == "done" { trf!("Treino realizado: {}", e.title) } else { trf!("Treino: {}", e.title) };
         if !self.platform.add_calendar_event(&title, &e.subtitle, begin, end, all_day) {
-            self.toast("Nenhum app de agenda encontrado no aparelho.");
+            self.toast(tr("Nenhum app de agenda encontrado no aparelho."));
         }
     }
 
@@ -2029,16 +2042,16 @@ impl Controller {
         let dir = self.platform.data_dir();
         let trace = std::fs::read_to_string(dir.join("startup.log")).unwrap_or_else(|_| "(sem registro)".into());
         let integrity = if self.db.integrity_ok().unwrap_or(false) { "ok" } else { "FALHOU" };
-        let text = format!(
-            "Versão do app: {}\nSchema do banco: {}\nIntegridade do banco: {}\nNotificações permitidas: {}\nCronômetro: {:?}\n\nEtapas da última abertura:\n{}",
+        let text = trf!(
+            "Versão do app: {}\nSchema do banco: {}\nIntegridade do banco: {}\nNotificações permitidas: {}\nCronômetro: {}\n\nEtapas da última abertura:\n{}",
             self.platform.app_version(),
             schema_version(&self.db.conn).unwrap_or(0),
             integrity,
-            if self.platform.notifications_allowed() { "sim" } else { "não" },
-            self.timer.status,
+            if self.platform.notifications_allowed() { tr("sim") } else { tr("não") },
+            format!("{:?}", self.timer.status),
             trace.lines().rev().take(25).collect::<Vec<_>>().into_iter().rev().collect::<Vec<_>>().join("\n")
         );
-        self.show_info(InfoCtx::Plain, "Diagnóstico", &text, "OK", "");
+        self.show_info(InfoCtx::Plain, tr("Diagnóstico"), &text, tr("OK"), "");
     }
 
     fn cal_entry(&mut self, i: usize) {
@@ -2066,7 +2079,7 @@ impl Controller {
                 id: s.id as i32,
                 date: ss(capitalize(&fmt_date_time(s.started_at))),
                 title: ss(format!("{} — {}", s.plan_name, s.schedule_name)),
-                subtitle: ss(format!(
+                subtitle: ss(trf!(
                     "{} exercício(s) · {} série(s) · volume {}{}",
                     s.exercises,
                     s.sets,
@@ -2082,10 +2095,10 @@ impl Controller {
             .map(|h| HistExRow {
                 key: ss(&h.key),
                 name: ss(&h.name),
-                detail: ss(format!("{} sessão(ões) · última em {}", h.sessions, fmt_date_short(h.last_at))),
+                detail: ss(trf!("{} sessão(ões) · última em {}", h.sessions, fmt_date_short(h.last_at))),
             })
             .collect();
-        let summary = if list.is_empty() { String::new() } else { format!("{} sessão(ões) concluída(s)", list.len()) };
+        let summary = if list.is_empty() { String::new() } else { trf!("{} sessão(ões) concluída(s)", list.len()) };
         self.with_bridge(|b| {
             b.set_hist_rows(model(rows));
             b.set_evo_exercises(model(evo));
@@ -2120,36 +2133,36 @@ impl Controller {
             .map(|e| {
                 let badge = match e.substitution {
                     SubstitutionType::None => String::new(),
-                    SubstitutionType::Temporary => format!("Substituiu {} (só nesta sessão)", e.original_name),
-                    SubstitutionType::Permanent => format!("Substituiu {} (permanente)", e.original_name),
+                    SubstitutionType::Temporary => trf!("Substituiu {} (só nesta sessão)", e.original_name),
+                    SubstitutionType::Permanent => trf!("Substituiu {} (permanente)", e.original_name),
                 };
                 let mut lines: Vec<SharedString> = e
                     .sets
                     .iter()
                     .map(|s| {
                         let actual = match (s.actual_load_g, s.actual_reps) {
-                            (Some(l), Some(r)) => format!("{} × {}", format_load_unit(l, unit), r),
-                            _ => "não registrada".to_string(),
+                            (Some(l), Some(r)) => trf!("{} × {}", format_load_unit(l, unit), r),
+                            _ => tr("não registrada").to_string(),
                         };
                         let rest = match s.rest_taken_s {
-                            Some(secs) => format!(" · descanso {}", format_duration_s(secs)),
+                            Some(secs) => trf!(" · descanso {}", format_duration_s(secs)),
                             None => interval
                                 .get(&s.id)
-                                .map(|secs| format!(" · intervalo {}", format_duration_s(*secs)))
+                                .map(|secs| trf!(" · intervalo {}", format_duration_s(*secs)))
                                 .unwrap_or_default(),
                         };
-                        ss(format!(
+                        ss(trf!(
                             "Série {}: {}  (plan. {}{}){}",
                             s.set_number,
                             actual,
-                            if s.planned_load_g > 0 { format!("{} × ", format_load_unit(s.planned_load_g, unit)) } else { String::new() },
+                            if s.planned_load_g > 0 { trf!("{} × ", format_load_unit(s.planned_load_g, unit)) } else { String::new() },
                             format_reps(s.planned_reps_min, s.planned_reps_max),
                             rest
                         ))
                     })
                     .collect();
                 if lines.is_empty() {
-                    lines.push(ss("Não realizado nesta sessão."));
+                    lines.push(ss(tr("Não realizado nesta sessão.")));
                 }
                 DetailEx {
                     title: ss(&e.performed_name),
@@ -2157,7 +2170,7 @@ impl Controller {
                         "{}{}{}",
                         e.muscle_focus,
                         if e.exercise_type.is_empty() { String::new() } else { format!(" · {}", e.exercise_type) },
-                        if e.rest_seconds > 0 { format!(" · descanso planejado {}", format_duration_s(e.rest_seconds)) } else { String::new() }
+                        if e.rest_seconds > 0 { trf!(" · descanso planejado {}", format_duration_s(e.rest_seconds)) } else { String::new() }
                     )),
                     badge: ss(badge),
                     lines: model(lines),
@@ -2173,9 +2186,9 @@ impl Controller {
                 local_time_of(end),
                 fmt_minutes(end - f.session.started_at)
             ),
-            None => format!("{} · em andamento", capitalize(&cal::date_long(local_date_of(f.session.started_at)))),
+            None => trf!("{} · em andamento", capitalize(&cal::date_long(local_date_of(f.session.started_at)))),
         };
-        let summary = format!(
+        let summary = trf!(
             "{} série(s) · volume {}",
             f.completed_sets(),
             fmt_volume(f.volume_g(), unit)
@@ -2214,7 +2227,7 @@ impl Controller {
             .unwrap_or_default();
         let fmt_v = |v: i64| -> String {
             match metric {
-                EvolutionMetric::BestReps => format!("{v} reps"),
+                EvolutionMetric::BestReps => trf!("{} reps", v),
                 EvolutionMetric::Volume => fmt_volume(v, unit),
                 _ => format_load_unit(v, unit),
             }
@@ -2256,7 +2269,7 @@ impl Controller {
         } else {
             String::new()
         };
-        let metric_name = ["Carga máxima", "Volume", "1RM estimada", "Repetições"][self.evo_metric.clamp(0, 3) as usize];
+        let metric_name = [tr("Carga máxima"), tr("Volume"), tr("1RM estimada"), tr("Repetições")][self.evo_metric.clamp(0, 3) as usize];
         let points: Vec<EvoPt> = norm
             .iter()
             .zip(&pts)
@@ -2270,7 +2283,7 @@ impl Controller {
         let sel_label = if sel >= 0 { points[sel as usize].label.to_string() } else { String::new() };
         let bests = self.db.current_bests(&self.evo_key)?;
         let bests_text = if bests.count > 0 {
-            format!(
+            trf!(
                 "Maior carga: {} · Mais repetições: {} · Maior volume em uma série: {} · 1RM estimada: {}",
                 format_load_unit(bests.load_g, unit),
                 bests.reps,
@@ -2286,7 +2299,7 @@ impl Controller {
             .iter()
             .take(8)
             .map(|r| {
-                ss(format!(
+                ss(trf!(
                     "{} — {} ({} × {})",
                     fmt_date_short(r.at_ms),
                     r.kinds.iter().map(|k| k.label()).collect::<Vec<_>>().join(", "),
@@ -2301,7 +2314,7 @@ impl Controller {
             let last = *values.last().unwrap();
             let diff = last - first;
             let pct = if first > 0 { format!(" ({:+.0}%)", diff as f64 * 100.0 / first as f64) } else { String::new() };
-            format!(
+            trf!(
                 "{} sessão(ões) no período. Variação: {}{}{}",
                 values.len(),
                 if diff >= 0 { "+" } else { "−" },
@@ -2309,7 +2322,7 @@ impl Controller {
                 pct
             )
         } else if values.len() == 1 {
-            "1 sessão no período.".to_string()
+            tr("1 sessão no período.").to_string()
         } else {
             String::new()
         };
@@ -2319,7 +2332,7 @@ impl Controller {
             .map(|p| EvoRow {
                 date: ss(fmt_date_short(p.started_at)),
                 value: ss(fmt_v(p.value(metric))),
-                detail: ss(format!("{} série(s) · melhor {} reps", p.sets, p.best_reps)),
+                detail: ss(trf!("{} série(s) · melhor {} reps", p.sets, p.best_reps)),
             })
             .collect();
         self.with_bridge(|b| {
@@ -2335,8 +2348,8 @@ impl Controller {
             b.set_evo_bests(ss(&bests_text));
             b.set_evo_records(model(records));
             b.set_evo_axis_max(ss(&axis_max));
-            b.set_evo_min(ss(format!("mín. {}", fmt_v(mn))));
-            b.set_evo_max(ss(format!("máx. {}", fmt_v(mx))));
+            b.set_evo_min(ss(trf!("mín. {}", fmt_v(mn))));
+            b.set_evo_max(ss(trf!("máx. {}", fmt_v(mx))));
             b.set_evo_first_date(ss(pts.first().map(|p| fmt_date_short(p.started_at)).unwrap_or_default()));
             b.set_evo_last_date(ss(pts.last().map(|p| fmt_date_short(p.started_at)).unwrap_or_default()));
             b.set_evo_summary(ss(summary));
@@ -2353,13 +2366,13 @@ impl Controller {
         let p = self.prefs.clone();
         let counts = self.db.counts()?;
         let notif = if !self.platform.is_android() {
-            "Em segundo plano, o alerta usa uma notificação do sistema.".to_string()
+            tr("Em segundo plano, o alerta usa uma notificação do sistema.").to_string()
         } else if self.platform.notifications_allowed() {
-            "Notificações permitidas. O Android pode atrasar o alerta alguns segundos em modo de economia de energia.".to_string()
+            tr("Notificações permitidas. O Android pode atrasar o alerta alguns segundos em modo de economia de energia.").to_string()
         } else {
-            "Notificações não permitidas: em segundo plano, apenas a vibração (se ativada) pode ocorrer. O cronômetro continua correto na tela.".to_string()
+            tr("Notificações não permitidas: em segundo plano, apenas a vibração (se ativada) pode ocorrer. O cronômetro continua correto na tela.").to_string()
         };
-        let data = format!(
+        let data = trf!(
             "{} ficha(s) · {} exercício(s) na biblioteca · {} sessão(ões) · {} série(s) registradas. Tudo fica no armazenamento privado do app (sem internet, sem nuvem).",
             counts.plans,
             counts.exercises,
@@ -2372,12 +2385,12 @@ impl Controller {
         let auto_on = self.db.get_pref(storage::PREF_AUTO)?.as_deref() != Some("0");
         let last_auto = backups.iter().filter(|b| b.automatic && b.valid).map(|b| b.created_at).max();
         let last_ext = self.db.get_pref(storage::PREF_LAST_EXTERNAL)?.and_then(|v| v.parse::<i64>().ok());
-        let backups_info = format!(
+        let backups_info = trf!(
             "{} backup(s) no aparelho · {}\nÚltimo automático: {}\nÚltima cópia que você salvou fora do app: {}\n\nOs backups ficam na área privada do app: são apagados se o app for desinstalado.",
             backups.len(),
             storage::fmt_bytes(rep.backups_bytes),
-            last_auto.map(fmt_date_time).unwrap_or_else(|| "nenhum ainda".into()),
-            last_ext.map(fmt_date_time).unwrap_or_else(|| "nenhuma registrada".into()),
+            last_auto.map(fmt_date_time).unwrap_or_else(|| tr("nenhum ainda").into()),
+            last_ext.map(fmt_date_time).unwrap_or_else(|| tr("nenhuma registrada").into()),
         );
         let backup_rows: Vec<BackupRow> = backups
             .iter()
@@ -2386,9 +2399,9 @@ impl Controller {
                 index: i as i32,
                 title: ss(fmt_date_time(b.created_at)),
                 subtitle: ss(if b.valid {
-                    format!("{} · {} ficha(s) · {} sessão(ões){}", storage::fmt_bytes(b.bytes), b.plans, b.sessions, if b.encrypted { " · com senha" } else { "" })
+                    trf!("{} · {} ficha(s) · {} sessão(ões){}", storage::fmt_bytes(b.bytes), b.plans, b.sessions, if b.encrypted { tr(" · com senha") } else { "" })
                 } else {
-                    format!("{} · arquivo ilegível (não pode ser restaurado)", storage::fmt_bytes(b.bytes))
+                    trf!("{} · arquivo ilegível (não pode ser restaurado)", storage::fmt_bytes(b.bytes))
                 }),
                 automatic: b.automatic,
                 valid: b.valid,
@@ -2396,11 +2409,11 @@ impl Controller {
             .collect();
         let sc = self.home_shortcuts();
         let slots: Vec<SharedString> = (0..shortcuts::MAX_SHORTCUTS)
-            .map(|i| ss(sc.get(i).map(|c| shortcuts::label(c)).unwrap_or("Nenhum")))
+            .map(|i| ss(sc.get(i).map(|c| shortcuts::label(c)).unwrap_or(tr("Nenhum"))))
             .collect();
         self.with_bridge(|b| {
             b.set_storage_db(ss(storage::fmt_bytes(rep.db_bytes)));
-            b.set_storage_backups(ss(format!("{} · {} arquivo(s)", storage::fmt_bytes(rep.backups_bytes), rep.backups_count)));
+            b.set_storage_backups(ss(trf!("{} · {} arquivo(s)", storage::fmt_bytes(rep.backups_bytes), rep.backups_count)));
             b.set_storage_temp(ss(storage::fmt_bytes(rep.temp_bytes)));
             b.set_storage_total(ss(storage::fmt_bytes(rep.total())));
             b.set_set_auto_backup(auto_on);
@@ -2430,22 +2443,22 @@ impl Controller {
         let step = format_load_unit(p.load_step_g, p.unit);
         self.with_bridge(|b| {
             b.set_set_sound(p.sound_enabled);
-            b.set_set_tone_rest(ss(TONE_NAMES[p.tone_rest_end as usize]));
-            b.set_set_tone_start(ss(TONE_NAMES[p.tone_set_start as usize]));
-            b.set_set_tone_pre(ss(TONE_NAMES[p.tone_pre_alert as usize]));
+            b.set_set_tone_rest(ss(tr(TONE_NAMES[p.tone_rest_end as usize])));
+            b.set_set_tone_start(ss(tr(TONE_NAMES[p.tone_set_start as usize])));
+            b.set_set_tone_pre(ss(tr(TONE_NAMES[p.tone_pre_alert as usize])));
             b.set_set_vibrate(p.vibrate);
             b.set_set_haptics(p.haptics);
             b.set_set_app_keypad(p.app_keypad);
             b.set_use_app_keypad(p.app_keypad);
             b.set_set_pre_alert(p.pre_alert);
-            b.set_set_pre_alert_s(ss(format!("{} s", p.pre_alert_seconds)));
+            b.set_set_pre_alert_s(ss(trf!("{} s", p.pre_alert_seconds)));
             b.set_set_background(p.background_alert);
             b.set_set_timer_default(ss(format_duration_s(p.timer_default_seconds)));
-            b.set_set_adjust_step(ss(format!("{} s", p.timer_adjust_step)));
+            b.set_set_adjust_step(ss(trf!("{} s", p.timer_adjust_step)));
             b.set_set_auto_rest(p.auto_start_rest);
             b.set_set_rest_end_prepare(p.rest_end_action == RestEndAction::PrepareCountdown);
-            b.set_set_prepare_s(ss(format!("{} s", p.prepare_seconds)));
-            b.set_set_unit(ss(if p.unit == LoadUnit::Kg { "Quilogramas (kg)" } else { "Libras (lb)" }));
+            b.set_set_prepare_s(ss(trf!("{} s", p.prepare_seconds)));
+            b.set_set_unit(ss(if p.unit == LoadUnit::Kg { tr("Quilogramas (kg)") } else { tr("Libras (lb)") }));
             b.set_set_load_step(ss(step));
             b.set_set_prefill_last(p.prefill_last);
             b.set_set_default_sets(ss(p.default_sets.to_string()));
@@ -2453,14 +2466,15 @@ impl Controller {
             b.set_set_week_monday(p.week_starts_monday);
             b.set_set_week_view(p.calendar_week_view);
             b.set_set_theme(ss(match p.theme_mode {
-                ThemeMode::System => "Seguir sistema",
-                ThemeMode::Light => "Claro",
-                ThemeMode::Dark => "Escuro",
+                ThemeMode::System => tr("Seguir sistema"),
+                ThemeMode::Light => tr("Claro"),
+                ThemeMode::Dark => tr("Escuro"),
             }));
-            b.set_set_text_size(ss(TEXT_SIZES[p.text_size as usize]));
-            b.set_set_density(ss(DENSITIES[p.density as usize]));
-            b.set_set_anim(ss(ANIM_MODES[anim_index(p.anim_mode)]));
-            b.set_set_anim_speed(ss(ANIM_SPEEDS[p.anim_speed as usize]));
+            b.set_set_text_size(ss(tr(TEXT_SIZES[p.text_size.clamp(0, 3) as usize])));
+            b.set_set_density(ss(tr(DENSITIES[p.density as usize])));
+            b.set_set_anim(ss(tr(ANIM_MODES[anim_index(p.anim_mode)])));
+            b.set_set_anim_speed(ss(tr(ANIM_SPEEDS[p.anim_speed as usize])));
+            b.set_set_language(ss(language_label(&p.language)));
             b.set_set_keep_screen(p.keep_screen_on);
             b.set_set_confirm_finish(p.confirm_finish);
             b.set_notif_status(ss(notif));
@@ -2495,6 +2509,7 @@ impl Controller {
         let t = ui.global::<Theme>();
         t.set_dark(dark);
         t.set_text_size(ts);
+        t.set_font_scale(self.platform.font_scale().clamp(0.8, 1.6));
         t.set_density(dn);
         t.set_anim_enabled(enabled);
         t.set_anim_reduced(reduced);
@@ -2538,7 +2553,7 @@ impl Controller {
                 match planned.first() {
                     Some(p) => self.start_day(p.day_id),
                     None => {
-                        self.toast("Nenhum treino planejado para hoje. Escolha uma ficha.");
+                        self.toast(tr("Nenhum treino planejado para hoje. Escolha uma ficha."));
                         self.navigate(P_PLANS);
                     }
                 }
@@ -2571,12 +2586,52 @@ impl Controller {
         }
     }
 
+    /// Boas-vindas (evolução 3.2): só no primeiro acesso. Quem atualiza o app e já tem dados não
+    /// vê de novo; a conclusão fica salva nas preferências e pode ser refeita em Configurações › Sobre.
+    fn maybe_onboarding(&mut self) -> bool {
+        if self.prefs.onboarding_done {
+            return false;
+        }
+        let has_data = self.db.counts().map(|c| c.plans > 0 || c.sessions > 0).unwrap_or(false);
+        if has_data {
+            self.prefs.onboarding_done = true;
+            let r = self.prefs.save(&self.db);
+            self.report(r);
+            return false;
+        }
+        self.open_onboarding();
+        true
+    }
+
+    fn open_onboarding(&mut self) {
+        let r = self.refresh_settings();
+        self.report(r);
+        self.with_bridge(|b| b.set_onboarding_step(0));
+        self.stack.clear();
+        self.stack.push(P_HOME);
+        self.navigate(P_ONBOARDING);
+    }
+
+    fn onboarding_finish(&mut self, action: &str) {
+        self.prefs.onboarding_done = true;
+        let r = self.prefs.save(&self.db);
+        self.report(r);
+        self.with_bridge(|b| b.set_nav_dir(-1));
+        match action {
+            "create" => {
+                self.navigate(P_PLANS);
+                self.new_plan();
+            }
+            _ => self.navigate(P_HOME),
+        }
+    }
+
     /// 8.12: ao abrir o app com uma sessão ainda aberta, pergunta se deseja continuar ou descartar.
     /// Nada é concluído automaticamente; as séries já registradas estão salvas no banco.
     fn offer_session_recovery(&mut self) {
         let Some(sid) = self.session_id else { return };
         let Ok(f) = self.db.get_session_full(sid) else { return };
-        let text = format!(
+        let text = trf!(
             "Encontramos a sessão \"{} — {}\", iniciada em {}, que não foi finalizada (o app pode ter sido fechado ou o aparelho desligado).\n\n{} de {} série(s) registradas estão salvas. Deseja continuar de onde parou?",
             f.session.plan_name,
             f.session.schedule_name,
@@ -2584,20 +2639,20 @@ impl Controller {
             f.completed_sets(),
             f.total_sets()
         );
-        self.show_info(InfoCtx::RecoverSession, "Sessão interrompida", &text, "Continuar", "Descartar…");
+        self.show_info(InfoCtx::RecoverSession, tr("Sessão interrompida"), &text, tr("Continuar"), tr("Descartar…"));
     }
 
     fn open_templates(&mut self) {
         let opts = crate::training::templates::TEMPLATES
             .iter()
-            .map(|t| format!("{} — {}", t.name, t.description))
+            .map(|t| format!("{} — {}", tr(t.name), tr(t.description)))
             .collect();
-        self.ask_choice(ChoiceCtx::Template, "Modelos de fichas", "Escolha um modelo para ver a prévia. Nada é criado antes de confirmar.", opts, -1);
+        self.ask_choice(ChoiceCtx::Template, tr("Modelos de fichas"), tr("Escolha um modelo para ver a prévia. Nada é criado antes de confirmar."), opts, -1);
     }
 
     fn shortcut_slot(&mut self, slot: usize) {
         let cur = self.home_shortcuts();
-        let mut opts = vec!["Nenhum".to_string()];
+        let mut opts = vec![tr("Nenhum").to_string()];
         opts.extend(shortcuts::SHORTCUTS.iter().map(|s| s.1.to_string()));
         let selected = cur
             .get(slot)
@@ -2606,8 +2661,8 @@ impl Controller {
             .unwrap_or(0);
         self.ask_choice(
             ChoiceCtx::Shortcut(slot),
-            &format!("Atalho da posição {}", slot + 1),
-            "Se o atalho já estiver em outra posição, os dois trocam de lugar.",
+            &trf!("Atalho da posição {}", slot + 1),
+            tr("Se o atalho já estiver em outra posição, os dois trocam de lugar."),
             opts,
             selected,
         );
@@ -2639,7 +2694,7 @@ impl Controller {
         let work = self.platform.tmp_dir();
         let version = self.platform.app_version();
         match storage::create_local_backup(&self.db, &data, &work, &version, false) {
-            Ok(_) => self.toast("Backup criado no aparelho. Salve uma cópia fora dele para mais segurança."),
+            Ok(_) => self.toast(tr("Backup criado no aparelho. Salve uma cópia fora dele para mais segurança.")),
             Err(e) => self.toast(e.to_string()),
         }
         let r = self.refresh_settings();
@@ -2669,22 +2724,22 @@ impl Controller {
             return;
         }
         let name = bk.file_name.clone();
-        self.save_via_picker(tmp, &name, "application/zip", "Cópia do backup salva");
+        self.save_via_picker(tmp, &name, "application/zip", tr("Cópia do backup salva"));
     }
 
     fn local_backup_delete(&mut self, i: i32) {
         let Some(bk) = self.local_backup_at(i) else { return };
-        let text = format!(
+        let text = trf!(
             "Excluir o backup de {}{}? Esta ação não pode ser desfeita. Seus dados atuais não são afetados.",
             fmt_date_time(bk.created_at),
-            if bk.automatic { " (automático)" } else { "" }
+            if bk.automatic { tr(" (automático)") } else { "" }
         );
-        self.ask_confirm(ConfirmAction::DeleteLocalBackup(bk.path), "Excluir backup", &text, "Excluir");
+        self.ask_confirm(ConfirmAction::DeleteLocalBackup(bk.path), tr("Excluir backup"), &text, tr("Excluir"));
     }
 
     fn storage_clear_temp(&mut self) {
         let freed = storage::clear_temp(&self.platform.tmp_dir());
-        self.toast(format!("Temporários limpos: {} liberados.", storage::fmt_bytes(freed)));
+        self.toast(trf!("Temporários limpos: {} liberados.", storage::fmt_bytes(freed)));
         let r = self.refresh_settings();
         self.report(r);
     }
@@ -2720,6 +2775,33 @@ impl Controller {
         }
     }
 
+    /// Resolve o idioma (preferência ou sistema) e aplica à interface Slint e às frases do Rust.
+    fn apply_language(&mut self) {
+        let lang = match self.prefs.language.as_str() {
+            "pt-BR" => Lang::Pt,
+            "en" => Lang::En,
+            "es" => Lang::Es,
+            _ => Lang::from_system(&self.platform.system_locale()),
+        };
+        crate::i18n::set_lang(lang);
+        if let Err(e) = slint::select_bundled_translation(lang.slint_code()) {
+            log::warn!("idioma {} indisponível na interface: {e:?}", lang.code());
+        }
+        self.with_bridge(|b| b.set_decimal_sep(ss(lang.decimal_sep().to_string())));
+    }
+
+    /// Depois de trocar o idioma: refaz todos os textos montados pelo Rust.
+    fn relocalize(&mut self) {
+        self.apply_language();
+        let r = self.refresh_settings();
+        self.report(r);
+        let _ = self.refresh_home();
+        let _ = self.refresh_calendar();
+        self.refresh_timer();
+        let p = self.page();
+        self.refresh_page(p);
+    }
+
     fn save_prefs(&mut self) {
         let r = self.prefs.save(&self.db);
         self.report(r);
@@ -2741,10 +2823,10 @@ impl Controller {
                 if !p.background_alert && self.platform.is_android() && !self.platform.notifications_allowed() {
                     self.show_info(
                         InfoCtx::NotifPermission { then_enable: true },
-                        "Permitir notificações",
-                        "O alerta com o app em segundo plano é exibido como notificação. Ao continuar, o Android vai pedir sua autorização. Você pode negar: o restante do app continua funcionando.",
-                        "Continuar",
-                        "Cancelar",
+                        tr("Permitir notificações"),
+                        tr("O alerta com o app em segundo plano é exibido como notificação. Ao continuar, o Android vai pedir sua autorização. Você pode negar: o restante do app continua funcionando."),
+                        tr("Continuar"),
+                        tr("Cancelar"),
                     );
                     return;
                 }
@@ -2798,23 +2880,34 @@ impl Controller {
     }
 
     fn pref_choose(&mut self, key: &str) {
-        let tones: Vec<String> = TONE_NAMES.iter().map(|s| s.to_string()).collect();
+        let tones: Vec<String> = TONE_NAMES.iter().map(|s| tr(s).to_string()).collect();
         match key {
-            "tone-rest" => self.ask_choice(ChoiceCtx::Tone("rest"), "Som do fim do descanso", "", tones, self.prefs.tone_rest_end),
-            "tone-start" => self.ask_choice(ChoiceCtx::Tone("start"), "Som do início de série", "", tones, self.prefs.tone_set_start),
-            "tone-pre" => self.ask_choice(ChoiceCtx::Tone("pre"), "Som do pré-alerta", "", tones, self.prefs.tone_pre_alert),
+            "tone-rest" => self.ask_choice(ChoiceCtx::Tone("rest"), tr("Som do fim do descanso"), "", tones, self.prefs.tone_rest_end),
+            "tone-start" => self.ask_choice(ChoiceCtx::Tone("start"), tr("Som do início de série"), "", tones, self.prefs.tone_set_start),
+            "tone-pre" => self.ask_choice(ChoiceCtx::Tone("pre"), tr("Som do pré-alerta"), "", tones, self.prefs.tone_pre_alert),
             "unit" => self.ask_choice(
                 ChoiceCtx::Unit,
-                "Unidade de carga",
-                "Os valores são guardados com precisão em gramas; trocar a unidade só muda a exibição.",
-                vec!["Quilogramas (kg)".into(), "Libras (lb)".into()],
+                tr("Unidade de carga"),
+                tr("Os valores são guardados com precisão em gramas; trocar a unidade só muda a exibição."),
+                vec![tr("Quilogramas (kg)").into(), tr("Libras (lb)").into()],
                 if self.prefs.unit == LoadUnit::Kg { 0 } else { 1 },
             ),
+            "language" => {
+                let opts: Vec<String> = LANG_CODES.iter().map(|c| language_label(c)).collect();
+                let sel = LANG_CODES.iter().position(|c| *c == self.prefs.language).unwrap_or(0) as i32;
+                self.ask_choice(
+                    ChoiceCtx::Language,
+                    tr("Idioma"),
+                    tr("Muda os textos do aplicativo. Nomes de exercícios, fichas e anotações não são alterados."),
+                    opts,
+                    sel,
+                );
+            }
             "theme" => self.ask_choice(
                 ChoiceCtx::Appearance("theme"),
-                "Tema",
-                "\"Seguir sistema\" acompanha o modo claro/escuro do Android.",
-                vec!["Seguir sistema".into(), "Claro".into(), "Escuro".into()],
+                tr("Tema"),
+                tr("\"Seguir sistema\" acompanha o modo claro/escuro do Android."),
+                vec![tr("Seguir sistema").into(), tr("Claro").into(), tr("Escuro").into()],
                 match self.prefs.theme_mode {
                     ThemeMode::System => 0,
                     ThemeMode::Light => 1,
@@ -2823,36 +2916,36 @@ impl Controller {
             ),
             "text-size" => self.ask_choice(
                 ChoiceCtx::Appearance("text-size"),
-                "Tamanho do texto",
+                tr("Tamanho do texto"),
                 "",
-                TEXT_SIZES.iter().map(|s| s.to_string()).collect(),
+                TEXT_SIZES.iter().map(|s| tr(s).to_string()).collect(),
                 self.prefs.text_size,
             ),
             "density" => self.ask_choice(
                 ChoiceCtx::Appearance("density"),
-                "Densidade da interface",
-                "A densidade compacta não reduz o tamanho mínimo dos botões.",
-                DENSITIES.iter().map(|s| s.to_string()).collect(),
+                tr("Densidade da interface"),
+                tr("A densidade compacta não reduz o tamanho mínimo dos botões."),
+                DENSITIES.iter().map(|s| tr(s).to_string()).collect(),
                 self.prefs.density,
             ),
             "anim" => self.ask_choice(
                 ChoiceCtx::Appearance("anim"),
-                "Animações",
-                "\"Seguir sistema\" respeita a opção \"Remover animações\" do Android.",
-                ANIM_MODES.iter().map(|s| s.to_string()).collect(),
+                tr("Animações"),
+                tr("\"Seguir sistema\" respeita a opção \"Remover animações\" do Android."),
+                ANIM_MODES.iter().map(|s| tr(s).to_string()).collect(),
                 anim_index(self.prefs.anim_mode) as i32,
             ),
             "anim-speed" => self.ask_choice(
                 ChoiceCtx::Appearance("anim-speed"),
-                "Velocidade das animações",
+                tr("Velocidade das animações"),
                 "",
-                ANIM_SPEEDS.iter().map(|s| s.to_string()).collect(),
+                ANIM_SPEEDS.iter().map(|s| tr(s).to_string()).collect(),
                 self.prefs.anim_speed,
             ),
             "load-step" => {
                 let opts: Vec<String> = LOAD_STEPS.iter().map(|g| format_load_unit(*g, self.prefs.unit)).collect();
                 let sel = LOAD_STEPS.iter().position(|g| *g == self.prefs.load_step_g).map(|i| i as i32).unwrap_or(-1);
-                self.ask_choice(ChoiceCtx::LoadStep, "Incremento de carga", "", opts, sel);
+                self.ask_choice(ChoiceCtx::LoadStep, tr("Incremento de carga"), "", opts, sel);
             }
             _ => {}
         }
@@ -2876,7 +2969,7 @@ impl Controller {
                 let p = &mut self.prefs;
                 match which {
                     "theme" => p.theme_mode = [ThemeMode::System, ThemeMode::Light, ThemeMode::Dark][(i as usize).min(2)],
-                    "text-size" => p.text_size = i.min(2),
+                    "text-size" => p.text_size = i.clamp(0, 3),
                     "density" => p.density = i.min(2),
                     "anim" => {
                         p.anim_mode = [AnimMode::System, AnimMode::Normal, AnimMode::Reduced, AnimMode::Off][(i as usize).min(3)]
@@ -2884,6 +2977,12 @@ impl Controller {
                     _ => p.anim_speed = i.min(2),
                 }
                 self.save_prefs();
+            }
+            ChoiceCtx::Language => {
+                self.prefs.language = LANG_CODES.get(i.max(0) as usize).unwrap_or(&"system").to_string();
+                let r = self.prefs.save(&self.db);
+                self.report(r);
+                self.relocalize();
             }
             ChoiceCtx::Unit => {
                 self.prefs.unit = if i == 1 { LoadUnit::Lb } else { LoadUnit::Kg };
@@ -2939,14 +3038,14 @@ impl Controller {
                     Ok(p) => {
                         let mut text = p.text;
                         if !p.missing_exercises.is_empty() {
-                            text.push_str(&format!(
+                            text.push_str(&trf!(
                                 "\nAtenção: {} exercício(s) não estão na biblioteca e serão criados como personalizados: {}.",
                                 p.missing_exercises.len(),
                                 p.missing_exercises.join(", ")
                             ));
                         }
                         text.push_str("\nA ficha criada é independente: você poderá editar exercícios, séries e cargas.");
-                        self.show_info(InfoCtx::Template(t.code), &format!("Modelo {}", t.name), &text, "Criar ficha", "Cancelar");
+                        self.show_info(InfoCtx::Template(t.code), &trf!("Modelo {}", tr(t.name)), &text, tr("Criar ficha"), tr("Cancelar"));
                     }
                     Err(e) => self.toast(e.to_string()),
                 }
@@ -2977,7 +3076,8 @@ impl Controller {
     }
 
     fn save_via_picker(&mut self, path: std::path::PathBuf, name: &str, mime: &str, what: &str) {
-        self.file_op = Some(FileOp::Save(what.to_string()));
+        let is_backup = mime == "application/zip";
+        self.file_op = Some(FileOp::Save(what.to_string(), is_backup));
         self.platform.save_document(name, mime, &path);
     }
 
@@ -2989,7 +3089,7 @@ impl Controller {
         };
         let path = self.tmp_file(&format!("export-{}.xlsx", now_ms()));
         match export_xlsx(&self.db, kind, &path) {
-            Ok(_) => self.save_via_picker(path, &name, XLSX_MIME, "Planilha exportada"),
+            Ok(_) => self.save_via_picker(path, &name, XLSX_MIME, tr("Planilha exportada")),
             Err(e) => self.toast(e.to_string()),
         }
     }
@@ -2997,7 +3097,7 @@ impl Controller {
     fn data_template(&mut self) {
         let path = self.tmp_file(&format!("modelo-{}.xlsx", now_ms()));
         match export_template(&path) {
-            Ok(()) => self.save_via_picker(path, "modelo-importacao-empeto.xlsx", XLSX_MIME, "Modelo salvo"),
+            Ok(()) => self.save_via_picker(path, "modelo-importacao-empeto.xlsx", XLSX_MIME, tr("Modelo salvo")),
             Err(e) => self.toast(e.to_string()),
         }
     }
@@ -3005,8 +3105,8 @@ impl Controller {
     fn data_backup(&mut self) {
         self.ask_text(
             TextCtx::BackupPassword,
-            "Senha do backup (opcional)",
-            "Com senha, o banco dentro do arquivo é criptografado (AES-256) e só pode ser restaurado com ela. Deixe em branco para não usar senha. Não há como recuperar uma senha esquecida.",
+            tr("Senha do backup (opcional)"),
+            tr("Com senha, o banco dentro do arquivo é criptografado (AES-256) e só pode ser restaurado com ela. Deixe em branco para não usar senha. Não há como recuperar uma senha esquecida."),
             "",
             false,
             false,
@@ -3021,7 +3121,7 @@ impl Controller {
         match create_backup(&self.db, &path, &work, &version, password) {
             Ok(_) => {
                 let name = format!("empeto-backup-{}.zip", Self::today_tag());
-                self.save_via_picker(path, &name, "application/zip", "Backup criado");
+                self.save_via_picker(path, &name, "application/zip", tr("Backup criado"));
             }
             Err(e) => self.toast(e.to_string()),
         }
@@ -3035,7 +3135,7 @@ impl Controller {
                     self.toast(e.to_string());
                     return;
                 }
-                self.save_via_picker(path, "empeto-calendario.ics", "text/calendar", "Calendário exportado");
+                self.save_via_picker(path, "empeto-calendario.ics", "text/calendar", tr("Calendário exportado"));
             }
             Err(e) => self.toast(e.to_string()),
         }
@@ -3050,13 +3150,13 @@ impl Controller {
         match (op, res) {
             (_, FileResult::Cancelled) => {}
             (_, FileResult::Error(e)) => self.toast(e),
-            (FileOp::Save(what), FileResult::Saved { name }) => {
-                if what.starts_with("Backup") || what.starts_with("Cópia do backup") {
+            (FileOp::Save(what, is_backup), FileResult::Saved { name }) => {
+                if is_backup {
                     // Só registramos a cópia externa quando o próprio usuário a salvou.
                     let r = self.db.set_pref(storage::PREF_LAST_EXTERNAL, &now_ms().to_string());
                     self.report(r);
                 }
-                self.toast(format!("{what}: {name}"))
+                self.toast(format!("{}: {}", what, name))
             }
             (FileOp::ImportXlsx, FileResult::Opened { path, name }) => {
                 let r = read_workbook(&path);
@@ -3076,7 +3176,7 @@ impl Controller {
                         self.rebuild_import_preview();
                         self.navigate(P_IMPORT);
                     }
-                    Err(e) => self.show_info(InfoCtx::Plain, "Não foi possível importar", &e.to_string(), "OK", ""),
+                    Err(e) => self.show_info(InfoCtx::Plain, tr("Não foi possível importar"), &e.to_string(), tr("OK"), ""),
                 }
             }
             (FileOp::Restore, FileResult::Opened { path, name: _ }) => self.begin_restore(path),
@@ -3093,8 +3193,8 @@ impl Controller {
                         self.restore_path = Some(path);
                         self.ask_text(
                             TextCtx::RestorePassword,
-                            "Backup protegido por senha",
-                            &format!("Backup de {}. Informe a senha usada ao criá-lo.", fmt_date_time(m.created_at)),
+                            tr("Backup protegido por senha"),
+                            &trf!("Backup de {}. Informe a senha usada ao criá-lo.", fmt_date_time(m.created_at)),
                             "",
                             false,
                             false,
@@ -3116,8 +3216,8 @@ impl Controller {
                 if wrong_password {
                     // Mantém o arquivo para nova tentativa.
                     self.restore_path = Some(path);
-                    self.toast("Senha do backup incorreta. Tente novamente.");
-                    self.ask_text(TextCtx::RestorePassword, "Backup protegido por senha", "Senha incorreta. Informe novamente.", "", false, false);
+                    self.toast(tr("Senha do backup incorreta. Tente novamente."));
+                    self.ask_text(TextCtx::RestorePassword, tr("Backup protegido por senha"), tr("Senha incorreta. Informe novamente."), "", false, false);
                     self.with_bridge(|b| b.set_text_password(true));
                     return;
                 }
@@ -3125,7 +3225,7 @@ impl Controller {
                 match r {
                     Ok(v) => {
                         let m = &v.manifest;
-                        let text = format!(
+                        let text = trf!(
                             "Backup de {} (app {}): {} ficha(s), {} sessão(ões), {} série(s).\n\nOs dados atuais serão substituídos por este backup. Uma cópia do estado atual é guardada para desfazer em caso de falha. Deseja continuar?",
                             fmt_date_time(m.created_at),
                             m.app_version,
@@ -3134,9 +3234,9 @@ impl Controller {
                             m.counts.sets
                         );
                         self.pending_restore = Some(v);
-                        self.ask_confirm(ConfirmAction::Restore, "Restaurar backup", &text, "Restaurar");
+                        self.ask_confirm(ConfirmAction::Restore, tr("Restaurar backup"), &text, tr("Restaurar"));
                     }
-                    Err(e) => self.show_info(InfoCtx::Plain, "Backup inválido", &e.to_string(), "OK", ""),
+                    Err(e) => self.show_info(InfoCtx::Plain, tr("Backup inválido"), &e.to_string(), tr("OK"), ""),
                 }
             }
         }
@@ -3178,9 +3278,9 @@ impl Controller {
             .filter(|c| header.get(*c).map(|h| !h.trim().is_empty()).unwrap_or(false) || st.mapping.columns[*c].is_some())
             .map(|c| MapCol {
                 index: c as i32,
-                header: ss(header.get(c).filter(|h| !h.trim().is_empty()).cloned().unwrap_or_else(|| format!("Coluna {}", c + 1))),
-                sample: ss(sample_row.get(c).map(|s| format!("Ex.: {s}")).unwrap_or_default()),
-                field: ss(st.mapping.columns[c].map(|f| f.label()).unwrap_or("Ignorar")),
+                header: ss(header.get(c).filter(|h| !h.trim().is_empty()).cloned().unwrap_or_else(|| trf!("Coluna {}", c + 1))),
+                sample: ss(sample_row.get(c).map(|s| trf!("Ex.: {}", s)).unwrap_or_default()),
+                field: ss(st.mapping.columns[c].map(|f| f.label()).unwrap_or(tr("Ignorar"))),
             })
             .collect();
         let unit = self.prefs.unit;
@@ -3201,7 +3301,7 @@ impl Controller {
                             if d.weekdays != 0 { format!(" ({})", weekdays_text(d.weekdays)) } else { String::new() },
                             d.exercises
                                 .iter()
-                                .map(|e| format!(
+                                .map(|e| trf!(
                                     "{} {}×{}{}",
                                     e.name,
                                     e.target.sets,
@@ -3217,7 +3317,7 @@ impl Controller {
                 conflict: p.exists,
             })
             .collect();
-        let summary = format!(
+        let summary = trf!(
             "{} linha(s) com dados, {} válida(s) → {} ficha(s), {} exercício(s). Nada é gravado até você confirmar.",
             st.preview.data_rows,
             st.preview.valid_rows,
@@ -3227,7 +3327,7 @@ impl Controller {
         let p = &st.preview;
         let (file, sheet_name, multi, can, conflicts, replace) = (
             st.file_name.clone(),
-            if all { format!("Todas as abas ({})", st.workbook.sheets.len()) } else { sheet.name.clone() },
+            if all { trf!("Todas as abas ({})", st.workbook.sheets.len()) } else { sheet.name.clone() },
             st.workbook.sheets.len() > 1,
             p.can_import(),
             p.has_conflicts(),
@@ -3254,7 +3354,7 @@ impl Controller {
     fn imp_confirm(&mut self) {
         let Some(st) = self.import.as_ref() else { return };
         if !st.preview.warnings.is_empty() && !self.with_bridge(|b| b.get_imp_reviewed()) {
-            self.toast("Confira os avisos antes de importar.");
+            self.toast(tr("Confira os avisos antes de importar."));
             return;
         }
         let policy = if st.replace { ConflictPolicy::Replace } else { ConflictPolicy::CreateNew };
@@ -3265,24 +3365,24 @@ impl Controller {
                 self.navigate(P_PLANS);
                 self.show_info(
                     InfoCtx::Plain,
-                    "Importação concluída",
-                    &format!(
+                    tr("Importação concluída"),
+                    &trf!(
                         "{} ficha(s), {} dia(s) e {} exercício(s) importados.{}{}",
                         r.plans,
                         r.days,
                         r.exercises,
                         if r.new_catalog_exercises > 0 {
-                            format!("\n{} exercício(s) novo(s) adicionados à biblioteca.", r.new_catalog_exercises)
+                            trf!("\n{} exercício(s) novo(s) adicionados à biblioteca.", r.new_catalog_exercises)
                         } else {
                             String::new()
                         },
-                        if r.replaced > 0 { format!("\n{} ficha(s) substituída(s).", r.replaced) } else { String::new() }
+                        if r.replaced > 0 { trf!("\n{} ficha(s) substituída(s).", r.replaced) } else { String::new() }
                     ),
-                    "OK",
+                    tr("OK"),
                     "",
                 );
             }
-            Err(e) => self.show_info(InfoCtx::Plain, "Importação não realizada", &format!("{e}\n\nNenhum dado foi gravado."), "OK", ""),
+            Err(e) => self.show_info(InfoCtx::Plain, tr("Importação não realizada"), &trf!("{}\n\nNenhum dado foi gravado.", e), tr("OK"), ""),
         }
     }
 
@@ -3295,13 +3395,13 @@ impl Controller {
                 self.load_timer();
                 self.apply_appearance();
                 self.navigate(P_HOME);
-                self.show_info(InfoCtx::Plain, "Backup restaurado", "Fichas, sessões, exercícios e preferências foram restaurados.", "OK", "");
+                self.show_info(InfoCtx::Plain, tr("Backup restaurado"), tr("Fichas, sessões, exercícios e preferências foram restaurados."), tr("OK"), "");
             }
             Err(e) => self.show_info(
                 InfoCtx::Plain,
-                "Falha na restauração",
-                &format!("{e}\n\nOs dados anteriores foram mantidos."),
-                "OK",
+                tr("Falha na restauração"),
+                &trf!("{}\n\nOs dados anteriores foram mantidos.", e),
+                tr("OK"),
                 "",
             ),
         }
@@ -3318,7 +3418,7 @@ impl Controller {
             ConfirmAction::DeletePlan(id) => {
                 let r = self.db.delete_plan(id);
                 if r.is_ok() {
-                    self.toast("Ficha excluída. Sessões já realizadas continuam no histórico.");
+                    self.toast(tr("Ficha excluída. Sessões já realizadas continuam no histórico."));
                     if self.plan_id == Some(id) {
                         self.plan_id = None;
                     }
@@ -3344,7 +3444,7 @@ impl Controller {
                 let r = self.db.delete_plan_exercise(id);
                 if let (Ok(()), Some((pe, pos))) = (&r, before) {
                     self.toast_undo(
-                        format!("{} removido da ficha.", pe.exercise.name),
+                        trf!("{} removido da ficha.", pe.exercise.name),
                         UndoOp::new(
                             UndoKind::DeletePlanExercise {
                                 day_id: pe.schedule_id,
@@ -3354,7 +3454,7 @@ impl Controller {
                                 notes: pe.notes.clone(),
                                 position: pos,
                             },
-                            "Remoção do exercício",
+                            tr("Remoção do exercício"),
                         ),
                     );
                 }
@@ -3371,7 +3471,7 @@ impl Controller {
                             self.platform.keep_screen_on(false);
                             self.with_bridge(|b| b.set_session_active(false));
                             self.navigate(P_HOME);
-                            self.toast("Sessão descartada. Nada foi gravado no histórico.");
+                            self.toast(tr("Sessão descartada. Nada foi gravado no histórico."));
                         }
                         Err(e) => self.toast(e.to_string()),
                     }
@@ -3381,7 +3481,7 @@ impl Controller {
             ConfirmAction::DeleteLocalBackup(path) => {
                 let r = storage::delete_local_backup(&self.platform.data_dir(), &path);
                 match r {
-                    Ok(()) => self.toast("Backup excluído."),
+                    Ok(()) => self.toast(tr("Backup excluído.")),
                     Err(e) => self.toast(e.to_string()),
                 }
                 let r = self.refresh_settings();
@@ -3391,10 +3491,10 @@ impl Controller {
                 let r = self.db.set_exercise_archived(id, archive);
                 match r {
                     Ok(()) => self.toast_undo(
-                        if archive { "Exercício arquivado." } else { "Exercício reativado." },
+                        if archive { tr("Exercício arquivado.") } else { tr("Exercício reativado.") },
                         UndoOp::new(
                             UndoKind::ArchiveExercise { exercise_id: id, was_archived: !archive },
-                            if archive { "Arquivamento" } else { "Reativação" },
+                            if archive { tr("Arquivamento") } else { tr("Reativação") },
                         ),
                     ),
                     Err(e) => self.toast(e.to_string()),
@@ -3411,7 +3511,7 @@ impl Controller {
             TextCtx::BackupPassword => {
                 let pw = value.trim().to_string();
                 if !pw.is_empty() && pw.chars().count() < 4 {
-                    self.toast("A senha deve ter pelo menos 4 caracteres (ou deixe em branco).");
+                    self.toast(tr("A senha deve ter pelo menos 4 caracteres (ou deixe em branco)."));
                     return;
                 }
                 self.close_dialog();
@@ -3433,7 +3533,7 @@ impl Controller {
             TextCtx::SessionNotes => self.session_id.map(|sid| self.db.set_session_notes(sid, value)).unwrap_or(Ok(())),
             TextCtx::ExerciseNotes(se) => self.db.set_session_exercise_notes(se, value),
             TextCtx::TimerCustom => {
-                let secs = parse_rest(value).and_then(|s| if s < 1 { validation("Informe pelo menos 1 segundo.") } else { Ok(s) });
+                let secs = parse_rest(value).and_then(|s| if s < 1 { validation(tr("Informe pelo menos 1 segundo.")) } else { Ok(s) });
                 match secs {
                     Ok(s) => {
                         self.timer.set_duration(s * 1000);
@@ -3475,7 +3575,7 @@ impl Controller {
                 Ok(id) => {
                     self.plan_id = Some(id);
                     self.navigate(P_EDITOR);
-                    self.toast("Ficha criada a partir do modelo. Ajuste à vontade — o modelo não muda.");
+                    self.toast(tr("Ficha criada a partir do modelo. Ajuste à vontade — o modelo não muda."));
                 }
                 Err(e) => self.toast(e.to_string()),
             },
@@ -3489,9 +3589,9 @@ impl Controller {
         if let Some(InfoCtx::RecoverSession) = ctx {
             self.ask_confirm(
                 ConfirmAction::DiscardSession,
-                "Descartar sessão",
-                "Descartar a sessão interrompida? As séries registradas nela não irão para o histórico. Para guardá-las, escolha Cancelar e finalize a sessão.",
-                "Descartar",
+                tr("Descartar sessão"),
+                tr("Descartar a sessão interrompida? As séries registradas nela não irão para o histórico. Para guardá-las, escolha Cancelar e finalize a sessão."),
+                tr("Descartar"),
             );
             return;
         }
@@ -3509,9 +3609,9 @@ impl Controller {
         if let Some(granted) = self.platform.poll_permission_result() {
             self.awaiting_permission = false;
             if granted {
-                self.toast("Notificações permitidas. Você receberá o alerta com a tela bloqueada.");
+                self.toast(tr("Notificações permitidas. Você receberá o alerta com a tela bloqueada."));
             } else {
-                self.toast("Permissão negada. O cronômetro continua funcionando na tela; em segundo plano o alerta pode não aparecer.");
+                self.toast(tr("Permissão negada. O cronômetro continua funcionando na tela; em segundo plano o alerta pode não aparecer."));
             }
             let r = self.refresh_settings();
             self.report(r);
@@ -3544,10 +3644,22 @@ impl Controller {
 
 const LIB_PAGE: usize = 40;
 const LOAD_STEPS: [i64; 6] = [500, 1_000, 1_250, 2_000, 2_500, 5_000];
-const TEXT_SIZES: [&str; 3] = ["Normal", "Grande", "Extragrande"];
+const TEXT_SIZES: [&str; 4] = ["Pequena", "Média", "Grande", "Extragrande"];
 const DENSITIES: [&str; 3] = ["Compacta", "Padrão", "Espaçosa"];
 const ANIM_MODES: [&str; 4] = ["Seguir sistema", "Normais", "Reduzidas", "Desativadas"];
 const ANIM_SPEEDS: [&str; 3] = ["Rápida", "Normal", "Lenta"];
+
+/// Opções de idioma: o nome de cada idioma aparece nele mesmo; "Seguir o sistema" é traduzido.
+const LANG_CODES: [&str; 4] = ["system", "pt-BR", "en", "es"];
+
+fn language_label(code: &str) -> String {
+    match code {
+        "pt-BR" => Lang::Pt.native_name().to_string(),
+        "en" => Lang::En.native_name().to_string(),
+        "es" => Lang::Es.native_name().to_string(),
+        _ => tr("Seguir o sistema").to_string(),
+    }
+}
 
 fn anim_index(m: AnimMode) -> usize {
     match m {
@@ -3591,12 +3703,12 @@ fn ex_row(e: &Exercise, note: &str) -> ExRow {
 }
 
 fn target_text(t: &Target, rest: i64, unit: LoadUnit) -> String {
-    let mut s = format!("{} × {}", t.sets, format_reps(t.reps_min, t.reps_max));
+    let mut s = trf!("{} × {}", t.sets, format_reps(t.reps_min, t.reps_max));
     if t.load_g > 0 {
         s.push_str(&format!(" · {}", format_load_unit(t.load_g, unit)));
     }
     if rest > 0 {
-        s.push_str(&format!(" · descanso {}", format_duration_s(rest)));
+        s.push_str(&trf!(" · descanso {}", format_duration_s(rest)));
     }
     s
 }
@@ -3671,6 +3783,7 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         c.load_timer();
         c.session_id = c.db.active_session_id().ok().flatten();
         let week_view = c.prefs.calendar_week_view;
+        c.apply_language();
         c.apply_appearance();
         let b = ui.global::<Bridge>();
         b.set_cal_week_view(week_view);
@@ -3681,13 +3794,15 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         c.auto_backup();
         c.refresh_timer();
         c.navigate(P_HOME);
-        c.offer_session_recovery();
+        if !c.maybe_onboarding() {
+            c.offer_session_recovery();
+        }
         if let Some(err) = open_error {
             c.show_info(
                 InfoCtx::Plain,
-                "Erro ao abrir os dados",
-                &format!("{err}\n\nO app abriu em modo temporário (nada será salvo). Restaure um backup ou reinstale o app."),
-                "OK",
+                tr("Erro ao abrir os dados"),
+                &trf!("{}\n\nO app abriu em modo temporário (nada será salvo). Restaure um backup ou reinstale o app.", err),
+                tr("OK"),
                 "",
             );
         }
@@ -3746,7 +3861,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     cb!(b, ctrl, on_open_plan, |c, id: i32| { c.open_plan(id as Id); });
     cb!(b, ctrl, on_duplicate_plan, |c, id: i32| {
         match c.db.duplicate_plan(id as Id) {
-            Ok(_) => c.toast("Ficha duplicada."),
+            Ok(_) => c.toast(tr("Ficha duplicada.")),
             Err(e) => c.toast(e.to_string()),
         }
         let r = c.refresh_plans();
@@ -3757,9 +3872,9 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         let name = c.db.get_plan(id).map(|p| p.name).unwrap_or_default();
         c.ask_confirm(
             ConfirmAction::DeletePlan(id),
-            "Excluir ficha",
-            &format!("Excluir \"{name}\"? As sessões já realizadas com esta ficha continuam no histórico."),
-            "Excluir",
+            tr("Excluir ficha"),
+            &trf!("Excluir \"{}\"? As sessões já realizadas com esta ficha continuam no histórico.", name),
+            tr("Excluir"),
         );
     });
     cb!(b, ctrl, on_toggle_plan_active, |c, id: i32| {
@@ -3780,9 +3895,9 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         let name = c.db.get_day(id as Id).map(|d| d.name).unwrap_or_default();
         c.ask_confirm(
             ConfirmAction::DeleteDay(id as Id),
-            "Excluir dia",
-            &format!("Excluir \"{name}\" e seus exercícios desta ficha? O histórico não é afetado."),
-            "Excluir",
+            tr("Excluir dia"),
+            &trf!("Excluir \"{}\" e seus exercícios desta ficha? O histórico não é afetado.", name),
+            tr("Excluir"),
         );
     });
     cb!(b, ctrl, on_move_day, |c, id: i32, d: i32| {
@@ -3809,7 +3924,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     });
     cb!(b, ctrl, on_pe_delete, |c| {
         if let Some(id) = c.pe.as_ref().and_then(|p| p.plan_ex_id) {
-            c.ask_confirm(ConfirmAction::DeletePlanEx(id), "Remover exercício", "Remover este exercício da ficha? O histórico não é afetado.", "Remover");
+            c.ask_confirm(ConfirmAction::DeletePlanEx(id), tr("Remover exercício"), tr("Remover este exercício da ficha? O histórico não é afetado."), tr("Remover"));
         }
     });
 
@@ -3871,13 +3986,16 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         c.report(r);
     });
     cb!(b, ctrl, on_open_templates, |c| { c.open_templates(); });
+    cb!(b, ctrl, on_onboarding_skip, |c| { c.onboarding_finish("explore"); });
+    cb!(b, ctrl, on_onboarding_finish, |c, a: SharedString| { c.onboarding_finish(&a); });
+    cb!(b, ctrl, on_onboarding_restart, |c| { c.open_onboarding(); });
     cb!(b, ctrl, on_gesture, |c, ctx: SharedString, ev: SharedString| { c.gesture(&ctx, &ev); });
     cb!(b, ctrl, on_home_shortcut, |c, code: SharedString| { c.home_shortcut(&code); });
     cb!(b, ctrl, on_shortcut_slot, |c, i: i32| { c.shortcut_slot(i.max(0) as usize); });
     cb!(b, ctrl, on_shortcuts_reset, |c| {
         let r = c.db.set_pref(shortcuts::PREF_KEY, &shortcuts::serialize(&shortcuts::defaults()));
         c.report(r);
-        c.toast("Atalhos padrão restaurados.");
+        c.toast(tr("Atalhos padrão restaurados."));
         let r = c.refresh_settings();
         c.report(r);
     });
@@ -3918,13 +4036,13 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
             c.close_dialog();
             c.ask_confirm(
                 ConfirmAction::ArchiveExercise(id, !archived),
-                if archived { "Reativar exercício" } else { "Arquivar exercício" },
+                if archived { tr("Reativar exercício") } else { tr("Arquivar exercício") },
                 if archived {
-                    "O exercício volta a aparecer na biblioteca."
+                    tr("O exercício volta a aparecer na biblioteca.")
                 } else {
-                    "O exercício deixa de aparecer na biblioteca. O histórico continua com os registros."
+                    tr("O exercício deixa de aparecer na biblioteca. O histórico continua com os registros.")
                 },
-                if archived { "Reativar" } else { "Arquivar" },
+                if archived { tr("Reativar") } else { tr("Arquivar") },
             );
         }
     });
@@ -3972,7 +4090,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         match c.db.clear_set(id as Id) {
             Ok(()) => {
                 if let Some(bf) = before {
-                    c.toast_undo("Registro da série desfeito.", UndoOp::new(UndoKind::ClearSet { set_id: id as Id, before: bf }, "Desfazer registro"));
+                    c.toast_undo(tr("Registro da série desfeito."), UndoOp::new(UndoKind::ClearSet { set_id: id as Id, before: bf }, tr("Desfazer registro")));
                 }
             }
             Err(e) => c.toast(e.to_string()),
@@ -3989,7 +4107,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     cb!(b, ctrl, on_session_remove_set, |c, id: i32| {
         let r = c.db.remove_last_session_set(id as Id);
         if r.is_ok() {
-            c.toast_undo("Série removida.", UndoOp::new(UndoKind::RemoveSet { session_exercise_id: id as Id }, "Remoção da série"));
+            c.toast_undo(tr("Série removida."), UndoOp::new(UndoKind::RemoveSet { session_exercise_id: id as Id }, tr("Remoção da série")));
         }
         c.report(r);
         let r = c.refresh_session();
@@ -4001,7 +4119,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
             match c.db.undo_substitution(se) {
                 Ok(()) => {
                     c.close_dialog();
-                    c.toast("Exercício original restaurado nesta sessão.");
+                    c.toast(tr("Exercício original restaurado nesta sessão."));
                 }
                 Err(e) => c.toast(e.to_string()),
             }
@@ -4015,11 +4133,11 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
             .and_then(|sid| c.db.get_session_full(sid).ok())
             .and_then(|f| f.exercises.into_iter().find(|e| e.id == id as Id).map(|e| e.notes))
             .unwrap_or_default();
-        c.ask_text(TextCtx::ExerciseNotes(id as Id), "Observação do exercício", "", &notes, true, false);
+        c.ask_text(TextCtx::ExerciseNotes(id as Id), tr("Observação do exercício"), "", &notes, true, false);
     });
     cb!(b, ctrl, on_session_edit_notes, |c| {
         let notes = c.session_id.and_then(|sid| c.db.get_session(sid).ok()).map(|s| s.notes).unwrap_or_default();
-        c.ask_text(TextCtx::SessionNotes, "Observações da sessão", "", &notes, true, false);
+        c.ask_text(TextCtx::SessionNotes, tr("Observações da sessão"), "", &notes, true, false);
     });
     cb!(b, ctrl, on_session_finish, |c| {
         let Some(sid) = c.session_id else { return };
@@ -4031,17 +4149,17 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
             }
         };
         if f.completed_sets() == 0 {
-            c.toast("Registre pelo menos uma série antes de finalizar, ou descarte a sessão.");
+            c.toast(tr("Registre pelo menos uma série antes de finalizar, ou descarte a sessão."));
             return;
         }
         if c.prefs.confirm_finish {
             let pending = f.total_sets() - f.completed_sets();
             let text = if pending > 0 {
-                format!("{} série(s) não registrada(s) serão descartadas. Após finalizar, a sessão vira registro histórico e não pode ser alterada.", pending)
+                trf!("{} série(s) não registrada(s) serão descartadas. Após finalizar, a sessão vira registro histórico e não pode ser alterada.", pending)
             } else {
-                "Após finalizar, a sessão vira registro histórico e não pode ser alterada.".to_string()
+                tr("Após finalizar, a sessão vira registro histórico e não pode ser alterada.").to_string()
             };
-            c.ask_confirm(ConfirmAction::FinishSession, "Finalizar sessão", &text, "Finalizar");
+            c.ask_confirm(ConfirmAction::FinishSession, tr("Finalizar sessão"), &text, tr("Finalizar"));
         } else {
             c.finish_session_now();
         }
@@ -4049,9 +4167,9 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     cb!(b, ctrl, on_session_discard, |c| {
         c.ask_confirm(
             ConfirmAction::DiscardSession,
-            "Descartar sessão",
-            "Descartar esta sessão? Nada dela será salvo no histórico.",
-            "Descartar",
+            tr("Descartar sessão"),
+            tr("Descartar esta sessão? Nada dela será salvo no histórico."),
+            tr("Descartar"),
         );
     });
     {
@@ -4114,7 +4232,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
                 let v = c.with_bridge(|b| (b.get_focus_load().to_string(), b.get_focus_reps().to_string()));
                 c.drafts.insert(id, v);
             }
-            None => c.toast("Sem valores para preencher."),
+            None => c.toast(tr("Sem valores para preencher.")),
         }
     });
     cb!(b, ctrl, on_focus_confirm, |c| { c.focus_confirm(); });
@@ -4136,7 +4254,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         match c.db.clear_set(id) {
             Ok(()) => {
                 if let Some(bf) = before {
-                    c.toast_undo("Registro da série desfeito.", UndoOp::new(UndoKind::ClearSet { set_id: id, before: bf }, "Desfazer registro"));
+                    c.toast_undo(tr("Registro da série desfeito."), UndoOp::new(UndoKind::ClearSet { set_id: id, before: bf }, tr("Desfazer registro")));
                 }
                 let r = c.refresh_session();
                 c.report(r);
@@ -4166,7 +4284,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
                 b.get_session_exercises().row_data(i)
             }) {
                 if c.page() == P_SESSION {
-                    c.timer.context = format!("{} — descanso", cur.name);
+                    c.timer.context = trf!("{} — descanso", cur.name);
                     if cur.rest > 0 && c.timer.status != TimerStatus::Paused {
                         c.timer.set_duration(cur.rest as i64 * 1000);
                     }
@@ -4212,7 +4330,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     });
     cb!(b, ctrl, on_timer_custom, |c| {
         let cur = (c.timer.duration_ms / 1000).to_string();
-        c.ask_text(TextCtx::TimerCustom, "Duração do cronômetro", "Em segundos (ex.: 75) ou minutos:segundos (ex.: 1:15).", &cur, false, false);
+        c.ask_text(TextCtx::TimerCustom, tr("Duração do cronômetro"), tr("Em segundos (ex.: 75) ou minutos:segundos (ex.: 1:15)."), &cur, false, false);
     });
 
     // Calendário
@@ -4265,21 +4383,21 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     });
     cb!(b, ctrl, on_progression_accept, |c, id: i32| {
         let r = (|| -> AppResult<()> {
-            let s = c.db.progression_for(id as Id, c.prefs.load_step_g, c.prefs.unit)?.ok_or_else(|| AppError::Validation("Sugestão indisponível.".into()))?;
+            let s = c.db.progression_for(id as Id, c.prefs.load_step_g, c.prefs.unit)?.ok_or_else(|| AppError::Validation(tr("Sugestão indisponível.").into()))?;
             let pe = c.db.get_plan_exercise(id as Id)?;
             let mut t = pe.target;
             t.load_g = s.suggested_load_g;
             c.db.update_plan_exercise(pe.id, pe.exercise.id, t, pe.rest_seconds, &pe.notes)
         })();
         match r {
-            Ok(()) => c.toast("Carga-alvo atualizada na ficha."),
+            Ok(()) => c.toast(tr("Carga-alvo atualizada na ficha.")),
             Err(e) => c.toast(e.to_string()),
         }
         c.report_refresh_editor();
     });
     cb!(b, ctrl, on_progression_dismiss, |c, id: i32| {
         if let Ok(Some(s)) = c.db.progression_for(id as Id, c.prefs.load_step_g, c.prefs.unit) {
-            let _ = c.db.set_pref(&format!("progression.dismissed.{id}"), &s.based_on_session.to_string());
+            let _ = c.db.set_pref(&format!("progression.dismissed.{}", id), &s.based_on_session.to_string());
         }
         c.report_refresh_editor();
     });
@@ -4307,7 +4425,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         c.with_bridge(|b| b.set_lib_mode(ss("pick")));
         let r = c.refresh_library();
         c.report(r);
-        c.toast("Escolha o exercício alternativo.");
+        c.toast(tr("Escolha o exercício alternativo."));
     });
     cb!(b, ctrl, on_exf_remove_alt, |c, alt: i32| {
         if let Some(id) = c.exf_id {
@@ -4356,7 +4474,7 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
             c.platform.vibrate(400);
         }
         if !c.prefs.sound_enabled && !c.prefs.vibrate {
-            c.toast("Som e vibração estão desligados.");
+            c.toast(tr("Som e vibração estão desligados."));
         }
     });
     cb!(b, ctrl, on_notif_settings, |c| { c.platform.open_notification_settings(); });
@@ -4367,9 +4485,9 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     cb!(b, ctrl, on_data_export, |c| {
         c.ask_choice(
             ChoiceCtx::ExportKind,
-            "Exportar planilha",
-            "Escolha o que exportar. Depois você escolhe onde salvar o arquivo.",
-            vec!["Fichas de treino".into(), "Histórico de sessões".into(), "Tudo (fichas + histórico)".into()],
+            tr("Exportar planilha"),
+            tr("Escolha o que exportar. Depois você escolhe onde salvar o arquivo."),
+            vec![tr("Fichas de treino").into(), tr("Histórico de sessões").into(), tr("Tudo (fichas + histórico)").into()],
             -1,
         );
     });
@@ -4386,21 +4504,21 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         let (names, sel) = match c.import.as_ref() {
             Some(st) => {
                 let mut v = st.workbook.sheets.iter().map(|s| s.name.clone()).collect::<Vec<_>>();
-                v.push("Todas as abas (juntar)".into());
+                v.push(tr("Todas as abas (juntar)").into());
                 let sel = if st.sheet == usize::MAX { v.len() as i32 - 1 } else { st.sheet as i32 };
                 (v, sel)
             }
             None => return,
         };
-        c.ask_choice(ChoiceCtx::ImportSheet, "Aba da planilha", "", names, sel);
+        c.ask_choice(ChoiceCtx::ImportSheet, tr("Aba da planilha"), "", names, sel);
     });
     cb!(b, ctrl, on_imp_map, |c, col: i32| {
         let Some(st) = c.import.as_ref() else { return };
         let cur = st.mapping.columns.get(col as usize).copied().flatten();
-        let mut opts = vec!["Ignorar esta coluna".to_string()];
+        let mut opts = vec![tr("Ignorar esta coluna").to_string()];
         opts.extend(Field::ALL.iter().map(|f| f.label().to_string()));
         let sel = cur.map(|f| f.index() as i32 + 1).unwrap_or(0);
-        c.ask_choice(ChoiceCtx::ImportMap(col as usize), "Campo da coluna", "", opts, sel);
+        c.ask_choice(ChoiceCtx::ImportMap(col as usize), tr("Campo da coluna"), "", opts, sel);
     });
     cb!(b, ctrl, on_imp_set_replace, |c, v: bool| {
         if let Some(st) = c.import.as_mut() {

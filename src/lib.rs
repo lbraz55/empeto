@@ -11,6 +11,8 @@
 //! - `platform`      integração Android (notificações, vibração, alarmes, seletor de arquivos)
 //! - `app`           interface Slint
 
+#[macro_use]
+pub mod i18n;
 pub mod application;
 pub mod calendar;
 pub mod domain;

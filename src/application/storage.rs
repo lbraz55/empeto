@@ -9,6 +9,7 @@
 //! - Uma cópia local NÃO protege contra perda/desinstalação: o app lembra o usuário de salvar uma
 //!   cópia externa, mas nunca afirma que ela existe (só registra quando o próprio usuário salva).
 
+use crate::i18n::tr;
 use crate::domain::*;
 use crate::import_export::backup::{create_backup, read_manifest};
 use crate::persistence::Db;
@@ -38,11 +39,11 @@ impl StorageReport {
 
 pub fn fmt_bytes(b: u64) -> String {
     if b < 1024 {
-        format!("{b} B")
+        trf!("{} B", b)
     } else if b < 1024 * 1024 {
-        format!("{:.0} KB", b as f64 / 1024.0)
+        trf!("{:.0} KB", b as f64 / 1024.0)
     } else {
-        format!("{:.1} MB", b as f64 / 1_048_576.0).replace('.', ",")
+        trf!("{:.1} MB", b as f64 / 1_048_576.0).replace('.', ",")
     }
 }
 
@@ -204,9 +205,9 @@ pub fn prune_automatic(data_dir: &Path, keep: usize) -> usize {
 /// Exclui um backup local. Só aceita arquivos dentro da pasta de backups.
 pub fn delete_local_backup(data_dir: &Path, path: &Path) -> AppResult<()> {
     let dir = backups_dir(data_dir).canonicalize()?;
-    let p = path.canonicalize().map_err(|_| AppError::File("Backup não encontrado.".into()))?;
+    let p = path.canonicalize().map_err(|_| AppError::File(tr("Backup não encontrado.").into()))?;
     if p.parent() != Some(dir.as_path()) {
-        return Err(AppError::File("Arquivo fora da pasta de backups.".into()));
+        return Err(AppError::File(tr("Arquivo fora da pasta de backups.").into()));
     }
     std::fs::remove_file(&p)?;
     Ok(())

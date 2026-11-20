@@ -1,6 +1,7 @@
 //! Formatação de textos para a interface (pt-BR).
 
 use crate::calendar::{local_date_of, local_time_of, weekday_index};
+use crate::i18n::tr;
 use crate::domain::{format_load, LoadUnit, WEEKDAY_SHORT};
 use chrono::{Datelike, NaiveDate};
 
@@ -15,9 +16,9 @@ pub fn capitalize(s: &str) -> String {
 pub fn fmt_minutes(ms: i64) -> String {
     let m = (ms / 60_000).max(0);
     if m >= 60 {
-        format!("{}h{:02}", m / 60, m % 60)
+        trf!("{}h{:02}", m / 60, m % 60)
     } else {
-        format!("{m} min")
+        trf!("{} min", m)
     }
 }
 
@@ -35,7 +36,7 @@ pub fn fmt_date_time(ms: i64) -> String {
     let d = local_date_of(ms);
     format!(
         "{}, {:02}/{:02}/{} · {}",
-        WEEKDAY_SHORT[weekday_index(d) as usize].to_lowercase(),
+        crate::i18n::lower_name(tr(WEEKDAY_SHORT[weekday_index(d) as usize])),
         d.day(),
         d.month(),
         d.year(),
@@ -49,12 +50,12 @@ pub fn fmt_int(v: i64) -> String {
     let mut out = String::new();
     for (i, ch) in s.chars().enumerate() {
         if i > 0 && (s.len() - i) % 3 == 0 {
-            out.push('.');
+            out.push(if crate::i18n::decimal_sep() == '.' { ',' } else { '.' });
         }
         out.push(ch);
     }
     if v < 0 {
-        format!("-{out}")
+        format!("-{}", out)
     } else {
         out
     }

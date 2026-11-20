@@ -373,6 +373,8 @@ export global Bridge {
     in-out property <string> set-density;
     in-out property <string> set-anim;
     in-out property <string> set-anim-speed;
+    in-out property <string> set-language;
+    in-out property <string> decimal-sep: ",";
     in-out property <bool> set-keep-screen;
     in-out property <bool> set-confirm-finish;
     in-out property <string> notif-status;
@@ -392,6 +394,14 @@ export global Bridge {
     callback data-restore();
     callback data-ics();
     callback show-diagnostics();
+
+    // ---------------- Boas-vindas (evolução 3.2) ----------------
+    in-out property <int> onboarding-step: 0;
+    callback onboarding-skip();
+    callback onboarding-finish(string);
+    callback onboarding-restart();
+    // Abertura (evolução 3.1): some sozinha no primeiro quadro, sem atrasar a inicialização.
+    in-out property <bool> splash-done: false;
 
     // ---------------- Fase 5: personalização ----------------
     // Gestos (GestureEvent): a UI só informa contexto e gesto; o Rust decide a ação.

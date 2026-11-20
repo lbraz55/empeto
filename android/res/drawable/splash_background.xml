@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Abertura (evolução 3.1) para Android 8–11: fundo da janela com a marca centralizada.
+     Aparece só enquanto o app carrega; não há tela extra nem espera artificial. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/empeto_background" />
+    <item android:drawable="@drawable/ic_launcher_foreground"
+        android:width="160dp" android:height="160dp" android:gravity="center" />
+</layer-list>

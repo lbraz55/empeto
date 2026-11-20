@@ -223,6 +223,14 @@ impl Platform for AndroidPlatform {
         self.with_env(|env, act| env.call_method(act, "animatorsEnabled", "()Z", &[])?.z()).unwrap_or(true)
     }
 
+    fn system_locale(&self) -> String {
+        self.call_string("localeTag").unwrap_or_default()
+    }
+
+    fn font_scale(&self) -> f32 {
+        self.with_env(|env, act| env.call_method(act, "fontScale", "()F", &[])?.f()).unwrap_or(1.0)
+    }
+
     fn update_widget(&self) {
         self.call_void("updateWidget", "()V", |_| Ok(vec![]));
     }

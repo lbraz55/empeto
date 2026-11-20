@@ -66,15 +66,15 @@ pub const MONTHS: [&str; 12] = [
 ];
 
 pub fn month_title(year: i32, month: u32) -> String {
-    format!("{} de {}", MONTHS[(month as usize + 11) % 12], year)
+    trf!("{} de {}", crate::i18n::tr(MONTHS[(month as usize + 11) % 12]), year)
 }
 
 pub fn date_long(d: NaiveDate) -> String {
-    format!(
+    trf!(
         "{}, {} de {} de {}",
-        WEEKDAY_LONG[weekday_index(d) as usize],
+        crate::i18n::tr(WEEKDAY_LONG[weekday_index(d) as usize]),
         d.day(),
-        MONTHS[d.month0() as usize].to_lowercase(),
+        crate::i18n::lower_name(crate::i18n::tr(MONTHS[d.month0() as usize])),
         d.year()
     )
 }

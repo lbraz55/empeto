@@ -13,7 +13,7 @@ export component RestTimerIndicator inherits Rectangle {
     border-radius: 28px;
     background: ta.pressed ? Theme.surface3 : (status == "finished" ? Theme.accent : Theme.surface2);
     accessible-role: button;
-    accessible-label: "Cronômetro de descanso, " + (status == "running" ? "em contagem, " : status == "paused" ? "pausado, " : status == "finished" ? "encerrado, " : "") + display + ". Abrir cronômetro.";
+    accessible-label: @tr("Cronômetro de descanso, ") + (status == "running" ? @tr("em contagem, ") : status == "paused" ? @tr("pausado, ") : status == "finished" ? @tr("encerrado, ") : "") + display + @tr(". Abrir cronômetro.");
     accessible-action-default => { clicked(); }
     ta := TouchArea {
         clicked => { root.clicked(); }
@@ -65,7 +65,7 @@ export component RestTimerIndicator inherits Rectangle {
                 font-weight: 700;
             }
             if !root.compact && root.context != "": Text {
-                text: root.status == "finished" ? "Descanso encerrado" : root.status == "paused" ? "Pausado" : root.context;
+                text: root.status == "finished" ? @tr("Descanso encerrado") : root.status == "paused" ? @tr("Pausado") : root.context;
                 color: root.status == "finished" ? Theme.on-accent : Theme.muted;
                 font-size: Theme.fs-xs;
                 overflow: elide;

@@ -68,7 +68,16 @@ export component HomeScreen inherits Scroll {
             clicked => { Bridge.home-shortcut(sc.code); }
         }
     }
-    for c in Bridge.home-cards: Card {
+    for c[i] in Bridge.home-cards: Card {
+        // Entrada dos cartões da Home (evolução 3.3) — decorativa, em cascata curta.
+        property <bool> shown: false;
+        Timer {
+            interval: (30ms + i * 45ms) * Theme.anim-scale;
+            running: !parent.shown;
+            triggered => { parent.shown = true; }
+        }
+        opacity: self.shown || !Theme.decorative ? 1 : 0;
+        animate opacity { duration: Theme.decorative ? 260ms : 0ms; easing: ease-out; }
         clickable: true;
         accessible-role: button;
         accessible-label: c.title + ". " + c.line1 + ". " + c.line2;
@@ -98,33 +107,33 @@ export component PlansScreen inherits Scroll {
     HorizontalLayout {
         spacing: 8px;
         Btn {
-            text: "Nova ficha";
+            text: @tr("Nova ficha");
             icon: Icons.plus;
             kind: "primary";
             clicked => { Bridge.new-plan(); }
         }
         Btn {
-            text: "Modelos";
+            text: @tr("Modelos");
             icon: Icons.template;
             clicked => { Bridge.open-templates(); }
         }
     }
     Btn {
-        text: "Biblioteca de exercícios";
+        text: @tr("Biblioteca de exercícios");
         icon: Icons.list;
         clicked => { Bridge.open-library(); }
     }
     if Bridge.plans.length == 0: EmptyState {
         icon: Icons.dumbbell;
-        title: "Crie sua primeira ficha";
-        text: "Você ainda não tem fichas de treino. Monte uma do zero, comece por um modelo pronto ou importe uma planilha em Configurações › Dados.";
-        action: "Criar ficha";
+        title: @tr("Crie sua primeira ficha");
+        text: @tr("Você ainda não tem fichas de treino. Monte uma do zero, comece por um modelo pronto ou importe uma planilha em Configurações › Dados.");
+        action: @tr("Criar ficha");
         action-clicked => { Bridge.new-plan(); }
     }
     for p in Bridge.plans: Card {
         clickable: true;
         accessible-role: button;
-        accessible-label: "Ficha " + p.name;
+        accessible-label: @tr("Ficha ") + p.name;
         clicked => { Bridge.open-plan(p.id); }
         HorizontalLayout {
             spacing: 4px;
@@ -135,7 +144,7 @@ export component PlansScreen inherits Scroll {
                 Label { text: p.subtitle; }
                 if !p.active: HorizontalLayout {
                     alignment: start;
-                    Badge { text: "Inativa"; }
+                    Badge { text: @tr("Inativa"); }
                 }
             }
             StarBtn {
@@ -145,12 +154,12 @@ export component PlansScreen inherits Scroll {
             }
             IconBtn {
                 icon: Icons.copy;
-                label: "Duplicar ficha " + p.name;
+                label: @tr("Duplicar ficha ") + p.name;
                 clicked => { Bridge.duplicate-plan(p.id); }
             }
             IconBtn {
                 icon: Icons.trash;
-                label: "Excluir ficha " + p.name;
+                label: @tr("Excluir ficha ") + p.name;
                 clicked => { Bridge.delete-plan(p.id); }
             }
         }
@@ -162,7 +171,7 @@ export component CalendarScreen inherits Scroll {
     HorizontalLayout {
         IconBtn {
             icon: Icons.back;
-            label: "Período anterior";
+            label: @tr("Período anterior");
             clicked => { Bridge.cal-prev(); }
         }
         Text {
@@ -176,7 +185,7 @@ export component CalendarScreen inherits Scroll {
         }
         IconBtn {
             icon: Icons.forward;
-            label: "Próximo período";
+            label: @tr("Próximo período");
             clicked => { Bridge.cal-next(); }
         }
     }
@@ -184,20 +193,20 @@ export component CalendarScreen inherits Scroll {
         spacing: 8px;
         Segmented {
             horizontal-stretch: 1;
-            items: ["Mês", "Semana"];
+            items: [@tr("Mês"), @tr("Semana")];
             selected: Bridge.cal-week-view ? 1 : 0;
             select(i) => { Bridge.cal-set-week-view(i == 1); }
         }
         Btn {
-            text: "Hoje";
+            text: @tr("Hoje");
             compact: true;
             horizontal-stretch: 0;
             clicked => { Bridge.cal-today(); }
         }
     }
     if Bridge.cal-heatmap-available: ToggleRow {
-        text: "Mapa de intensidade";
-        description: "Dias mais escuros tiveram maior volume (carga × repetições). Volume não indica qualidade do treino.";
+        text: @tr("Mapa de intensidade");
+        description: @tr("Dias mais escuros tiveram maior volume (carga × repetições). Volume não indica qualidade do treino.");
         checked: Bridge.cal-heatmap;
         toggled => { Bridge.cal-toggle-heatmap(); }
     }
@@ -232,7 +241,7 @@ export component CalendarScreen inherits Scroll {
                 width: parent.width / 7;
                 height: grid.cell-h;
                 accessible-role: button;
-                accessible-label: c.day + (c.planned ? ", treino planejado" : "") + (c.done ? ", treino realizado" : "") + (Bridge.cal-heatmap && c.heat-text != "" ? ", " + c.heat-text : "") + (c.today ? ", hoje" : "");
+                accessible-label: c.day + (c.planned ? @tr(", treino planejado") : "") + (c.done ? @tr(", treino realizado") : "") + (Bridge.cal-heatmap && c.heat-text != "" ? ", " + c.heat-text : "") + (c.today ? @tr(", hoje") : "");
                 accessible-action-default => { Bridge.cal-select(c.key); }
                 TouchArea {
                     clicked => { Bridge.cal-select(c.key); }
@@ -291,7 +300,7 @@ export component CalendarScreen inherits Scroll {
                 border-radius: 4px;
                 background: Theme.text;
             }
-            Label { text: "realizado"; }
+            Label { text: @tr("realizado"); }
         }
         HorizontalLayout {
             spacing: 6px;
@@ -303,18 +312,18 @@ export component CalendarScreen inherits Scroll {
                 border-width: 1.5px;
                 border-color: Theme.muted;
             }
-            Label { text: "planejado"; }
+            Label { text: @tr("planejado"); }
         }
     }
     Rectangle { height: 4px; }
     Title { text: Bridge.cal-selected-title; }
-    if Bridge.cal-entries.length == 0: Label { text: "Nada planejado ou realizado nesta data."; }
+    if Bridge.cal-entries.length == 0: Label { text: @tr("Nada planejado ou realizado nesta data."); }
     for e[i] in Bridge.cal-entries: Card {
         clickable: true;
         clicked => { Bridge.cal-entry(i); }
         HorizontalLayout {
             alignment: start;
-            Badge { text: e.kind == "done" ? "Realizado" : "Planejado"; }
+            Badge { text: e.kind == "done" ? @tr("Realizado") : @tr("Planejado"); }
         }
         Body {
             text: e.title;
@@ -324,15 +333,15 @@ export component CalendarScreen inherits Scroll {
         HorizontalLayout {
             spacing: 8px;
             if e.can-start: Btn {
-                text: "Iniciar";
+                text: @tr("Iniciar");
                 icon: Icons.play;
                 kind: "primary";
                 clicked => { Bridge.cal-entry(i); }
             }
             Btn {
-                text: "Agenda";
+                text: @tr("Agenda");
                 icon: Icons.calendar;
-                accessible-label: "Adicionar à agenda do aparelho";
+                accessible-label: @tr("Adicionar à agenda do aparelho");
                 clicked => { Bridge.cal-add-to-agenda(i); }
             }
         }
@@ -342,16 +351,16 @@ export component CalendarScreen inherits Scroll {
 // RF-14 / RF-15 / 6.6: visão geral; detalhe e evolução abrem em telas próprias.
 export component HistoryScreen inherits Scroll {
     Segmented {
-        items: ["Sessões", "Evolução por exercício"];
+        items: [@tr("Sessões"), @tr("Evolução por exercício")];
         selected: Bridge.hist-tab;
         select(i) => { Bridge.hist-set-tab(i); }
     }
     if Bridge.hist-tab == 0 && Bridge.hist-summary != "": Label { text: Bridge.hist-summary; }
     if Bridge.hist-tab == 0 && Bridge.hist-rows.length == 0: EmptyState {
         icon: Icons.history;
-        title: "Seu histórico aparecerá após o primeiro treino";
-        text: "Nenhuma sessão foi concluída ainda. Inicie um treino e finalize-o para vê-lo aqui.";
-        action: "Ver fichas";
+        title: @tr("Seu histórico aparecerá após o primeiro treino");
+        text: @tr("Nenhuma sessão foi concluída ainda. Inicie um treino e finalize-o para vê-lo aqui.");
+        action: @tr("Ver fichas");
         action-clicked => { Bridge.navigate(1); }
     }
     if Bridge.hist-tab == 0: VerticalLayout {
@@ -371,15 +380,15 @@ export component HistoryScreen inherits Scroll {
     }
     if Bridge.hist-tab == 1 && Bridge.evo-exercises.length == 0: EmptyState {
         icon: Icons.chart;
-        title: "Sem dados de evolução";
-        text: "A evolução aparece depois que você registrar séries em sessões concluídas.";
+        title: @tr("Sem dados de evolução");
+        text: @tr("A evolução aparece depois que você registrar séries em sessões concluídas.");
     }
     if Bridge.hist-tab == 1: VerticalLayout {
         spacing: Theme.gap;
         for x in Bridge.evo-exercises: Card {
             clickable: true;
             accessible-role: button;
-            accessible-label: "Evolução de " + x.name;
+            accessible-label: @tr("Evolução de ") + x.name;
             clicked => { Bridge.evo-open(x.key); }
             HorizontalLayout {
                 spacing: 8px;

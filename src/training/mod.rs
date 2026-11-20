@@ -4,6 +4,7 @@ pub mod session;
 pub mod progression;
 pub mod templates;
 
+use crate::i18n::tr;
 use crate::domain::*;
 use crate::persistence::Db;
 use rusqlite::{params, OptionalExtension, Row};
@@ -113,7 +114,7 @@ impl Db {
         ] {
             if !v.trim().is_empty() {
                 args.push(v.trim().to_string());
-                conds.push(format!("e.{col} = ?{} COLLATE NOCASE", args.len()));
+                conds.push(format!("e.{} = ?{} COLLATE NOCASE", col, args.len()));
             }
         }
         let where_ = if conds.is_empty() { String::new() } else { format!("WHERE {}", conds.join(" AND ")) };
@@ -136,7 +137,7 @@ impl Db {
             params![id, favorite as i64, now_ms()],
         )?;
         if n == 0 {
-            return Err(AppError::NotFound("Exercício não encontrado.".into()));
+            return Err(AppError::NotFound(tr("Exercício não encontrado.").into()));
         }
         Ok(())
     }
@@ -145,7 +146,7 @@ impl Db {
     pub fn set_plan_favorite(&self, id: Id, favorite: bool) -> AppResult<()> {
         let n = self.conn.execute("UPDATE workout_plan SET is_favorite = ?2 WHERE id = ?1", params![id, favorite as i64])?;
         if n == 0 {
-            return Err(AppError::NotFound("Ficha não encontrada.".into()));
+            return Err(AppError::NotFound(tr("Ficha não encontrada.").into()));
         }
         Ok(())
     }
@@ -160,7 +161,7 @@ impl Db {
                 row_exercise(r, 0)
             })
             .optional()?
-            .ok_or_else(|| AppError::NotFound("Exercício não encontrado.".into()))
+            .ok_or_else(|| AppError::NotFound(tr("Exercício não encontrado.").into()))
     }
 
     pub fn find_exercise_by_name(&self, name: &str) -> AppResult<Option<Exercise>> {
@@ -195,7 +196,7 @@ impl Db {
             params![id, v.name, v.muscle_focus, v.exercise_type, v.equipment, v.movement_pattern, v.description, v.notes, now_ms()],
         )?;
         if n == 0 {
-            return Err(AppError::NotFound("Exercício não encontrado.".into()));
+            return Err(AppError::NotFound(tr("Exercício não encontrado.").into()));
         }
         Ok(())
     }
@@ -210,7 +211,7 @@ impl Db {
             )?;
             if used > 0 {
                 return Err(AppError::Conflict(
-                    "Este exercício está em uma ficha. Remova-o das fichas antes de arquivar.".into(),
+                    tr("Este exercício está em uma ficha. Remova-o das fichas antes de arquivar.").into(),
                 ));
             }
         }
@@ -265,7 +266,7 @@ impl Db {
             let f = ExerciseFilter { muscle: base.muscle_focus.clone(), ..Default::default() };
             for e in self.list_exercises(&f)? {
                 if e.id != exercise_id && !out.iter().any(|(x, _)| x.id == e.id) {
-                    out.push((e, "Mesmo grupo muscular".into()));
+                    out.push((e, tr("Mesmo grupo muscular").into()));
                 }
             }
         }
@@ -294,7 +295,7 @@ impl Db {
 
     pub fn add_alternative(&self, exercise_id: Id, alternative_id: Id, reason: &str) -> AppResult<()> {
         if exercise_id == alternative_id {
-            return validation("Um exercício não pode ser alternativa de si mesmo.");
+            return validation(tr("Um exercício não pode ser alternativa de si mesmo."));
         }
         self.conn.execute(
             "INSERT OR IGNORE INTO exercise_alternative(exercise_id, alternative_id, reason) VALUES (?1, ?2, ?3)",
@@ -319,7 +320,7 @@ impl Db {
         self.conn
             .query_row(&format!("SELECT {PLAN_COLS} FROM workout_plan WHERE id = ?1"), params![id], row_plan)
             .optional()?
-            .ok_or_else(|| AppError::NotFound("Ficha não encontrada.".into()))
+            .ok_or_else(|| AppError::NotFound(tr("Ficha não encontrada.").into()))
     }
 
     pub fn find_plan_by_name(&self, name: &str) -> AppResult<Option<Plan>> {
@@ -336,7 +337,7 @@ impl Db {
     pub fn create_plan(&self, name: &str, description: &str, schedule: ScheduleType) -> AppResult<Id> {
         let name = clean_text(name, 80);
         if name.is_empty() {
-            return validation("Informe o nome da ficha.");
+            return validation(tr("Informe o nome da ficha."));
         }
         let now = now_ms();
         self.conn.execute(
@@ -350,14 +351,14 @@ impl Db {
     pub fn update_plan(&self, id: Id, name: &str, description: &str, schedule: ScheduleType) -> AppResult<()> {
         let name = clean_text(name, 80);
         if name.is_empty() {
-            return validation("Informe o nome da ficha.");
+            return validation(tr("Informe o nome da ficha."));
         }
         let n = self.conn.execute(
             "UPDATE workout_plan SET name=?2, description=?3, schedule_type=?4, updated_at=?5 WHERE id=?1",
             params![id, name, clean_notes(description), schedule.as_str(), now_ms()],
         )?;
         if n == 0 {
-            return Err(AppError::NotFound("Ficha não encontrada.".into()));
+            return Err(AppError::NotFound(tr("Ficha não encontrada.").into()));
         }
         Ok(())
     }
@@ -385,14 +386,14 @@ impl Db {
         )?;
         if active > 0 {
             return Err(AppError::Conflict(
-                "Há uma sessão em andamento com esta ficha. Finalize ou descarte a sessão antes de excluir.".into(),
+                tr("Há uma sessão em andamento com esta ficha. Finalize ou descarte a sessão antes de excluir.").into(),
             ));
         }
         let tx = self.conn.transaction()?;
         let n = tx.execute("DELETE FROM workout_plan WHERE id = ?1", params![id])?;
         tx.commit()?;
         if n == 0 {
-            return Err(AppError::NotFound("Ficha não encontrada.".into()));
+            return Err(AppError::NotFound(tr("Ficha não encontrada.").into()));
         }
         Ok(())
     }
@@ -400,10 +401,10 @@ impl Db {
     /// Duplica a ficha com todos os dias e exercícios (RF-01).
     pub fn duplicate_plan(&mut self, id: Id) -> AppResult<Id> {
         let full = self.get_plan_full(id)?;
-        let mut name = format!("{} (cópia)", full.plan.name);
+        let mut name = trf!("{} (cópia)", full.plan.name);
         let mut i = 2;
         while self.find_plan_by_name(&name)?.is_some() {
-            name = format!("{} (cópia {i})", full.plan.name);
+            name = trf!("{} (cópia {})", full.plan.name, i);
             i += 1;
         }
         let tx = self.conn.transaction()?;
@@ -490,13 +491,13 @@ impl Db {
                 },
             )
             .optional()?
-            .ok_or_else(|| AppError::NotFound("Dia da ficha não encontrado.".into()))
+            .ok_or_else(|| AppError::NotFound(tr("Dia da ficha não encontrado.").into()))
     }
 
     pub fn add_day(&self, plan_id: Id, name: &str, weekdays: u8) -> AppResult<Id> {
         let name = clean_text(name, 60);
         if name.is_empty() {
-            return validation("Informe o nome do dia (ex.: Treino A, Peito e tríceps).");
+            return validation(tr("Informe o nome do dia (ex.: Treino A, Peito e tríceps)."));
         }
         self.get_plan(plan_id)?;
         let next: i64 = self.conn.query_row(
@@ -516,7 +517,7 @@ impl Db {
     pub fn update_day(&self, day_id: Id, name: &str, weekdays: u8) -> AppResult<()> {
         let name = clean_text(name, 60);
         if name.is_empty() {
-            return validation("Informe o nome do dia.");
+            return validation(tr("Informe o nome do dia."));
         }
         let d = self.get_day(day_id)?;
         self.conn.execute(
@@ -596,11 +597,11 @@ impl Db {
             .conn
             .query_row("SELECT schedule_id FROM plan_exercise WHERE id = ?1", params![id], |r| r.get(0))
             .optional()?
-            .ok_or_else(|| AppError::NotFound("Exercício da ficha não encontrado.".into()))?;
+            .ok_or_else(|| AppError::NotFound(tr("Exercício da ficha não encontrado.").into()))?;
         self.list_plan_exercises(day_id)?
             .into_iter()
             .find(|p| p.id == id)
-            .ok_or_else(|| AppError::NotFound("Exercício da ficha não encontrado.".into()))
+            .ok_or_else(|| AppError::NotFound(tr("Exercício da ficha não encontrado.").into()))
     }
 
     pub fn add_plan_exercise(
@@ -616,7 +617,7 @@ impl Db {
         let day = self.get_day(day_id)?;
         let ex = self.get_exercise(exercise_id)?;
         if ex.archived {
-            return validation("Este exercício está arquivado.");
+            return validation(tr("Este exercício está arquivado."));
         }
         let next: i64 = self.conn.query_row(
             "SELECT COALESCE(MAX(position), -1) + 1 FROM plan_exercise WHERE schedule_id = ?1",
@@ -672,7 +673,7 @@ impl Db {
     pub fn move_plan_exercise_to(&mut self, id: Id, index: usize) -> AppResult<()> {
         let pe = self.get_plan_exercise(id)?;
         let mut list: Vec<Id> = self.list_plan_exercises(pe.schedule_id)?.iter().map(|x| x.id).collect();
-        let from = list.iter().position(|x| *x == id).ok_or_else(|| AppError::NotFound("Exercício não encontrado.".into()))?;
+        let from = list.iter().position(|x| *x == id).ok_or_else(|| AppError::NotFound(tr("Exercício não encontrado.").into()))?;
         let item = list.remove(from);
         list.insert(index.min(list.len()), item);
         let tx = self.conn.transaction()?;

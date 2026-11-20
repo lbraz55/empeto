@@ -9,39 +9,39 @@ import { EmptyState } from "../components/empty_state.slint";
 // RF-01..RF-03: edição da ficha (dias/sequência, exercícios, séries, repetições, carga-alvo).
 export component PlanEditorScreen inherits Scroll {
     Field {
-        label: "Nome da ficha";
-        placeholder: "Ex.: Hipertrofia ABC";
+        label: @tr("Nome da ficha");
+        placeholder: @tr("Ex.: Hipertrofia ABC");
         text <=> Bridge.edit-plan-name;
     }
     Field {
-        label: "Objetivo da ficha (opcional)";
-        placeholder: "Objetivo, período, observações";
+        label: @tr("Objetivo da ficha (opcional)");
+        placeholder: @tr("Objetivo, período, observações");
         text <=> Bridge.edit-plan-desc;
     }
     Btn {
-        text: "Salvar nome e descrição";
+        text: @tr("Salvar nome e descrição");
         icon: Icons.check;
         clicked => { Bridge.save-plan-header(Bridge.edit-plan-name, Bridge.edit-plan-desc); }
     }
-    SectionTitle { text: "ORGANIZAÇÃO"; }
+    SectionTitle { text: @tr("ORGANIZAÇÃO"); }
     Segmented {
-        items: ["Dias da semana", "Sequência A/B/C"];
+        items: [@tr("Dias da semana"), @tr("Sequência A/B/C")];
         selected: Bridge.edit-plan-weekday ? 0 : 1;
         select(i) => { Bridge.set-plan-schedule(i == 0); }
     }
     Label {
         text: Bridge.edit-plan-weekday
-            ? "Cada dia da ficha é associado a dias da semana; aparece no calendário nessas datas."
-            : "Os dias seguem em fila (A → B → C → A…). A Home mostra o próximo da sequência.";
+            ? @tr("Cada dia da ficha é associado a dias da semana; aparece no calendário nessas datas.")
+            : @tr("Os dias seguem em fila (A → B → C → A…). A Home mostra o próximo da sequência.");
     }
     ToggleRow {
-        text: "Ficha ativa";
-        description: "Fichas ativas aparecem na Home e no calendário.";
+        text: @tr("Ficha ativa");
+        description: @tr("Fichas ativas aparecem na Home e no calendário.");
         checked: Bridge.edit-plan-active;
         toggled => { Bridge.toggle-plan-active(Bridge.edit-plan-id); }
     }
-    SectionTitle { text: "DIAS DE TREINO"; }
-    if Bridge.edit-days.length == 0: Label { text: "Adicione o primeiro dia (ex.: Treino A, Peito e tríceps)."; }
+    SectionTitle { text: @tr("DIAS DE TREINO"); }
+    if Bridge.edit-days.length == 0: Label { text: @tr("Adicione o primeiro dia (ex.: Treino A, Peito e tríceps)."); }
     for d in Bridge.edit-days: Card {
         HorizontalLayout {
             spacing: 0px;
@@ -57,33 +57,33 @@ export component PlanEditorScreen inherits Scroll {
             }
             IconBtn {
                 icon: Icons.up;
-                label: "Mover dia para cima";
+                label: @tr("Mover dia para cima");
                 clicked => { Bridge.move-day(d.id, -1); }
             }
             IconBtn {
                 icon: Icons.down;
-                label: "Mover dia para baixo";
+                label: @tr("Mover dia para baixo");
                 clicked => { Bridge.move-day(d.id, 1); }
             }
             IconBtn {
                 icon: Icons.edit;
-                label: "Editar dia " + d.name;
+                label: @tr("Editar dia ") + d.name;
                 clicked => { Bridge.edit-day(d.id); }
             }
             IconBtn {
                 icon: Icons.trash;
-                label: "Excluir dia " + d.name;
+                label: @tr("Excluir dia ") + d.name;
                 clicked => { Bridge.delete-day(d.id); }
             }
         }
-        if d.exercises.length == 0: Label { text: "Nenhum exercício neste dia."; }
+        if d.exercises.length == 0: Label { text: @tr("Nenhum exercício neste dia."); }
         for e[i] in d.exercises: Rectangle {
             min-height: Theme.touch + 8px;
             background: ta.pressed ? Theme.surface3 : transparent;
             border-width: 0px;
             border-radius: 10px;
             accessible-role: button;
-            accessible-label: "Editar " + e.name;
+            accessible-label: @tr("Editar ") + e.name;
             accessible-action-default => { Bridge.edit-plan-ex(e.id); }
             ta := TouchArea {
                 clicked => { Bridge.edit-plan-ex(e.id); }
@@ -108,7 +108,7 @@ export component PlanEditorScreen inherits Scroll {
                     Body { text: e.name; }
                     Label { text: e.detail; }
                     if e.notes != "": Label {
-                        text: "Obs.: " + e.notes;
+                        text: @tr("Obs.: ") + e.notes;
                         color: Theme.faint;
                     }
                     if e.suggestion != "": Rectangle {
@@ -127,7 +127,7 @@ export component PlanEditorScreen inherits Scroll {
                                 wrap: word-wrap;
                             }
                             Text {
-                                text: e.suggestion-detail + " É só uma sugestão, não uma prescrição.";
+                                text: e.suggestion-detail + @tr(" É só uma sugestão, não uma prescrição.");
                                 color: Theme.muted;
                                 font-size: Theme.fs-xs;
                                 wrap: word-wrap;
@@ -135,13 +135,13 @@ export component PlanEditorScreen inherits Scroll {
                             HorizontalLayout {
                                 spacing: 6px;
                                 Btn {
-                                    text: "Aceitar";
+                                    text: @tr("Aceitar");
                                     compact: true;
                                     kind: "primary";
                                     clicked => { Bridge.progression-accept(e.id); }
                                 }
                                 Btn {
-                                    text: "Ignorar";
+                                    text: @tr("Ignorar");
                                     compact: true;
                                     clicked => { Bridge.progression-dismiss(e.id); }
                                 }
@@ -151,12 +151,12 @@ export component PlanEditorScreen inherits Scroll {
                 }
                 IconBtn {
                     icon: Icons.up;
-                    label: "Mover exercício para cima";
+                    label: @tr("Mover exercício para cima");
                     clicked => { Bridge.move-plan-ex(e.id, -1); }
                 }
                 IconBtn {
                     icon: Icons.down;
-                    label: "Mover exercício para baixo";
+                    label: @tr("Mover exercício para baixo");
                     clicked => { Bridge.move-plan-ex(e.id, 1); }
                 }
             }
@@ -164,12 +164,12 @@ export component PlanEditorScreen inherits Scroll {
         HorizontalLayout {
             spacing: 8px;
             Btn {
-                text: "Exercício";
+                text: @tr("Exercício");
                 icon: Icons.plus;
                 clicked => { Bridge.add-plan-ex(d.id); }
             }
             Btn {
-                text: "Iniciar";
+                text: @tr("Iniciar");
                 icon: Icons.play;
                 kind: "primary";
                 enabled: d.exercises.length > 0;
@@ -178,7 +178,7 @@ export component PlanEditorScreen inherits Scroll {
         }
     }
     Btn {
-        text: "Adicionar dia";
+        text: @tr("Adicionar dia");
         icon: Icons.plus;
         clicked => { Bridge.add-day(); }
     }
@@ -187,9 +187,9 @@ export component PlanEditorScreen inherits Scroll {
 // RF-09: biblioteca pesquisável por grupo muscular, equipamento e padrão de movimento.
 // Biblioteca aprimorada (4.1–4.3): busca, filtros em área expansível, favoritos, personalizados.
 export component LibraryScreen inherits Scroll {
-    if Bridge.lib-mode == "pick": Label { text: "Toque em um exercício para selecioná-lo."; }
+    if Bridge.lib-mode == "pick": Label { text: @tr("Toque em um exercício para selecioná-lo."); }
     Field {
-        placeholder: "Buscar por nome, músculo, equipamento, técnica…";
+        placeholder: @tr("Buscar por nome, músculo, equipamento, técnica…");
         input-type: InputType.text;
         text <=> Bridge.lib-search;
         edited(t) => { Bridge.lib-search-changed(t); }
@@ -197,14 +197,14 @@ export component LibraryScreen inherits Scroll {
     HorizontalLayout {
         spacing: 8px;
         Btn {
-            text: Bridge.lib-active-filters > 0 ? "Filtros (" + Bridge.lib-active-filters + ")" : "Filtros";
+            text: Bridge.lib-active-filters > 0 ? @tr("Filtros (") + Bridge.lib-active-filters + ")" : @tr("Filtros");
             icon: Icons.filter;
             kind: Bridge.lib-filters-open ? "primary" : "secondary";
-            accessible-label: (Bridge.lib-filters-open ? "Ocultar filtros" : "Mostrar filtros") + ", " + Bridge.lib-active-filters + " ativo(s)";
+            accessible-label: (Bridge.lib-filters-open ? @tr("Ocultar filtros") : @tr("Mostrar filtros")) + ", " + Bridge.lib-active-filters + @tr(" ativo(s)");
             clicked => { Bridge.lib-toggle("open"); }
         }
         Btn {
-            text: "Novo";
+            text: @tr("Novo");
             icon: Icons.plus;
             clicked => { Bridge.lib-new(); }
         }
@@ -214,13 +214,13 @@ export component LibraryScreen inherits Scroll {
             spacing: 6px;
             Chip {
                 horizontal-stretch: 1;
-                text: Bridge.lib-muscle == "" ? "Músculo" : Bridge.lib-muscle;
+                text: Bridge.lib-muscle == "" ? @tr("Músculo") : Bridge.lib-muscle;
                 selected: Bridge.lib-muscle != "";
                 clicked => { Bridge.lib-filter("muscle"); }
             }
             Chip {
                 horizontal-stretch: 1;
-                text: Bridge.lib-equipment == "" ? "Equipamento" : Bridge.lib-equipment;
+                text: Bridge.lib-equipment == "" ? @tr("Equipamento") : Bridge.lib-equipment;
                 selected: Bridge.lib-equipment != "";
                 clicked => { Bridge.lib-filter("equipment"); }
             }
@@ -229,13 +229,13 @@ export component LibraryScreen inherits Scroll {
             spacing: 6px;
             Chip {
                 horizontal-stretch: 1;
-                text: Bridge.lib-type == "" ? "Tipo" : Bridge.lib-type;
+                text: Bridge.lib-type == "" ? @tr("Tipo") : Bridge.lib-type;
                 selected: Bridge.lib-type != "";
                 clicked => { Bridge.lib-filter("type"); }
             }
             Chip {
                 horizontal-stretch: 1;
-                text: Bridge.lib-pattern == "" ? "Movimento" : Bridge.lib-pattern;
+                text: Bridge.lib-pattern == "" ? @tr("Movimento") : Bridge.lib-pattern;
                 selected: Bridge.lib-pattern != "";
                 clicked => { Bridge.lib-filter("pattern"); }
             }
@@ -244,25 +244,25 @@ export component LibraryScreen inherits Scroll {
             spacing: 6px;
             Chip {
                 horizontal-stretch: 1;
-                text: (Bridge.lib-favorites ? "★ " : "☆ ") + "Favoritos";
+                text: (Bridge.lib-favorites ? "★ " : "☆ ") + @tr("Favoritos");
                 selected: Bridge.lib-favorites;
                 clicked => { Bridge.lib-toggle("favorites"); }
             }
             Chip {
                 horizontal-stretch: 1;
-                text: "Personalizados";
+                text: @tr("Personalizados");
                 selected: Bridge.lib-custom;
                 clicked => { Bridge.lib-toggle("custom"); }
             }
             if Bridge.lib-mode == "browse": Chip {
                 horizontal-stretch: 1;
-                text: "Arquivados";
+                text: @tr("Arquivados");
                 selected: Bridge.lib-show-archived;
                 clicked => { Bridge.lib-toggle-archived(); }
             }
         }
         if Bridge.lib-active-filters > 0 || Bridge.lib-search != "": Btn {
-            text: "Limpar filtros";
+            text: @tr("Limpar filtros");
             icon: Icons.close;
             compact: true;
             clicked => { Bridge.lib-clear-filters(); }
@@ -271,17 +271,17 @@ export component LibraryScreen inherits Scroll {
     Label { text: Bridge.lib-count; }
     if Bridge.library.length == 0: EmptyState {
         icon: Bridge.lib-favorites ? Icons.star : Icons.search;
-        title: Bridge.lib-favorites ? "Adicione exercícios aos favoritos" : "Nenhum exercício encontrado";
+        title: Bridge.lib-favorites ? @tr("Adicione exercícios aos favoritos") : @tr("Nenhum exercício encontrado");
         text: Bridge.lib-favorites
-            ? "Toque na estrela de um exercício para acessá-lo rapidamente aqui."
-            : "Nenhum exercício corresponde à busca e aos filtros. Ajuste os filtros ou crie um exercício personalizado.";
-        action: Bridge.lib-favorites ? "Ver todos" : "Limpar filtros";
+            ? @tr("Toque na estrela de um exercício para acessá-lo rapidamente aqui.")
+            : @tr("Nenhum exercício corresponde à busca e aos filtros. Ajuste os filtros ou crie um exercício personalizado.");
+        action: Bridge.lib-favorites ? @tr("Ver todos") : @tr("Limpar filtros");
         action-clicked => { Bridge.lib-clear-filters(); }
     }
     for e in Bridge.library: Card {
         clickable: true;
         accessible-role: button;
-        accessible-label: e.name + (e.favorite ? ", favorito" : "") + (e.custom ? ", personalizado" : "") + (e.archived ? ", arquivado" : "");
+        accessible-label: e.name + (e.favorite ? @tr(", favorito") : "") + (e.custom ? @tr(", personalizado") : "") + (e.archived ? @tr(", arquivado") : "");
         clicked => { Bridge.lib-item(e.id); }
         HorizontalLayout {
             spacing: 4px;
@@ -296,8 +296,8 @@ export component LibraryScreen inherits Scroll {
                 if e.archived || e.custom: HorizontalLayout {
                     alignment: start;
                     spacing: 4px;
-                    if e.custom: Badge { text: "Personalizado"; }
-                    if e.archived: Badge { text: "Arquivado"; }
+                    if e.custom: Badge { text: @tr("Personalizado"); }
+                    if e.archived: Badge { text: @tr("Arquivado"); }
                 }
             }
             StarBtn {
@@ -307,13 +307,13 @@ export component LibraryScreen inherits Scroll {
             }
             if Bridge.lib-mode == "browse": IconBtn {
                 icon: Icons.edit;
-                label: "Editar " + e.name;
+                label: @tr("Editar ") + e.name;
                 clicked => { Bridge.lib-edit(e.id); }
             }
         }
     }
     if Bridge.lib-has-more: Btn {
-        text: "Carregar mais";
+        text: @tr("Carregar mais");
         clicked => { Bridge.lib-more(); }
     }
 }
@@ -329,13 +329,15 @@ component SetLine inherits Rectangle {
     background: s.done ? Theme.surface2 : Theme.surface;
     border-width: 1px;
     border-color: s.done ? Theme.border-strong : Theme.border;
+    // Confirmação visual da série concluída (evolução 3.3).
+    animate background, border-color { duration: Theme.anim-page; easing: ease-out; }
     VerticalLayout {
         padding: 10px;
         spacing: 6px;
         HorizontalLayout {
             spacing: 8px;
             Text {
-                text: "Série " + root.s.number;
+                text: @tr("Série ") + root.s.number;
                 color: Theme.text;
                 font-size: Theme.fs-m;
                 font-weight: 700;
@@ -357,14 +359,14 @@ component SetLine inherits Rectangle {
                 size: 22px;
             }
             Text {
-                text: root.s.load + " " + root.unit + "  ×  " + root.s.reps + " reps";
+                text: root.s.load + " " + root.unit + @tr("  ×  ") + root.s.reps + @tr(" reps");
                 color: Theme.text;
                 font-size: Theme.fs-l;
                 font-weight: 600;
                 vertical-alignment: center;
             }
             Btn {
-                text: "Desfazer";
+                text: @tr("Desfazer");
                 compact: true;
                 horizontal-stretch: 0;
                 clicked => { Bridge.session-undo(root.s.id); }
@@ -375,7 +377,7 @@ component SetLine inherits Rectangle {
             IconBtn {
                 width: 40px;
                 icon: Icons.minus;
-                label: "Diminuir carga";
+                label: @tr("Diminuir carga");
                 clicked => { root.load = Bridge.adjust-load(root.load, -1); }
             }
             Field {
@@ -389,18 +391,18 @@ component SetLine inherits Rectangle {
             IconBtn {
                 width: 40px;
                 icon: Icons.plus;
-                label: "Aumentar carga";
+                label: @tr("Aumentar carga");
                 clicked => { root.load = Bridge.adjust-load(root.load, 1); }
             }
             Text {
-                text: "×";
+                text: @tr("×");
                 color: Theme.muted;
                 vertical-alignment: center;
             }
             Field {
                 horizontal-stretch: 1;
                 text <=> root.reps;
-                placeholder: "reps";
+                placeholder: @tr("reps");
                 input-type: InputType.number;
                 align: center;
                 font-size: Theme.fs-l;
@@ -409,7 +411,7 @@ component SetLine inherits Rectangle {
                 horizontal-stretch: 0;
                 icon: Icons.check;
                 kind: "primary";
-                accessible-label: "Registrar série " + root.s.number;
+                accessible-label: @tr("Registrar série ") + root.s.number;
                 clicked => { Bridge.session-record(root.s.id, root.load, root.reps); }
             }
         }
@@ -417,7 +419,7 @@ component SetLine inherits Rectangle {
             spacing: 6px;
             alignment: start;
             Btn {
-                text: "Repetir anterior";
+                text: @tr("Repetir anterior");
                 icon: Icons.repeat;
                 compact: true;
                 horizontal-stretch: 0;
@@ -428,7 +430,7 @@ component SetLine inherits Rectangle {
                 }
             }
             Btn {
-                text: "Planejado";
+                text: @tr("Planejado");
                 compact: true;
                 horizontal-stretch: 0;
                 font-size: Theme.fs-s;
@@ -471,11 +473,11 @@ export component SessionScreen inherits Rectangle {
                     vertical-alignment: center;
                 }
                 Btn {
-                    text: "Foco";
+                    text: @tr("Foco");
                     icon: Icons.focus;
                     compact: true;
                     horizontal-stretch: 0;
-                    accessible-label: "Abrir modo foco";
+                    accessible-label: @tr("Abrir modo foco");
                     clicked => { Bridge.session-focus(); }
                 }
             }
@@ -500,7 +502,7 @@ export component SessionScreen inherits Rectangle {
                 padding-bottom: 8px;
                 spacing: 6px;
                 Text {
-                    text: "Exercício " + (Bridge.session-index + 1) + " de " + root.count;
+                    text: @tr("Exercício ") + (Bridge.session-index + 1) + @tr(" de ") + root.count;
                     color: Theme.muted;
                     font-size: Theme.fs-s;
                     horizontal-alignment: center;
@@ -540,33 +542,33 @@ export component SessionScreen inherits Rectangle {
             HorizontalLayout {
                 spacing: 8px;
                 Btn {
-                    text: "Série";
+                    text: @tr("Série");
                     icon: Icons.plus;
                     compact: true;
                     clicked => { Bridge.session-add-set(root.cur.id); }
                 }
                 Btn {
-                    text: "Série";
+                    text: @tr("Série");
                     icon: Icons.minus;
                     compact: true;
                     clicked => { Bridge.session-remove-set(root.cur.id); }
                 }
                 Btn {
-                    text: "Obs.";
+                    text: @tr("Obs.");
                     icon: Icons.note;
                     compact: true;
                     clicked => { Bridge.session-ex-notes(root.cur.id); }
                 }
             }
             Btn {
-                text: "Substituir exercício";
+                text: @tr("Substituir exercício");
                 icon: Icons.swap;
                 clicked => { Bridge.session-substitute(root.cur.id); }
             }
-            if root.cur.notes != "": Label { text: "Obs.: " + root.cur.notes; }
+            if root.cur.notes != "": Label { text: @tr("Obs.: ") + root.cur.notes; }
             if root.cur.technique != "": Card {
                 Text {
-                    text: "TÉCNICA E OBSERVAÇÕES";
+                    text: @tr("TÉCNICA E OBSERVAÇÕES");
                     color: Theme.muted;
                     font-size: Theme.fs-xs;
                     font-weight: 700;
@@ -575,7 +577,7 @@ export component SessionScreen inherits Rectangle {
             }
             Divider { }
             Btn {
-                text: "Observações da sessão";
+                text: @tr("Observações da sessão");
                 icon: Icons.note;
                 kind: "ghost";
                 clicked => { Bridge.session-edit-notes(); }
@@ -584,12 +586,12 @@ export component SessionScreen inherits Rectangle {
             HorizontalLayout {
                 spacing: 8px;
                 Btn {
-                    text: "Descartar";
+                    text: @tr("Descartar");
                     kind: "danger";
                     clicked => { Bridge.session-discard(); }
                 }
                 Btn {
-                    text: "Finalizar sessão";
+                    text: @tr("Finalizar sessão");
                     icon: Icons.check;
                     kind: "primary";
                     clicked => { Bridge.session-finish(); }
@@ -606,13 +608,13 @@ export component SessionScreen inherits Rectangle {
                     icon: Icons.back;
                     horizontal-stretch: 0;
                     min-width: 72px;
-                    accessible-label: "Exercício anterior";
+                    accessible-label: @tr("Exercício anterior");
                     enabled: Bridge.session-index > 0;
                     clicked => { Bridge.session-select(Bridge.session-index - 1); }
                 }
                 if Bridge.timer-status == "idle": Btn {
                     icon: Icons.timer;
-                    text: "Cronômetro";
+                    text: @tr("Cronômetro");
                     clicked => { Bridge.open-timer(); }
                 }
                 if Bridge.timer-status != "idle": RestTimerIndicator {
@@ -628,7 +630,7 @@ export component SessionScreen inherits Rectangle {
                     icon: Icons.forward;
                     horizontal-stretch: 0;
                     min-width: 72px;
-                    accessible-label: "Próximo exercício";
+                    accessible-label: @tr("Próximo exercício");
                     enabled: Bridge.session-index < root.count - 1;
                     clicked => { Bridge.session-select(Bridge.session-index + 1); }
                 }
@@ -661,7 +663,7 @@ export component TimerScreen inherits Scroll {
         font-weight: 300;
         horizontal-alignment: center;
         accessible-role: text;
-        accessible-label: "Tempo restante " + Bridge.timer-display;
+        accessible-label: @tr("Tempo restante ") + Bridge.timer-display;
     }
     Rectangle {
         height: 8px;
@@ -676,10 +678,10 @@ export component TimerScreen inherits Scroll {
         }
     }
     Text {
-        text: Bridge.timer-status == "running" ? "Em contagem"
-            : Bridge.timer-status == "paused" ? "Pausado"
-            : Bridge.timer-status == "finished" ? "Tempo encerrado — a série só é registrada por você."
-            : "Pronto para iniciar";
+        text: Bridge.timer-status == "running" ? @tr("Em contagem")
+            : Bridge.timer-status == "paused" ? @tr("Pausado")
+            : Bridge.timer-status == "finished" ? @tr("Tempo encerrado — a série só é registrada por você.")
+            : @tr("Pronto para iniciar");
         color: Theme.muted;
         font-size: Theme.fs-s;
         horizontal-alignment: center;
@@ -700,7 +702,7 @@ export component TimerScreen inherits Scroll {
         spacing: 10px;
         Btn {
             min-height: 60px;
-            text: Bridge.timer-status == "running" ? "Pausar" : Bridge.timer-status == "paused" ? "Retomar" : "Iniciar";
+            text: Bridge.timer-status == "running" ? @tr("Pausar") : Bridge.timer-status == "paused" ? @tr("Retomar") : @tr("Iniciar");
             icon: Bridge.timer-status == "running" ? Icons.pause : Icons.play;
             kind: "primary";
             font-size: Theme.fs-l;
@@ -714,29 +716,29 @@ export component TimerScreen inherits Scroll {
         }
         Btn {
             min-height: 60px;
-            text: "Reiniciar";
+            text: @tr("Reiniciar");
             icon: Icons.reset;
             font-size: Theme.fs-l;
             clicked => { Bridge.timer-reset(); }
         }
     }
-    SectionTitle { text: "DURAÇÃO"; }
+    SectionTitle { text: @tr("DURAÇÃO"); }
     HorizontalLayout {
         spacing: 6px;
         for p in Bridge.timer-presets: Chip {
             horizontal-stretch: 1;
-            text: p >= 60 && Math.mod(p, 60) == 0 ? (p / 60) + " min" : p + " s";
+            text: p >= 60 && Math.mod(p, 60) == 0 ? (p / 60) + @tr(" min") : p + @tr(" s");
             clicked => { Bridge.timer-preset(p); }
         }
     }
     HorizontalLayout {
         spacing: 8px;
         Label {
-            text: "Duração atual: " + Bridge.timer-duration;
+            text: @tr("Duração atual: ") + Bridge.timer-duration;
             vertical-alignment: center;
         }
         Btn {
-            text: "Outra…";
+            text: @tr("Outra…");
             compact: true;
             horizontal-stretch: 0;
             clicked => { Bridge.timer-custom(); }

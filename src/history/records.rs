@@ -7,6 +7,7 @@
 //! - O primeiro registro de um exercício não é recorde (não há marca anterior para superar).
 //! - Nada é gravado: sessões antigas nunca são alteradas.
 
+use crate::i18n::tr;
 use crate::domain::*;
 use crate::persistence::Db;
 use rusqlite::params;
@@ -22,10 +23,10 @@ pub enum RecordKind {
 impl RecordKind {
     pub fn label(self) -> &'static str {
         match self {
-            RecordKind::MaxLoad => "maior carga",
-            RecordKind::MaxReps => "mais repetições",
-            RecordKind::SetVolume => "maior volume em uma série",
-            RecordKind::Estimated1Rm => "maior 1RM estimada",
+            RecordKind::MaxLoad => tr("maior carga"),
+            RecordKind::MaxReps => tr("mais repetições"),
+            RecordKind::SetVolume => tr("maior volume em uma série"),
+            RecordKind::Estimated1Rm => tr("maior 1RM estimada"),
         }
     }
 }

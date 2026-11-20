@@ -1,7 +1,8 @@
+import { OnboardingScreen } from "screens/onboarding.slint";
 import { Theme, Icons } from "theme.slint";
 import { Bridge } from "bridge.slint";
 import { Icon, IconBtn, PageTransition } from "components/widgets.slint";
-import { BrandMark } from "components/brand.slint";
+import { BrandMark, BrandLogoVertical } from "components/brand.slint";
 import { Branding } from "themes/branding.slint";
 import { HomeScreen, PlansScreen, CalendarScreen, HistoryScreen } from "screens/main.slint";
 import { PlanEditorScreen, LibraryScreen, SessionScreen, TimerScreen } from "screens/training.slint";
@@ -55,7 +56,7 @@ component NavItem inherits Rectangle {
 }
 
 export component AppWindow inherits Window {
-    title: "EMPETO";
+    title: @tr("EMPETO");
     background: Theme.bg;
     preferred-width: 400px;
     preferred-height: 820px;
@@ -73,30 +74,30 @@ export component AppWindow inherits Window {
     property <bool> main-page: Bridge.page < 10;
     property <string> page-title:
         Bridge.page == 0 ? Branding.name
-        : Bridge.page == 1 ? "Treinos"
-        : Bridge.page == 2 ? "Calendário"
-        : Bridge.page == 3 ? "Histórico"
-        : Bridge.page == 10 ? "Editar ficha"
-        : Bridge.page == 11 ? (Bridge.lib-mode == "pick" ? "Escolher exercício" : "Exercícios")
+        : Bridge.page == 1 ? @tr("Treinos")
+        : Bridge.page == 2 ? @tr("Calendário")
+        : Bridge.page == 3 ? @tr("Histórico")
+        : Bridge.page == 10 ? @tr("Editar ficha")
+        : Bridge.page == 11 ? (Bridge.lib-mode == "pick" ? @tr("Escolher exercício") : @tr("Exercícios"))
         : Bridge.page == 12 ? Bridge.session-title
-        : Bridge.page == 13 ? "Cronômetro"
-        : Bridge.page == 16 ? "Modo foco"
-        : Bridge.page == 17 ? "Buscar"
-        : Bridge.page == 14 ? "Sessão realizada"
-        : Bridge.page == 15 ? "Evolução"
+        : Bridge.page == 13 ? @tr("Cronômetro")
+        : Bridge.page == 16 ? @tr("Modo foco")
+        : Bridge.page == 17 ? @tr("Buscar")
+        : Bridge.page == 14 ? @tr("Sessão realizada")
+        : Bridge.page == 15 ? @tr("Evolução")
         : Bridge.page == 20 ? (
-            Bridge.settings-section == 0 ? "Preferências"
-            : Bridge.settings-section == 1 ? "Sons e alertas"
-            : Bridge.settings-section == 2 ? "Cronômetro"
-            : Bridge.settings-section == 3 ? "Treinamento"
-            : Bridge.settings-section == 4 ? "Calendário"
-            : Bridge.settings-section == 5 ? "Interface"
-            : Bridge.settings-section == 6 ? "Dados e armazenamento"
-            : Bridge.settings-section == 8 ? "Recursos opcionais"
-            : Bridge.settings-section == 9 ? "Atalhos da Home"
-            : Bridge.settings-section == 10 ? "Backups"
-            : "Sobre")
-        : Bridge.page == 21 ? "Importar planilha"
+            Bridge.settings-section == 0 ? @tr("Preferências")
+            : Bridge.settings-section == 1 ? @tr("Sons e alertas")
+            : Bridge.settings-section == 2 ? @tr("Cronômetro")
+            : Bridge.settings-section == 3 ? @tr("Treinamento")
+            : Bridge.settings-section == 4 ? @tr("Calendário")
+            : Bridge.settings-section == 5 ? @tr("Interface")
+            : Bridge.settings-section == 6 ? @tr("Dados e armazenamento")
+            : Bridge.settings-section == 8 ? @tr("Recursos opcionais")
+            : Bridge.settings-section == 9 ? @tr("Atalhos da Home")
+            : Bridge.settings-section == 10 ? @tr("Backups")
+            : @tr("Sobre"))
+        : Bridge.page == 21 ? @tr("Importar planilha")
         : "";
 
     fs := FocusScope {
@@ -116,7 +117,7 @@ export component AppWindow inherits Window {
             padding-bottom: root.kb > 0 ? root.kb : root.safe-area-insets.bottom;
 
             // Cabeçalho: título + atalho do cronômetro + engrenagem (Configurações) em todas as telas.
-            Rectangle {
+            if Bridge.page != 18: Rectangle {
                 height: 56px;
                 background: Theme.bg;
                 HorizontalLayout {
@@ -125,7 +126,7 @@ export component AppWindow inherits Window {
                     spacing: 2px;
                     if !root.main-page: IconBtn {
                         icon: Icons.back;
-                        label: "Voltar";
+                        label: @tr("Voltar");
                         clicked => { Bridge.back(); }
                     }
                     if root.main-page: Rectangle { width: 12px; }
@@ -150,7 +151,7 @@ export component AppWindow inherits Window {
                         border-radius: 18px;
                         background: Bridge.timer-status == "finished" ? Theme.accent : Theme.surface3;
                         accessible-role: button;
-                        accessible-label: "Abrir cronômetro, " + Bridge.timer-display;
+                        accessible-label: @tr("Abrir cronômetro, ") + Bridge.timer-display;
                         accessible-action-default => { Bridge.open-timer(); }
                         TouchArea {
                             clicked => { Bridge.open-timer(); }
@@ -175,12 +176,12 @@ export component AppWindow inherits Window {
                     }
                     if root.main-page: IconBtn {
                         icon: Icons.search;
-                        label: "Buscar";
+                        label: @tr("Buscar");
                         clicked => { Bridge.open-search(); }
                     }
                     if Bridge.page != 20: IconBtn {
                         icon: Icons.gear;
-                        label: "Configurações";
+                        label: @tr("Configurações");
                         clicked => { Bridge.navigate(20); }
                     }
                 }
@@ -202,6 +203,7 @@ export component AppWindow inherits Window {
                 if Bridge.page == 16: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; FocusScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 17: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; SearchScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 20: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; SettingsScreen { width: parent.width; height: parent.height; } }
+                if Bridge.page == 18: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; OnboardingScreen { width: parent.width; height: parent.height; } }
                 if Bridge.page == 21: PageTransition { width: parent.width; height: parent.height; dir: Bridge.nav-dir; ImportScreen { width: parent.width; height: parent.height; } }
             }
 
@@ -217,25 +219,25 @@ export component AppWindow inherits Window {
                 HorizontalLayout {
                     NavItem {
                         icon: Icons.calendar;
-                        text: "Calendário";
+                        text: @tr("Calendário");
                         selected: Bridge.page == 2;
                         clicked => { Bridge.navigate(2); }
                     }
                     NavItem {
                         icon: Icons.dumbbell;
-                        text: "Treinos";
+                        text: @tr("Treinos");
                         selected: Bridge.page == 1;
                         clicked => { Bridge.navigate(1); }
                     }
                     NavItem {
                         icon: Icons.home;
-                        text: "Home";
+                        text: @tr("Home");
                         selected: Bridge.page == 0;
                         clicked => { Bridge.navigate(0); }
                     }
                     NavItem {
                         icon: Icons.history;
-                        text: "Histórico";
+                        text: @tr("Histórico");
                         selected: Bridge.page == 3;
                         clicked => { Bridge.navigate(3); }
                     }
@@ -310,11 +312,34 @@ export component AppWindow inherits Window {
             }
         }
 
+        // Abertura (evolução 3.1): logo centralizado que esmaece logo após o primeiro quadro.
+        // Não intercepta toques e não espera nada: respeita a desativação/redução de animações.
+        if !Bridge.splash-done: splash := Rectangle {
+            property <float> t: 1;
+            background: Theme.bg;
+            opacity: self.t;
+            animate t { duration: Theme.anim-enabled ? 380ms : 0ms; easing: ease-in; }
+            BrandLogoVertical {
+                x: (parent.width - self.preferred-width) / 2;
+                y: (parent.height - self.preferred-height) / 2;
+            }
+            Timer {
+                interval: 120ms;
+                running: splash.t > 0;
+                triggered => { splash.t = 0; }
+            }
+            Timer {
+                interval: 600ms;
+                running: true;
+                triggered => { Bridge.splash-done = true; }
+            }
+        }
+
         if Bridge.busy: Rectangle {
             background: Theme.scrim.with-alpha(0.6);
             TouchArea { }
             Text {
-                text: "Processando…";
+                text: @tr("Processando…");
                 color: Theme.text;
                 font-size: Theme.fs-l;
                 horizontal-alignment: center;

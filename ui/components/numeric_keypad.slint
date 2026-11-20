@@ -39,7 +39,7 @@ component Key inherits Rectangle {
 export component NumericKeypad inherits VerticalLayout {
     in property <bool> allow-decimal: true;
     in property <string> step-label;
-    in property <string> confirm-text: "Confirmar";
+    in property <string> confirm-text: @tr("Confirmar");
     callback key(string);
     callback step(int);
     callback confirm();
@@ -49,27 +49,27 @@ export component NumericKeypad inherits VerticalLayout {
         Key { text: "1"; clicked => { root.key("1"); } }
         Key { text: "2"; clicked => { root.key("2"); } }
         Key { text: "3"; clicked => { root.key("3"); } }
-        Key { text: "−" + root.step-label; label: "Diminuir " + root.step-label; clicked => { root.step(-1); } }
+        Key { text: "−" + root.step-label; label: @tr("Diminuir ") + root.step-label; clicked => { root.step(-1); } }
     }
     HorizontalLayout {
         spacing: 6px;
         Key { text: "4"; clicked => { root.key("4"); } }
         Key { text: "5"; clicked => { root.key("5"); } }
         Key { text: "6"; clicked => { root.key("6"); } }
-        Key { text: "+" + root.step-label; label: "Aumentar " + root.step-label; clicked => { root.step(1); } }
+        Key { text: "+" + root.step-label; label: @tr("Aumentar ") + root.step-label; clicked => { root.step(1); } }
     }
     HorizontalLayout {
         spacing: 6px;
         Key { text: "7"; clicked => { root.key("7"); } }
         Key { text: "8"; clicked => { root.key("8"); } }
         Key { text: "9"; clicked => { root.key("9"); } }
-        Key { text: "C"; label: "Limpar campo"; clicked => { root.key("clear"); } }
+        Key { text: "C"; label: @tr("Limpar campo"); clicked => { root.key("clear"); } }
     }
     HorizontalLayout {
         spacing: 6px;
-        Key { text: ","; label: "Vírgula decimal"; enabled: root.allow-decimal; clicked => { root.key(","); } }
+        Key { text: ","; label: @tr("Vírgula decimal"); enabled: root.allow-decimal; clicked => { root.key(","); } }
         Key { text: "0"; clicked => { root.key("0"); } }
-        Key { icon: Icons.backspace; label: "Apagar último caractere"; clicked => { root.key("back"); } }
+        Key { icon: Icons.backspace; label: @tr("Apagar último caractere"); clicked => { root.key("back"); } }
         Rectangle {
             min-height: 54px;
             horizontal-stretch: 1;

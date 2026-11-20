@@ -85,6 +85,14 @@ pub trait Platform {
     fn system_animations_enabled(&self) -> bool {
         true
     }
+    /// Idioma do sistema (ex.: "pt-BR", "en-US").
+    fn system_locale(&self) -> String {
+        std::env::var("WORKOUT_LANG").or_else(|_| std::env::var("LANG")).unwrap_or_default()
+    }
+    /// Escala de fonte do Android (Configurações › Tela › Tamanho da fonte). 1.0 no desktop.
+    fn font_scale(&self) -> f32 {
+        1.0
+    }
     /// Abre a agenda do sistema com um evento preenchido (Intent ACTION_INSERT; sem permissão).
     /// Devolve false se não houver app de agenda.
     fn add_calendar_event(&self, title: &str, description: &str, begin_ms: i64, end_ms: i64, all_day: bool) -> bool;

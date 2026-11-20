@@ -38,9 +38,7 @@ pub fn schema_version(conn: &Connection) -> AppResult<i64> {
 pub fn migrate(conn: &mut Connection) -> AppResult<()> {
     let current = schema_version(conn)?;
     if current > SCHEMA_VERSION {
-        return Err(AppError::Storage(format!(
-            "O banco de dados é de uma versão mais nova do app (schema {current}). Atualize o aplicativo."
-        )));
+        return Err(AppError::Storage(trf!("O banco de dados é de uma versão mais nova do app (schema {}). Atualize o aplicativo.", current)));
     }
     for (idx, sql) in MIGRATIONS.iter().enumerate() {
         let version = idx as i64 + 1;

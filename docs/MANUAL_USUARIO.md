@@ -71,6 +71,13 @@ Sons e alertas · Cronômetro · Treinamento · Calendário · Interface · Dado
 - **Backup** é diferente de planilha: guarda o estado completo para restaurar o app. **Restaurar**
   valida o arquivo antes de substituir os dados atuais.
 
+## Idioma, texto e boas-vindas
+
+- **Idioma**: Configurações › Interface › Idioma — Português, English, Español ou "Seguir o sistema". Os nomes
+  que você cadastrou (exercícios, fichas, anotações) não mudam.
+- **Tamanho do texto**: Pequena, Média, Grande ou Extragrande; também acompanha o tamanho de fonte do Android.
+- **Boas-vindas**: aparecem no primeiro uso; para ver de novo, Configurações › Sobre › Rever as boas-vindas.
+
 ## Personalização
 
 - **Atalhos da Home**: Configurações › Atalhos da Home. Até 4 posições; escolher um atalho que já está

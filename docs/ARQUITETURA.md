@@ -32,6 +32,15 @@
 | `src/application` | Casos de uso transversais: preferências, busca global, desfazer, `GestureEvent`, atalhos da Home, armazenamento e backups locais, resumo do widget |
 | `android/java` | `MainActivity` (NativeActivity + ponte), `LauncherActivity` (diagnóstico de abertura), `TimerAlarmReceiver` e `EmpetoWidget` |
 
+## Localização (evolução v1.1, 4.1)
+
+- Texto-fonte em português; catálogos `resources/i18n/en|es/LC_MESSAGES/workout.po`.
+- Slint: frases com `@tr("…")`, embutidas na compilação (`with_bundled_translations`, sem contexto padrão).
+- Rust: `crate::i18n::tr("…")` e `trf!("… {} …", args)` leem os mesmos `.po` (parser mínimo em `src/i18n`).
+- `Controller::apply_language` escolhe o idioma (preferência `ui.language` ou sistema via JNI `localeTag()`),
+  chama `slint::select_bundled_translation` e refaz os textos montados pelo Rust.
+- `scripts/i18n.py update|check|merge` mantém os catálogos; `tests/i18n.rs` confere marcadores `{}`.
+
 ## Personalização (EMPETO, Fase 5)
 
 - **Gestos**: a UI só emite `Bridge.gesture(contexto, gesto)`; `application::gestures::resolve` decide a

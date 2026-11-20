@@ -3,6 +3,7 @@
 pub mod input;
 pub mod timer;
 
+use crate::i18n::tr;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -37,26 +38,26 @@ impl From<rusqlite::Error> for AppError {
         log::error!("sqlite: {e}");
         let msg = e.to_string();
         if msg.contains("historico imutavel") {
-            AppError::Conflict("Sessões concluídas fazem parte do histórico e não podem ser alteradas.".into())
+            AppError::Conflict(tr("Sessões concluídas fazem parte do histórico e não podem ser alteradas.").into())
         } else if msg.contains("UNIQUE constraint failed: exercise.name") {
-            AppError::Conflict("Já existe um exercício com esse nome.".into())
+            AppError::Conflict(tr("Já existe um exercício com esse nome.").into())
         } else if msg.contains("FOREIGN KEY constraint failed") {
-            AppError::Conflict("O registro está em uso e não pode ser removido.".into())
+            AppError::Conflict(tr("O registro está em uso e não pode ser removido.").into())
         } else {
-            AppError::Storage(format!("Erro no banco de dados: {msg}"))
+            AppError::Storage(trf!("Erro no banco de dados: {}", msg))
         }
     }
 }
 
 impl From<std::io::Error> for AppError {
     fn from(e: std::io::Error) -> Self {
-        AppError::File(format!("Erro de arquivo: {e}"))
+        AppError::File(trf!("Erro de arquivo: {}", e.to_string()))
     }
 }
 
 impl From<serde_json::Error> for AppError {
     fn from(e: serde_json::Error) -> Self {
-        AppError::Storage(format!("Erro de serialização: {e}"))
+        AppError::Storage(trf!("Erro de serialização: {}", e.to_string()))
     }
 }
 
@@ -93,8 +94,8 @@ impl ScheduleType {
     }
     pub fn label(self) -> &'static str {
         match self {
-            ScheduleType::Weekday => "Dias da semana",
-            ScheduleType::Sequence => "Sequência (A/B/C…)",
+            ScheduleType::Weekday => tr("Dias da semana"),
+            ScheduleType::Sequence => tr("Sequência (A/B/C…)"),
         }
     }
 }
@@ -132,7 +133,7 @@ impl ExerciseInput {
     pub fn validated(&self) -> AppResult<ExerciseInput> {
         let name = clean_text(&self.name, 80);
         if name.is_empty() {
-            return validation("Informe o nome do exercício.");
+            return validation(tr("Informe o nome do exercício."));
         }
         Ok(ExerciseInput {
             name,
@@ -192,10 +193,10 @@ pub struct Target {
 impl Target {
     pub fn validated(self) -> AppResult<Target> {
         if !(1..=50).contains(&self.sets) {
-            return validation("Séries devem estar entre 1 e 50.");
+            return validation(tr("Séries devem estar entre 1 e 50."));
         }
         if !(0..=1000).contains(&self.reps_min) || !(0..=1000).contains(&self.reps_max) {
-            return validation("Repetições devem estar entre 0 e 1000.");
+            return validation(tr("Repetições devem estar entre 0 e 1000."));
         }
         let (a, b) = if self.reps_min <= self.reps_max {
             (self.reps_min, self.reps_max)
@@ -203,7 +204,7 @@ impl Target {
             (self.reps_max, self.reps_min)
         };
         if !(0..=MAX_LOAD_G).contains(&self.load_g) {
-            return validation("Carga fora do intervalo permitido (0 a 2000 kg).");
+            return validation(tr("Carga fora do intervalo permitido (0 a 2000 kg)."));
         }
         Ok(Target { sets: self.sets, reps_min: a, reps_max: b, load_g: self.load_g })
     }
@@ -213,7 +214,7 @@ pub const MAX_LOAD_G: i64 = 2_000_000;
 
 pub fn validate_rest(rest: i64) -> AppResult<i64> {
     if !(0..=3600).contains(&rest) {
-        return validation("Descanso deve estar entre 0 e 3600 segundos.");
+        return validation(tr("Descanso deve estar entre 0 e 3600 segundos."));
     }
     Ok(rest)
 }
@@ -275,8 +276,8 @@ impl SubstitutionType {
     pub fn label(self) -> &'static str {
         match self {
             SubstitutionType::None => "",
-            SubstitutionType::Temporary => "Substituição só nesta sessão",
-            SubstitutionType::Permanent => "Substituição permanente na ficha",
+            SubstitutionType::Temporary => tr("Substituição só nesta sessão"),
+            SubstitutionType::Permanent => tr("Substituição permanente na ficha"),
         }
     }
 }
@@ -485,7 +486,7 @@ pub fn format_load(g: i64, unit: LoadUnit) -> String {
     if s.ends_with('.') {
         s.pop();
     }
-    s.replace('.', ",")
+    s.replace('.', &crate::i18n::decimal_sep().to_string())
 }
 
 pub fn format_load_unit(g: i64, unit: LoadUnit) -> String {
@@ -506,16 +507,16 @@ pub fn parse_load(text: &str, unit: LoadUnit) -> AppResult<i64> {
         (t.clone(), unit)
     };
     let num = num.replace(',', ".");
-    let v: f64 = num.parse().map_err(|_| AppError::Validation(format!("Carga inválida: \"{text}\"")))?;
+    let v: f64 = num.parse().map_err(|_| AppError::Validation(trf!("Carga inválida: \"{}\"", text)))?;
     if !v.is_finite() || v < 0.0 {
-        return validation(format!("Carga inválida: \"{text}\""));
+        return validation(trf!("Carga inválida: \"{}\"", text));
     }
     let g = match unit {
         LoadUnit::Kg => (v * 1000.0).round() as i64,
         LoadUnit::Lb => (v * GRAMS_PER_LB).round() as i64,
     };
     if g > MAX_LOAD_G {
-        return validation("Carga acima do limite (2000 kg).");
+        return validation(tr("Carga acima do limite (2000 kg)."));
     }
     Ok(g)
 }
@@ -524,7 +525,7 @@ pub fn format_reps(min: i64, max: i64) -> String {
     if min == max {
         min.to_string()
     } else {
-        format!("{min}–{max}")
+        format!("{}–{}", min, max)
     }
 }
 
@@ -532,7 +533,7 @@ pub fn format_reps(min: i64, max: i64) -> String {
 pub fn parse_reps(text: &str) -> AppResult<(i64, i64)> {
     let t = text.trim().to_lowercase().replace(['–', '—'], "-");
     if t.is_empty() {
-        return validation("Informe as repetições.");
+        return validation(tr("Informe as repetições."));
     }
     let parts: Vec<i64> = t
         .split(|c: char| !c.is_ascii_digit())
@@ -540,7 +541,7 @@ pub fn parse_reps(text: &str) -> AppResult<(i64, i64)> {
         .map(|p| p.parse::<i64>().unwrap_or(-1))
         .collect();
     if parts.is_empty() || parts.iter().any(|&p| !(0..=1000).contains(&p)) {
-        return validation(format!("Repetições inválidas: \"{text}\""));
+        return validation(trf!("Repetições inválidas: \"{}\"", text));
     }
     let min = *parts.iter().min().unwrap();
     let max = *parts.iter().max().unwrap();
@@ -553,9 +554,9 @@ pub fn format_duration_s(total: i64) -> String {
     let m = (total % 3600) / 60;
     let s = total % 60;
     if h > 0 {
-        format!("{h}:{m:02}:{s:02}")
+        format!("{}:{:02}:{:02}", h, m, s)
     } else {
-        format!("{m}:{s:02}")
+        format!("{}:{:02}", m, s)
     }
 }
 
@@ -566,8 +567,8 @@ pub fn parse_rest(text: &str) -> AppResult<i64> {
         return Ok(0);
     }
     let secs = if let Some((m, s)) = t.split_once(':') {
-        let m: i64 = m.trim().parse().map_err(|_| AppError::Validation(format!("Descanso inválido: \"{text}\"")))?;
-        let s: i64 = s.trim().parse().map_err(|_| AppError::Validation(format!("Descanso inválido: \"{text}\"")))?;
+        let m: i64 = m.trim().parse().map_err(|_| AppError::Validation(trf!("Descanso inválido: \"{}\"", text)))?;
+        let s: i64 = s.trim().parse().map_err(|_| AppError::Validation(trf!("Descanso inválido: \"{}\"", text)))?;
         m * 60 + s
     } else if t.contains("min") || t.ends_with('m') {
         let nums: Vec<i64> = t
@@ -578,11 +579,11 @@ pub fn parse_rest(text: &str) -> AppResult<i64> {
         match nums.as_slice() {
             [m] => m * 60,
             [m, s, ..] => m * 60 + s,
-            _ => return validation(format!("Descanso inválido: \"{text}\"")),
+            _ => return validation(trf!("Descanso inválido: \"{}\"", text)),
         }
     } else {
         let n = t.trim_end_matches(|c: char| c.is_alphabetic() || c.is_whitespace());
-        n.trim().parse().map_err(|_| AppError::Validation(format!("Descanso inválido: \"{text}\"")))?
+        n.trim().parse().map_err(|_| AppError::Validation(trf!("Descanso inválido: \"{}\"", text)))?
     };
     validate_rest(secs)
 }
@@ -606,7 +607,7 @@ pub fn weekdays_text(mask: u8) -> String {
     }
     (0..7)
         .filter(|i| mask & (1 << i) != 0)
-        .map(|i| WEEKDAY_SHORT[i])
+        .map(|i| crate::i18n::tr(WEEKDAY_SHORT[i]))
         .collect::<Vec<_>>()
         .join(", ")
 }

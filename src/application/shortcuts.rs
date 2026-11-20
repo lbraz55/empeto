@@ -28,7 +28,7 @@ pub fn is_known(code: &str) -> bool {
 }
 
 pub fn label(code: &str) -> &'static str {
-    SHORTCUTS.iter().find(|s| s.0 == code).map(|s| s.1).unwrap_or("")
+    SHORTCUTS.iter().find(|s| s.0 == code).map(|s| crate::i18n::tr(s.1)).unwrap_or("")
 }
 
 pub fn icon(code: &str) -> &'static str {

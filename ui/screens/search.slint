@@ -6,19 +6,19 @@ import { EmptyState } from "../components/empty_state.slint";
 // Busca global (8.2): exercícios, fichas e sessões; os resultados mostram o tipo e abrem a tela.
 export component SearchScreen inherits Scroll {
     Field {
-        placeholder: "Buscar exercícios, fichas e sessões…";
+        placeholder: @tr("Buscar exercícios, fichas e sessões…");
         text <=> Bridge.search-query;
         edited(t) => { Bridge.search-changed(t); }
     }
     if Bridge.search-query == "": EmptyState {
         icon: Icons.search;
-        title: "Busca";
-        text: "Digite pelo menos 2 letras. A busca ignora acentos e procura em nomes, objetivos, técnicas e observações.";
+        title: @tr("Busca");
+        text: @tr("Digite pelo menos 2 letras. A busca ignora acentos e procura em nomes, objetivos, técnicas e observações.");
     }
     if Bridge.search-query != "" && Bridge.search-results.length == 0: EmptyState {
         icon: Icons.search;
-        title: "Nada encontrado";
-        text: "Nenhum exercício, ficha ou sessão corresponde à busca.";
+        title: @tr("Nada encontrado");
+        text: @tr("Nenhum exercício, ficha ou sessão corresponde à busca.");
     }
     for r[i] in Bridge.search-results: Card {
         clickable: true;

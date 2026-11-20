@@ -9,7 +9,7 @@ export component ConfirmDialog inherits DialogFrame {
     HorizontalLayout {
         spacing: 8px;
         Btn {
-            text: "Cancelar";
+            text: @tr("Cancelar");
             clicked => { Bridge.dialog-closed(); }
         }
         Btn {
@@ -91,11 +91,11 @@ export component TextDialog inherits DialogFrame {
     HorizontalLayout {
         spacing: 8px;
         Btn {
-            text: "Cancelar";
+            text: @tr("Cancelar");
             clicked => { Bridge.dialog-closed(); }
         }
         Btn {
-            text: "Salvar";
+            text: @tr("Salvar");
             kind: "primary";
             clicked => { Bridge.text-saved(Bridge.text-value); }
         }
@@ -106,31 +106,31 @@ export component DayDialog inherits DialogFrame {
     title: Bridge.day-title;
     dismiss => { Bridge.dialog-closed(); }
     Field {
-        label: "Nome do dia";
-        placeholder: "Ex.: Treino A — Peito e tríceps";
+        label: @tr("Nome do dia");
+        placeholder: @tr("Ex.: Treino A — Peito e tríceps");
         text <=> Bridge.day-name;
     }
-    if Bridge.day-show-weekdays: Label { text: "Dias da semana deste treino:"; }
+    if Bridge.day-show-weekdays: Label { text: @tr("Dias da semana deste treino:"); }
     if Bridge.day-show-weekdays: HorizontalLayout {
         spacing: 4px;
         for w[i] in ["S", "T", "Q", "Q", "S", "S", "D"]: Chip {
             horizontal-stretch: 1;
             min-width: 36px;
             text: w;
-            accessible-label: ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"][i];
+            accessible-label: [@tr("Segunda"), @tr("Terça"), @tr("Quarta"), @tr("Quinta"), @tr("Sexta"), @tr("Sábado"), @tr("Domingo")][i];
             selected: Bridge.day-weekdays[i];
             clicked => { Bridge.day-toggle(i); }
         }
     }
-    if !Bridge.day-show-weekdays: Label { text: "Ficha em sequência: a ordem dos dias define a fila (use as setas no editor)."; }
+    if !Bridge.day-show-weekdays: Label { text: @tr("Ficha em sequência: a ordem dos dias define a fila (use as setas no editor)."); }
     HorizontalLayout {
         spacing: 8px;
         Btn {
-            text: "Cancelar";
+            text: @tr("Cancelar");
             clicked => { Bridge.dialog-closed(); }
         }
         Btn {
-            text: "Salvar";
+            text: @tr("Salvar");
             kind: "primary";
             clicked => { Bridge.day-save(Bridge.day-name); }
         }
@@ -147,38 +147,38 @@ export component PlanExDialog inherits DialogFrame {
             width: flick.width;
             spacing: 10px;
             ValueRow {
-                text: "Exercício";
-                value: Bridge.pe-exercise == "" ? "Escolher…" : "";
+                text: @tr("Exercício");
+                value: Bridge.pe-exercise == "" ? @tr("Escolher…") : "";
                 description: Bridge.pe-exercise;
                 clicked => { Bridge.pe-pick(); }
             }
             HorizontalLayout {
                 spacing: 8px;
                 Field {
-                    label: "Séries";
+                    label: @tr("Séries");
                     text <=> Bridge.pe-sets;
                     input-type: InputType.number;
                 }
                 Field {
-                    label: "Repetições (ex.: 8-12)";
+                    label: @tr("Repetições (ex.: 8-12)");
                     text <=> Bridge.pe-reps;
                 }
             }
             HorizontalLayout {
                 spacing: 8px;
                 Field {
-                    label: "Carga-alvo (" + Bridge.pe-unit + ")";
+                    label: @tr("Carga-alvo (") + Bridge.pe-unit + ")";
                     text <=> Bridge.pe-load;
                     input-type: InputType.decimal;
                 }
                 Field {
-                    label: "Descanso (s)";
+                    label: @tr("Descanso (s)");
                     text <=> Bridge.pe-rest;
                     input-type: InputType.number;
                 }
             }
             Field {
-                label: "Observações";
+                label: @tr("Observações");
                 text <=> Bridge.pe-notes;
             }
         }
@@ -186,13 +186,13 @@ export component PlanExDialog inherits DialogFrame {
     HorizontalLayout {
         spacing: 8px;
         if Bridge.pe-can-delete: Btn {
-            text: "Remover";
+            text: @tr("Remover");
             icon: Icons.trash;
             kind: "danger";
             clicked => { Bridge.pe-delete(); }
         }
         Btn {
-            text: "Salvar";
+            text: @tr("Salvar");
             kind: "primary";
             clicked => { Bridge.pe-save(Bridge.pe-sets, Bridge.pe-reps, Bridge.pe-load, Bridge.pe-rest, Bridge.pe-notes); }
         }
@@ -209,44 +209,44 @@ export component ExerciseDialog inherits DialogFrame {
             width: flick.width;
             spacing: 10px;
             Field {
-                label: "Nome";
+                label: @tr("Nome");
                 text <=> Bridge.exf-name;
             }
             Field {
-                label: "Grupo muscular foco";
-                placeholder: "Ex.: Peito";
+                label: @tr("Grupo muscular foco");
+                placeholder: @tr("Ex.: Peito");
                 text <=> Bridge.exf-muscle;
             }
             Field {
-                label: "Tipo";
-                placeholder: "Ex.: Composto, Isolado";
+                label: @tr("Tipo");
+                placeholder: @tr("Ex.: Composto, Isolado");
                 text <=> Bridge.exf-type;
             }
             Field {
-                label: "Equipamento (opcional)";
-                placeholder: "Ex.: Barra, Halteres, Máquina";
+                label: @tr("Equipamento (opcional)");
+                placeholder: @tr("Ex.: Barra, Halteres, Máquina");
                 text <=> Bridge.exf-equipment;
             }
             Field {
-                label: "Padrão de movimento (opcional)";
-                placeholder: "Ex.: Empurrar horizontal";
+                label: @tr("Padrão de movimento (opcional)");
+                placeholder: @tr("Ex.: Empurrar horizontal");
                 text <=> Bridge.exf-pattern;
             }
             Field {
-                label: "Técnica de execução / descrição";
-                placeholder: "Ex.: escápulas aduzidas, descer até o peito";
+                label: @tr("Técnica de execução / descrição");
+                placeholder: @tr("Ex.: escápulas aduzidas, descer até o peito");
                 multiline: true;
                 text <=> Bridge.exf-description;
             }
             Field {
-                label: "Observações pessoais / ajustes do aparelho";
-                placeholder: "Ex.: banco no furo 3";
+                label: @tr("Observações pessoais / ajustes do aparelho");
+                placeholder: @tr("Ex.: banco no furo 3");
                 multiline: true;
                 text <=> Bridge.exf-notes;
             }
-            if Bridge.exf-editing: SectionTitle { text: "ALTERNATIVAS CADASTRADAS"; }
+            if Bridge.exf-editing: SectionTitle { text: @tr("ALTERNATIVAS CADASTRADAS"); }
             if Bridge.exf-editing: Text {
-                text: "Aparecem primeiro ao substituir este exercício na sessão. São sugestões suas, não equivalências garantidas.";
+                text: @tr("Aparecem primeiro ao substituir este exercício na sessão. São sugestões suas, não equivalências garantidas.");
                 color: Theme.faint;
                 font-size: Theme.fs-xs;
                 wrap: word-wrap;
@@ -263,13 +263,13 @@ export component ExerciseDialog inherits DialogFrame {
                     }
                     IconBtn {
                         icon: Icons.close;
-                        label: "Remover alternativa " + a.name;
+                        label: @tr("Remover alternativa ") + a.name;
                         clicked => { Bridge.exf-remove-alt(a.id); }
                     }
                 }
             }
             if Bridge.exf-editing: Btn {
-                text: "Adicionar alternativa";
+                text: @tr("Adicionar alternativa");
                 icon: Icons.plus;
                 clicked => { Bridge.exf-add-alt(); }
             }
@@ -278,12 +278,12 @@ export component ExerciseDialog inherits DialogFrame {
     HorizontalLayout {
         spacing: 8px;
         if Bridge.exf-editing: Btn {
-            text: Bridge.exf-archived ? "Reativar" : "Arquivar";
+            text: Bridge.exf-archived ? @tr("Reativar") : @tr("Arquivar");
             kind: "danger";
             clicked => { Bridge.lib-archive(-1); }
         }
         Btn {
-            text: "Salvar";
+            text: @tr("Salvar");
             kind: "primary";
             clicked => { Bridge.exf-save(Bridge.exf-name, Bridge.exf-muscle, Bridge.exf-type, Bridge.exf-equipment, Bridge.exf-pattern); }
         }
@@ -292,16 +292,16 @@ export component ExerciseDialog inherits DialogFrame {
 
 // RF-08 / RF-09 / RN-03: substituição com escolha explícita do alcance.
 export component SubstituteDialog inherits DialogFrame {
-    title: "Substituir exercício";
+    title: @tr("Substituir exercício");
     dismiss => { Bridge.dialog-closed(); }
-    Label { text: "Atual: " + Bridge.sub-original; }
+    Label { text: @tr("Atual: ") + Bridge.sub-original; }
     Field {
-        placeholder: "Buscar exercício…";
+        placeholder: @tr("Buscar exercício…");
         text <=> Bridge.sub-search;
         edited(t) => { Bridge.sub-search-changed(t); }
     }
     Text {
-        text: "Sugestões organizacionais (mesmo grupo/padrão). Não há garantia de equivalência biomecânica — avalie com seu profissional.";
+        text: @tr("Sugestões organizacionais (mesmo grupo/padrão). Não há garantia de equivalência biomecânica — avalie com seu profissional.");
         color: Theme.faint;
         font-size: Theme.fs-xs;
         wrap: word-wrap;
@@ -350,7 +350,7 @@ export component SubstituteDialog inherits DialogFrame {
         }
     }
     Segmented {
-        items: ["Só nesta sessão", "Também na ficha"];
+        items: [@tr("Só nesta sessão"), @tr("Também na ficha")];
         selected: Bridge.sub-permanent ? 1 : 0;
         select(i) => {
             if (i == 1 && !Bridge.sub-can-permanent) {
@@ -361,8 +361,8 @@ export component SubstituteDialog inherits DialogFrame {
     }
     Text {
         text: Bridge.sub-permanent
-            ? "A ficha passará a usar o substituto a partir de agora. Sessões anteriores não mudam."
-            : (Bridge.sub-can-permanent ? "A ficha não muda; vale apenas para esta sessão." : "A ficha original não existe mais; a troca vale só nesta sessão.");
+            ? @tr("A ficha passará a usar o substituto a partir de agora. Sessões anteriores não mudam.")
+            : (Bridge.sub-can-permanent ? @tr("A ficha não muda; vale apenas para esta sessão.") : @tr("A ficha original não existe mais; a troca vale só nesta sessão."));
         color: Theme.muted;
         font-size: Theme.fs-s;
         wrap: word-wrap;
@@ -370,11 +370,11 @@ export component SubstituteDialog inherits DialogFrame {
     HorizontalLayout {
         spacing: 8px;
         Btn {
-            text: "Voltar ao original";
+            text: @tr("Voltar ao original");
             clicked => { Bridge.session-undo-sub(-1); }
         }
         Btn {
-            text: "Substituir";
+            text: @tr("Substituir");
             kind: "primary";
             enabled: Bridge.sub-selected-id > 0;
             clicked => { Bridge.sub-confirm(Bridge.sub-permanent); }

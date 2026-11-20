@@ -351,7 +351,7 @@ export component StepperRow inherits Rectangle {
         }
         IconBtn {
             icon: Icons.minus;
-            label: "Diminuir " + root.text;
+            label: @tr("Diminuir ") + root.text;
             clicked => { root.step(-1); }
         }
         Text {
@@ -365,7 +365,7 @@ export component StepperRow inherits Rectangle {
         }
         IconBtn {
             icon: Icons.plus;
-            label: "Aumentar " + root.text;
+            label: @tr("Aumentar ") + root.text;
             clicked => { root.step(1); }
         }
     }
@@ -379,12 +379,23 @@ export component Segmented inherits Rectangle {
     height: 44px;
     border-radius: 12px;
     background: Theme.surface2;
+    // Indicador que desliza até a aba escolhida (evolução 3.3: alteração de abas).
+    property <length> item-w: (self.width - 6px - (root.items.length - 1) * 3px) / max(1, root.items.length);
+    Rectangle {
+        x: 3px + root.selected * (root.item-w + 3px);
+        y: 3px;
+        width: root.item-w;
+        height: parent.height - 6px;
+        border-radius: 10px;
+        background: Theme.accent;
+        animate x { duration: Theme.anim-fast; easing: ease-out; }
+    }
     HorizontalLayout {
         padding: 3px;
         spacing: 3px;
         for it[i] in root.items: Rectangle {
             border-radius: 10px;
-            background: i == root.selected ? Theme.accent : (ta.pressed ? Theme.pressed : transparent);
+            background: i != root.selected && ta.pressed ? Theme.pressed : transparent;
             accessible-role: tab;
             accessible-label: it;
             accessible-checked: i == root.selected;
@@ -395,6 +406,7 @@ export component Segmented inherits Rectangle {
             Text {
                 text: it;
                 color: i == root.selected ? Theme.on-accent : Theme.text;
+                animate color { duration: Theme.anim-fast; }
                 font-size: Theme.fs-s;
                 font-weight: i == root.selected ? 700 : 500;
                 horizontal-alignment: center;
@@ -515,7 +527,7 @@ export component DialogFrame inherits Rectangle {
                 }
                 IconBtn {
                     icon: Icons.close;
-                    label: "Fechar";
+                    label: @tr("Fechar");
                     clicked => { root.dismiss(); }
                 }
             }
@@ -560,7 +572,7 @@ export component StarBtn inherits Rectangle {
     border-radius: Theme.touch / 2;
     background: ta.pressed ? Theme.pressed : transparent;
     accessible-role: button;
-    accessible-label: on ? "Remover " + name + " dos favoritos" : "Favoritar " + name;
+    accessible-label: on ? @tr("Remover ") + name + @tr(" dos favoritos") : @tr("Favoritar ") + name;
     accessible-checked: on;
     accessible-action-default => { clicked(); }
     ta := TouchArea {

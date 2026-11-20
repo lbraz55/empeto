@@ -1,0 +1,2538 @@
+# Traduções do EMPETO. Texto-fonte: português (pt-BR). Gerado por scripts/i18n.py.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+
+msgid "EMPETO"
+msgstr "EMPETO"
+
+msgid "Treinos"
+msgstr "Workouts"
+
+msgid "Calendário"
+msgstr "Calendar"
+
+msgid "Histórico"
+msgstr "History"
+
+msgid "Editar ficha"
+msgstr "Edit plan"
+
+msgid "Escolher exercício"
+msgstr "Choose exercise"
+
+msgid "Exercícios"
+msgstr "Exercises"
+
+msgid "Cronômetro"
+msgstr "Timer"
+
+msgid "Modo foco"
+msgstr "Focus mode"
+
+msgid "Buscar"
+msgstr "Search"
+
+msgid "Sessão realizada"
+msgstr "Completed session"
+
+msgid "Evolução"
+msgstr "Progress"
+
+msgid "Preferências"
+msgstr "Preferences"
+
+msgid "Sons e alertas"
+msgstr "Sounds and alerts"
+
+msgid "Treinamento"
+msgstr "Training"
+
+msgid "Interface"
+msgstr "Interface"
+
+msgid "Dados e armazenamento"
+msgstr "Data and storage"
+
+msgid "Recursos opcionais"
+msgstr "Optional features"
+
+msgid "Atalhos da Home"
+msgstr "Home shortcuts"
+
+msgid "Backups"
+msgstr "Backups"
+
+msgid "Sobre"
+msgstr "About"
+
+msgid "Importar planilha"
+msgstr "Import spreadsheet"
+
+msgid "Voltar"
+msgstr "Back"
+
+msgid "Abrir cronômetro, "
+msgstr "Open timer, "
+
+msgid "Configurações"
+msgstr "Settings"
+
+msgid "Home"
+msgstr "Home"
+
+msgid "Processando…"
+msgstr "Processing…"
+
+msgid "Logotipo "
+msgstr "Logo "
+
+msgid "Confirmar"
+msgstr "Confirm"
+
+msgid "Diminuir "
+msgstr "Decrease "
+
+msgid "Aumentar "
+msgstr "Increase "
+
+msgid "Limpar campo"
+msgstr "Clear field"
+
+msgid "Vírgula decimal"
+msgstr "Decimal separator"
+
+msgid "Apagar último caractere"
+msgstr "Delete last character"
+
+msgid "Cronômetro de descanso, "
+msgstr "Rest timer, "
+
+msgid "em contagem, "
+msgstr "running, "
+
+msgid "pausado, "
+msgstr "paused, "
+
+msgid "encerrado, "
+msgstr "finished, "
+
+msgid ". Abrir cronômetro."
+msgstr ". Open timer."
+
+msgid "Descanso encerrado"
+msgstr "Rest finished"
+
+msgid "Pausado"
+msgstr "Paused"
+
+msgid "não iniciado"
+msgstr "not started"
+
+msgid "concluído"
+msgstr "completed"
+
+msgid "parcial"
+msgstr "partial"
+
+msgid "Exercício "
+msgstr "Exercise "
+
+msgid " de "
+msgstr " of "
+
+msgid " séries"
+msgstr " sets"
+
+msgid "Fechar"
+msgstr "Close"
+
+msgid "Remover "
+msgstr "Remove "
+
+msgid " dos favoritos"
+msgstr " from favorites"
+
+msgid "Favoritar "
+msgstr "Favorite "
+
+msgid "Cancelar"
+msgstr "Cancel"
+
+msgid "Salvar"
+msgstr "Save"
+
+msgid "Nome do dia"
+msgstr "Day name"
+
+msgid "Ex.: Treino A — Peito e tríceps"
+msgstr "E.g.: Workout A — Chest and triceps"
+
+msgid "Dias da semana deste treino:"
+msgstr "Weekdays for this workout:"
+
+msgid "Segunda"
+msgstr "Monday"
+
+msgid "Terça"
+msgstr "Tuesday"
+
+msgid "Quarta"
+msgstr "Wednesday"
+
+msgid "Quinta"
+msgstr "Thursday"
+
+msgid "Sexta"
+msgstr "Friday"
+
+msgid "Sábado"
+msgstr "Saturday"
+
+msgid "Domingo"
+msgstr "Sunday"
+
+msgid "Ficha em sequência: a ordem dos dias define a fila (use as setas no editor)."
+msgstr "Sequence plan: the order of the days defines the queue (use the arrows in the editor)."
+
+msgid "Exercício"
+msgstr "Exercise"
+
+msgid "Escolher…"
+msgstr "Choose…"
+
+msgid "Séries"
+msgstr "Sets"
+
+msgid "Repetições (ex.: 8-12)"
+msgstr "Reps (e.g.: 8-12)"
+
+msgid "Carga-alvo ("
+msgstr "Target load ("
+
+msgid "Descanso (s)"
+msgstr "Rest (s)"
+
+msgid "Observações"
+msgstr "Notes"
+
+msgid "Remover"
+msgstr "Remove"
+
+msgid "Nome"
+msgstr "Name"
+
+msgid "Grupo muscular foco"
+msgstr "Target muscle group"
+
+msgid "Ex.: Peito"
+msgstr "E.g.: Chest"
+
+msgid "Tipo"
+msgstr "Type"
+
+msgid "Ex.: Composto, Isolado"
+msgstr "E.g.: Compound, Isolation"
+
+msgid "Equipamento (opcional)"
+msgstr "Equipment (optional)"
+
+msgid "Ex.: Barra, Halteres, Máquina"
+msgstr "E.g.: Barbell, Dumbbells, Machine"
+
+msgid "Padrão de movimento (opcional)"
+msgstr "Movement pattern (optional)"
+
+msgid "Ex.: Empurrar horizontal"
+msgstr "E.g.: Horizontal push"
+
+msgid "Técnica de execução / descrição"
+msgstr "Technique / description"
+
+msgid "Ex.: escápulas aduzidas, descer até o peito"
+msgstr "E.g.: shoulder blades retracted, lower to the chest"
+
+msgid "Observações pessoais / ajustes do aparelho"
+msgstr "Personal notes / machine settings"
+
+msgid "Ex.: banco no furo 3"
+msgstr "E.g.: bench on hole 3"
+
+msgid "ALTERNATIVAS CADASTRADAS"
+msgstr "SAVED ALTERNATIVES"
+
+msgid "Aparecem primeiro ao substituir este exercício na sessão. São sugestões suas, não equivalências garantidas."
+msgstr "They appear first when replacing this exercise in a session. They are your own suggestions, not guaranteed equivalents."
+
+msgid "Remover alternativa "
+msgstr "Remove alternative "
+
+msgid "Adicionar alternativa"
+msgstr "Add alternative"
+
+msgid "Reativar"
+msgstr "Restore"
+
+msgid "Arquivar"
+msgstr "Archive"
+
+msgid "Substituir exercício"
+msgstr "Replace exercise"
+
+msgid "Atual: "
+msgstr "Current: "
+
+msgid "Buscar exercício…"
+msgstr "Search exercise…"
+
+msgid "Sugestões organizacionais (mesmo grupo/padrão). Não há garantia de equivalência biomecânica — avalie com seu profissional."
+msgstr "Organizational suggestions (same group/pattern). There is no guarantee of biomechanical equivalence — check with your coach."
+
+msgid "Só nesta sessão"
+msgstr "This session only"
+
+msgid "Também na ficha"
+msgstr "Also in the plan"
+
+msgid "A ficha passará a usar o substituto a partir de agora. Sessões anteriores não mudam."
+msgstr "The plan will use the replacement from now on. Previous sessions do not change."
+
+msgid "A ficha não muda; vale apenas para esta sessão."
+msgstr "The plan does not change; it only applies to this session."
+
+msgid "A ficha original não existe mais; a troca vale só nesta sessão."
+msgstr "The original plan no longer exists; the change only applies to this session."
+
+msgid "Voltar ao original"
+msgstr "Back to original"
+
+msgid "Substituir"
+msgstr "Replace"
+
+msgid "vazio"
+msgstr "empty"
+
+msgid ", selecionado"
+msgstr ", selected"
+
+msgid "Série anterior"
+msgstr "Previous set"
+
+msgid "Próxima série"
+msgstr "Next set"
+
+msgid "✓ Registrada: "
+msgstr "✓ Logged: "
+
+msgid "Desfazer"
+msgstr "Undo"
+
+msgid "Carga"
+msgstr "Load"
+
+msgid "Repetições"
+msgstr "Reps"
+
+msgid "reps"
+msgstr "reps"
+
+msgid "Repetir anterior"
+msgstr "Repeat previous"
+
+msgid "Planejado"
+msgstr "Planned"
+
+msgid "Última vez"
+msgstr "Last time"
+
+msgid "Registrar série"
+msgstr "Log set"
+
+msgid "Atualizar série"
+msgstr "Update set"
+
+msgid "Exercício anterior"
+msgstr "Previous exercise"
+
+msgid "Sair do foco"
+msgstr "Exit focus"
+
+msgid "Próximo exercício"
+msgstr "Next exercise"
+
+msgid "Nova ficha"
+msgstr "New plan"
+
+msgid "Modelos"
+msgstr "Templates"
+
+msgid "Biblioteca de exercícios"
+msgstr "Exercise library"
+
+msgid "Crie sua primeira ficha"
+msgstr "Create your first plan"
+
+msgid "Você ainda não tem fichas de treino. Monte uma do zero, comece por um modelo pronto ou importe uma planilha em Configurações › Dados."
+msgstr "You don't have any workout plans yet. Build one from scratch, start from a template or import a spreadsheet in Settings › Data."
+
+msgid "Criar ficha"
+msgstr "Create plan"
+
+msgid "Ficha "
+msgstr "Plan "
+
+msgid "Inativa"
+msgstr "Inactive"
+
+msgid "Duplicar ficha "
+msgstr "Duplicate plan "
+
+msgid "Excluir ficha "
+msgstr "Delete plan "
+
+msgid "Período anterior"
+msgstr "Previous period"
+
+msgid "Próximo período"
+msgstr "Next period"
+
+msgid "Mês"
+msgstr "Month"
+
+msgid "Semana"
+msgstr "Week"
+
+msgid "Hoje"
+msgstr "Today"
+
+msgid "Mapa de intensidade"
+msgstr "Intensity map"
+
+msgid "Dias mais escuros tiveram maior volume (carga × repetições). Volume não indica qualidade do treino."
+msgstr "Darker days had more volume (load × reps). Volume does not indicate workout quality."
+
+msgid ", treino planejado"
+msgstr ", workout planned"
+
+msgid ", treino realizado"
+msgstr ", workout done"
+
+msgid ", hoje"
+msgstr ", today"
+
+msgid "realizado"
+msgstr "done"
+
+msgid "planejado"
+msgstr "planned"
+
+msgid "Nada planejado ou realizado nesta data."
+msgstr "Nothing planned or done on this date."
+
+msgid "Realizado"
+msgstr "Done"
+
+msgid "Iniciar"
+msgstr "Start"
+
+msgid "Agenda"
+msgstr "Calendar app"
+
+msgid "Adicionar à agenda do aparelho"
+msgstr "Add to device calendar"
+
+msgid "Sessões"
+msgstr "Sessions"
+
+msgid "Evolução por exercício"
+msgstr "Progress by exercise"
+
+msgid "Seu histórico aparecerá após o primeiro treino"
+msgstr "Your history will appear after your first workout"
+
+msgid "Nenhuma sessão foi concluída ainda. Inicie um treino e finalize-o para vê-lo aqui."
+msgstr "No session has been completed yet. Start a workout and finish it to see it here."
+
+msgid "Ver fichas"
+msgstr "See plans"
+
+msgid "Sem dados de evolução"
+msgstr "No progress data"
+
+msgid "A evolução aparece depois que você registrar séries em sessões concluídas."
+msgstr "Progress appears after you log sets in completed sessions."
+
+msgid "Evolução de "
+msgstr "Progress of "
+
+msgid "Obs.: "
+msgstr "Note: "
+
+msgid "OBSERVAÇÕES DA SESSÃO"
+msgstr "SESSION NOTES"
+
+msgid "Registro histórico: alterações posteriores na ficha não modificam esta sessão."
+msgstr "Historical record: later changes to the plan do not modify this session."
+
+msgid "30 dias"
+msgstr "30 days"
+
+msgid "90 dias"
+msgstr "90 days"
+
+msgid "1 ano"
+msgstr "1 year"
+
+msgid "Tudo"
+msgstr "All"
+
+msgid "Carga máx."
+msgstr "Max load"
+
+msgid "Volume"
+msgstr "Volume"
+
+msgid "1RM est."
+msgstr "Est. 1RM"
+
+msgid "Reps"
+msgstr "Reps"
+
+msgid "Sem registros no período"
+msgstr "No records in this period"
+
+msgid "Não há séries deste exercício no período escolhido. Selecione um período maior."
+msgstr "There are no sets of this exercise in the chosen period. Select a longer period."
+
+msgid "Toque em um ponto para ver data e valor. Linha clara: tendência (com 3 sessões ou mais). Eixo vertical começa em 0 para não exagerar pequenas variações."
+msgstr "Tap a point to see the date and value. Light line: trend (with 3 or more sessions). The vertical axis starts at 0 so small changes are not exaggerated."
+
+msgid "MELHORES MARCAS"
+msgstr "PERSONAL BESTS"
+
+msgid "1RM estimada pela fórmula de Epley — apenas indicativa, não é recomendação de treino."
+msgstr "1RM estimated with the Epley formula — indicative only, not a training recommendation."
+
+msgid "Fim do descanso, início de série, pré-alerta, vibração"
+msgstr "End of rest, set start, pre-alert, vibration"
+
+msgid "Duração padrão, ajuste, modo manual/automático"
+msgstr "Default duration, adjustment, manual/automatic mode"
+
+msgid "Unidade de carga, incremento, valores padrão"
+msgstr "Load unit, increment, default values"
+
+msgid "Início da semana e visualização"
+msgstr "Week start and view"
+
+msgid "Idioma, tema, texto, densidade, animações"
+msgstr "Language, theme, text, density, animations"
+
+msgid "Escolha até 4 atalhos de acesso rápido"
+msgstr "Choose up to 4 quick-access shortcuts"
+
+msgid "Ligue ou desligue módulos sem perder dados"
+msgstr "Turn modules on or off without losing data"
+
+msgid "Espaço usado, importar, exportar e planilhas"
+msgstr "Space used, import, export and spreadsheets"
+
+msgid "Backups no aparelho, automático semanal e restauração"
+msgstr "On-device backups, weekly automatic backup and restore"
+
+msgid "Versão, privacidade e limitações"
+msgstr "Version, privacy and limitations"
+
+msgid "Sons"
+msgstr "Sounds"
+
+msgid "Respeita o volume de notificações do sistema."
+msgstr "Follows the system notification volume."
+
+msgid "Som do fim do descanso"
+msgstr "End of rest sound"
+
+msgid "Som do início de série"
+msgstr "Set start sound"
+
+msgid "Usado na contagem de preparação (Cronômetro)."
+msgstr "Used in the get-ready countdown (Timer)."
+
+msgid "Som do pré-alerta"
+msgstr "Pre-alert sound"
+
+msgid "Vibração"
+msgstr "Vibration"
+
+msgid "Vibração em ações"
+msgstr "Vibration on actions"
+
+msgid "Toque curto ao registrar série e ao desfazer. Não vibra em toda interação."
+msgstr "Short buzz when logging a set and when undoing. It does not vibrate on every interaction."
+
+msgid "Pré-alerta"
+msgstr "Pre-alert"
+
+msgid "Aviso alguns segundos antes do fim do descanso."
+msgstr "Warning a few seconds before the end of rest."
+
+msgid "Antecedência do pré-alerta"
+msgstr "Pre-alert lead time"
+
+msgid "Alerta com app em segundo plano"
+msgstr "Alert with app in background"
+
+msgid "Testar"
+msgstr "Test"
+
+msgid "Notificações"
+msgstr "Notifications"
+
+msgid "Duração padrão do descanso"
+msgstr "Default rest duration"
+
+msgid "Usada quando o exercício não define descanso."
+msgstr "Used when the exercise does not define a rest."
+
+msgid "Passo do ajuste (+/−)"
+msgstr "Adjustment step (+/−)"
+
+msgid "Iniciar descanso automaticamente"
+msgstr "Start rest automatically"
+
+msgid "Modo automático: ao registrar uma série, o cronômetro começa com o descanso do exercício. Desligado = modo manual."
+msgstr "Automatic mode: when you log a set, the timer starts with the exercise's rest. Off = manual mode."
+
+msgid "Contagem de preparação ao fim do descanso"
+msgstr "Get-ready countdown at the end of rest"
+
+msgid "Ação opcional: após o descanso, conta alguns segundos e toca o alerta de início de série. A série nunca é concluída automaticamente."
+msgstr "Optional action: after the rest, counts a few seconds and plays the set start alert. The set is never completed automatically."
+
+msgid "Duração da preparação"
+msgstr "Get-ready duration"
+
+msgid "Unidade de carga"
+msgstr "Load unit"
+
+msgid "Incremento de carga (+/−)"
+msgstr "Load increment (+/−)"
+
+msgid "Sugerir carga da última sessão"
+msgstr "Suggest load from last session"
+
+msgid "Pré-preenche a carga com o último valor realizado; desligado usa a carga-alvo da ficha."
+msgstr "Pre-fills the load with the last value done; off uses the plan's target load."
+
+msgid "Séries padrão (novo exercício)"
+msgstr "Default sets (new exercise)"
+
+msgid "Repetições padrão"
+msgstr "Default reps"
+
+msgid "Teclado numérico do app no modo foco"
+msgstr "App number pad in focus mode"
+
+msgid "Botões grandes com vírgula, apagar e ±incremento. Desligado: usa o teclado do sistema."
+msgstr "Large buttons with decimal separator, delete and ±increment. Off: uses the system keyboard."
+
+msgid "Confirmar ao finalizar sessão"
+msgstr "Confirm when finishing a session"
+
+msgid "Semana começa na segunda-feira"
+msgstr "Week starts on Monday"
+
+msgid "Desligado: começa no domingo."
+msgstr "Off: starts on Sunday."
+
+msgid "Abrir calendário na visão semanal"
+msgstr "Open calendar in week view"
+
+msgid "O calendário é interno ao app e não pede acesso à agenda do aparelho. Para levar seus treinos a outro calendário, use Dados e armazenamento › Exportar calendário (.ics)."
+msgstr "The calendar is internal to the app and does not ask for access to the device calendar. To take your workouts to another calendar, use Data and storage › Export calendar (.ics)."
+
+msgid "Idioma"
+msgstr "Language"
+
+msgid "Tema"
+msgstr "Theme"
+
+msgid "Tamanho do texto"
+msgstr "Text size"
+
+msgid "Densidade"
+msgstr "Density"
+
+msgid "Animações"
+msgstr "Animations"
+
+msgid "Velocidade das animações"
+msgstr "Animation speed"
+
+msgid "Manter tela ligada durante a sessão"
+msgstr "Keep screen on during the session"
+
+msgid "ESPAÇO USADO NO APARELHO"
+msgstr "SPACE USED ON THE DEVICE"
+
+msgid "Banco de dados"
+msgstr "Database"
+
+msgid "Backups locais"
+msgstr "Local backups"
+
+msgid "Arquivos temporários"
+msgstr "Temporary files"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "Limpar arquivos temporários"
+msgstr "Clear temporary files"
+
+msgid "PLANILHAS"
+msgstr "SPREADSHEETS"
+
+msgid "Importar planilha (XLSX)"
+msgstr "Import spreadsheet (XLSX)"
+
+msgid "Exportar planilha…"
+msgstr "Export spreadsheet…"
+
+msgid "Baixar modelo de importação"
+msgstr "Download import template"
+
+msgid "BACKUP"
+msgstr "BACKUP"
+
+msgid "Backups completos (fichas, sessões, exercícios e preferências) agora ficam em Configurações › Backups, com backup automático semanal no aparelho."
+msgstr "Full backups (plans, sessions, exercises and preferences) are now in Settings › Backups, with a weekly automatic backup on the device."
+
+msgid "Abrir backups"
+msgstr "Open backups"
+
+msgid "CALENDÁRIO"
+msgstr "CALENDAR"
+
+msgid "Exportar calendário (.ics)"
+msgstr "Export calendar (.ics)"
+
+msgid "Desligar um recurso só esconde a função: nenhum dado é apagado. Ao religar, tudo volta como estava."
+msgstr "Turning a feature off only hides it: no data is deleted. When you turn it back on, everything is as it was."
+
+msgid "Recordes pessoais"
+msgstr "Personal records"
+
+msgid "Aviso ao bater uma marca, cartão na Home e melhores marcas na Evolução"
+msgstr "Notice when you beat a mark, Home card and personal bests in Progress"
+
+msgid "Mapa de intensidade do calendário"
+msgstr "Calendar intensity map"
+
+msgid "Opção de colorir os dias pelo volume treinado"
+msgstr "Option to shade days by training volume"
+
+msgid "Sugestão de progressão"
+msgstr "Progression suggestion"
+
+msgid "Sugere aumentar a carga no editor da ficha (nunca altera sozinho)"
+msgstr "Suggests increasing the load in the plan editor (never changes it by itself)"
+
+msgid "Gestos"
+msgstr "Gestures"
+
+msgid "Deslizar no modo foco (série) e no calendário (período). Os botões continuam disponíveis"
+msgstr "Swipe in focus mode (set) and in the calendar (period). The buttons remain available"
+
+msgid "Animações decorativas"
+msgstr "Decorative animations"
+
+msgid "Efeitos que não informam nada (pulso do recorde, entrada de telas vazias)"
+msgstr "Effects that carry no information (record pulse, empty-screen entrance)"
+
+msgid "Lembrete de cópia externa do backup"
+msgstr "External backup copy reminder"
+
+msgid "Cartão na Home quando faz mais de 30 dias sem salvar um backup fora do aparelho"
+msgstr "Home card when it has been more than 30 days without saving a backup off the device"
+
+msgid "Os atalhos aparecem no topo da Home. Toque em uma posição para trocar; escolher um atalho que já está em outra posição troca os dois de lugar."
+msgstr "Shortcuts appear at the top of Home. Tap a position to change it; choosing a shortcut that is already in another position swaps the two."
+
+msgid "Posição "
+msgstr "Position "
+
+msgid "Restaurar atalhos padrão"
+msgstr "Restore default shortcuts"
+
+msgid "BACKUPS NO APARELHO"
+msgstr "BACKUPS ON THE DEVICE"
+
+msgid "Backup automático semanal"
+msgstr "Weekly automatic backup"
+
+msgid "Ao abrir o app, se o último tiver 7 dias ou mais. Mantém os 4 mais recentes."
+msgstr "When the app opens, if the last one is 7 or more days old. Keeps the 4 most recent."
+
+msgid "Criar backup agora"
+msgstr "Create backup now"
+
+msgid "Nenhum backup no aparelho"
+msgstr "No backups on the device"
+
+msgid "Crie um backup agora ou aguarde o backup automático semanal."
+msgstr "Create a backup now or wait for the weekly automatic backup."
+
+msgid "Automático"
+msgstr "Automatic"
+
+msgid "Manual"
+msgstr "Manual"
+
+msgid "Restaurar"
+msgstr "Restore"
+
+msgid "Salvar cópia"
+msgstr "Save copy"
+
+msgid "Excluir"
+msgstr "Delete"
+
+msgid "BACKUP EM ARQUIVO"
+msgstr "BACKUP TO FILE"
+
+msgid "Backups no aparelho não protegem contra perda, troca ou desinstalação do app. Salve uma cópia fora dele (com senha opcional) ou restaure um arquivo salvo antes."
+msgstr "Backups on the device do not protect against loss, replacement or uninstalling the app. Save a copy elsewhere (with an optional password) or restore a file saved earlier."
+
+msgid "Salvar backup em arquivo…"
+msgstr "Save backup to file…"
+
+msgid "Restaurar de um arquivo…"
+msgstr "Restore from a file…"
+
+msgid "Versão "
+msgstr "Version "
+
+msgid "Rever as boas-vindas"
+msgstr "Replay the welcome tour"
+
+msgid "Diagnóstico técnico"
+msgstr "Technical diagnostics"
+
+msgid "Arquivo: "
+msgstr "File: "
+
+msgid "Aba"
+msgstr "Sheet"
+
+msgid "Todas as abas: as colunas de cada aba são reconhecidas automaticamente. Para ajustar o mapeamento manualmente, escolha uma aba por vez."
+msgstr "All sheets: the columns of each sheet are recognized automatically. To adjust the mapping manually, choose one sheet at a time."
+
+msgid "MAPEAMENTO DE COLUNAS"
+msgstr "COLUMN MAPPING"
+
+msgid "Toque em uma coluna para mudar o campo correspondente. \"Exercício\" é obrigatório."
+msgstr "Tap a column to change its field. \"Exercise\" is required."
+
+msgid "PRÉVIA"
+msgstr "PREVIEW"
+
+msgid "Já existe"
+msgstr "Already exists"
+
+msgid "Substituir fichas existentes com o mesmo nome"
+msgstr "Replace existing plans with the same name"
+
+msgid "A ficha existente será apagada e recriada. Sessões do histórico são mantidas."
+msgstr "The existing plan will be deleted and recreated. History sessions are kept."
+
+msgid "Desligado: a ficha importada é criada com o sufixo \"(importada)\"; nada é sobrescrito."
+msgstr "Off: the imported plan is created with the suffix \"(imported)\"; nothing is overwritten."
+
+msgid "ERROS ("
+msgstr "ERRORS ("
+
+msgid "AVISOS ("
+msgstr "WARNINGS ("
+
+msgid "Conferi os avisos acima"
+msgstr "I have checked the warnings above"
+
+msgid "Necessário para confirmar a importação."
+msgstr "Required to confirm the import."
+
+msgid "Importar"
+msgstr "Import"
+
+msgid "Pular"
+msgstr "Skip"
+
+msgid "Seu organizador pessoal de treinos."
+msgstr "Your personal workout organizer."
+
+msgid "Planeje suas fichas, registre cada série e acompanhe sua evolução. Tudo fica no seu aparelho: sem conta, sem anúncios e funcionando sem internet."
+msgstr "Plan your workouts, log every set and track your progress. Everything stays on your device: no account, no ads, and it works without internet."
+
+msgid "O que você pode fazer"
+msgstr "What you can do"
+
+msgid "Fichas"
+msgstr "Plans"
+
+msgid "Monte treinos por dia da semana ou em sequência (A, B, C…), ou comece por um modelo pronto."
+msgstr "Build workouts by weekday or in sequence (A, B, C…), or start from a ready-made template."
+
+msgid "Registre a carga e as repetições reais de cada série, com modo foco e teclado numérico."
+msgstr "Log the actual load and reps of each set, with focus mode and a number pad."
+
+msgid "Controle o descanso com alertas, mesmo com a tela bloqueada."
+msgstr "Time your rest with alerts, even with the screen locked."
+
+msgid "Histórico e evolução"
+msgstr "History and progress"
+
+msgid "Calendário, recordes pessoais e gráficos mostram seu progresso."
+msgstr "Calendar, personal records and charts show your progress."
+
+msgid "Backup automático semanal no aparelho. Salve uma cópia fora dele para não perder nada."
+msgstr "Weekly automatic backup on the device. Save a copy elsewhere so you don't lose anything."
+
+msgid "Deixe do seu jeito"
+msgstr "Make it yours"
+
+msgid "Você pode mudar tudo isso depois em Configurações."
+msgstr "You can change all of this later in Settings."
+
+msgid "Primeiros passos"
+msgstr "First steps"
+
+msgid "Crie uma ficha em Treinos — ou escolha um modelo."
+msgstr "Create a plan in Workouts — or pick a template."
+
+msgid "No dia do treino, toque em Iniciar."
+msgstr "On workout day, tap Start."
+
+msgid "Registre cada série e use o cronômetro no descanso."
+msgstr "Log each set and use the timer during rest."
+
+msgid "Finalize a sessão para guardá-la no histórico."
+msgstr "Finish the session to save it to your history."
+
+msgid "Criar minha primeira ficha"
+msgstr "Create my first plan"
+
+msgid "Conhecer o aplicativo primeiro"
+msgstr "Explore the app first"
+
+msgid "Começar"
+msgstr "Get started"
+
+msgid "Avançar"
+msgstr "Next"
+
+msgid "Buscar exercícios, fichas e sessões…"
+msgstr "Search exercises, plans and sessions…"
+
+msgid "Busca"
+msgstr "Search"
+
+msgid "Digite pelo menos 2 letras. A busca ignora acentos e procura em nomes, objetivos, técnicas e observações."
+msgstr "Type at least 2 letters. The search ignores accents and looks in names, goals, techniques and notes."
+
+msgid "Nada encontrado"
+msgstr "Nothing found"
+
+msgid "Nenhum exercício, ficha ou sessão corresponde à busca."
+msgstr "No exercise, plan or session matches the search."
+
+msgid "Nome da ficha"
+msgstr "Plan name"
+
+msgid "Ex.: Hipertrofia ABC"
+msgstr "E.g.: Hypertrophy ABC"
+
+msgid "Objetivo da ficha (opcional)"
+msgstr "Plan goal (optional)"
+
+msgid "Objetivo, período, observações"
+msgstr "Goal, period, notes"
+
+msgid "Salvar nome e descrição"
+msgstr "Save name and description"
+
+msgid "ORGANIZAÇÃO"
+msgstr "ORGANIZATION"
+
+msgid "Dias da semana"
+msgstr "Weekdays"
+
+msgid "Sequência A/B/C"
+msgstr "A/B/C sequence"
+
+msgid "Cada dia da ficha é associado a dias da semana; aparece no calendário nessas datas."
+msgstr "Each day of the plan is linked to weekdays; it appears in the calendar on those dates."
+
+msgid "Os dias seguem em fila (A → B → C → A…). A Home mostra o próximo da sequência."
+msgstr "Days follow a queue (A → B → C → A…). Home shows the next one in the sequence."
+
+msgid "Ficha ativa"
+msgstr "Active plan"
+
+msgid "Fichas ativas aparecem na Home e no calendário."
+msgstr "Active plans appear on Home and in the calendar."
+
+msgid "DIAS DE TREINO"
+msgstr "WORKOUT DAYS"
+
+msgid "Adicione o primeiro dia (ex.: Treino A, Peito e tríceps)."
+msgstr "Add the first day (e.g.: Workout A, Chest and triceps)."
+
+msgid "Mover dia para cima"
+msgstr "Move day up"
+
+msgid "Mover dia para baixo"
+msgstr "Move day down"
+
+msgid "Editar dia "
+msgstr "Edit day "
+
+msgid "Excluir dia "
+msgstr "Delete day "
+
+msgid "Nenhum exercício neste dia."
+msgstr "No exercises on this day."
+
+msgid "Editar "
+msgstr "Edit "
+
+msgid " É só uma sugestão, não uma prescrição."
+msgstr " It is only a suggestion, not a prescription."
+
+msgid "Aceitar"
+msgstr "Accept"
+
+msgid "Ignorar"
+msgstr "Ignore"
+
+msgid "Mover exercício para cima"
+msgstr "Move exercise up"
+
+msgid "Mover exercício para baixo"
+msgstr "Move exercise down"
+
+msgid "Adicionar dia"
+msgstr "Add day"
+
+msgid "Toque em um exercício para selecioná-lo."
+msgstr "Tap an exercise to select it."
+
+msgid "Buscar por nome, músculo, equipamento, técnica…"
+msgstr "Search by name, muscle, equipment, technique…"
+
+msgid "Filtros ("
+msgstr "Filters ("
+
+msgid "Filtros"
+msgstr "Filters"
+
+msgid "Ocultar filtros"
+msgstr "Hide filters"
+
+msgid "Mostrar filtros"
+msgstr "Show filters"
+
+msgid " ativo(s)"
+msgstr " active"
+
+msgid "Novo"
+msgstr "New"
+
+msgid "Músculo"
+msgstr "Muscle"
+
+msgid "Equipamento"
+msgstr "Equipment"
+
+msgid "Movimento"
+msgstr "Movement"
+
+msgid "Favoritos"
+msgstr "Favorites"
+
+msgid "Personalizados"
+msgstr "Custom"
+
+msgid "Arquivados"
+msgstr "Archived"
+
+msgid "Limpar filtros"
+msgstr "Clear filters"
+
+msgid "Adicione exercícios aos favoritos"
+msgstr "Add exercises to your favorites"
+
+msgid "Nenhum exercício encontrado"
+msgstr "No exercises found"
+
+msgid "Toque na estrela de um exercício para acessá-lo rapidamente aqui."
+msgstr "Tap an exercise's star to access it quickly here."
+
+msgid "Nenhum exercício corresponde à busca e aos filtros. Ajuste os filtros ou crie um exercício personalizado."
+msgstr "No exercise matches the search and filters. Adjust the filters or create a custom exercise."
+
+msgid "Ver todos"
+msgstr "See all"
+
+msgid ", favorito"
+msgstr ", favorite"
+
+msgid ", personalizado"
+msgstr ", custom"
+
+msgid ", arquivado"
+msgstr ", archived"
+
+msgid "Personalizado"
+msgstr "Custom"
+
+msgid "Arquivado"
+msgstr "Archived"
+
+msgid "Carregar mais"
+msgstr "Load more"
+
+msgid "Série "
+msgstr "Set "
+
+msgid "  ×  "
+msgstr "  ×  "
+
+msgid " reps"
+msgstr " reps"
+
+msgid "Diminuir carga"
+msgstr "Decrease load"
+
+msgid "Aumentar carga"
+msgstr "Increase load"
+
+msgid "×"
+msgstr "×"
+
+msgid "Registrar série "
+msgstr "Log set "
+
+msgid "Foco"
+msgstr "Focus"
+
+msgid "Abrir modo foco"
+msgstr "Open focus mode"
+
+msgid "Série"
+msgstr "Set"
+
+msgid "Obs."
+msgstr "Notes"
+
+msgid "TÉCNICA E OBSERVAÇÕES"
+msgstr "TECHNIQUE AND NOTES"
+
+msgid "Observações da sessão"
+msgstr "Session notes"
+
+msgid "Descartar"
+msgstr "Discard"
+
+msgid "Finalizar sessão"
+msgstr "Finish session"
+
+msgid "Tempo restante "
+msgstr "Time left "
+
+msgid "Em contagem"
+msgstr "Running"
+
+msgid "Tempo encerrado — a série só é registrada por você."
+msgstr "Time's up — the set is only logged by you."
+
+msgid "Pronto para iniciar"
+msgstr "Ready to start"
+
+msgid "Pausar"
+msgstr "Pause"
+
+msgid "Retomar"
+msgstr "Resume"
+
+msgid "Reiniciar"
+msgstr "Reset"
+
+msgid "DURAÇÃO"
+msgstr "DURATION"
+
+msgid " min"
+msgstr " min"
+
+msgid " s"
+msgstr " s"
+
+msgid "Duração atual: "
+msgstr "Current duration: "
+
+msgid "Outra…"
+msgstr "Other…"
+
+msgid "{}h{:02}"
+msgstr "{}h{:02}"
+
+msgid "{} min"
+msgstr "{} min"
+
+msgid "Não é mais possível desfazer."
+msgstr "It is no longer possible to undo."
+
+msgid "Desfeito: {}"
+msgstr "Undone: {}"
+
+msgid "Não foi possível desfazer: {}"
+msgstr "Could not undo: {}"
+
+msgid "SESSÃO EM ANDAMENTO"
+msgstr "SESSION IN PROGRESS"
+
+msgid "{} de {} séries · iniciada às {}"
+msgstr "{} of {} sets · started at {}"
+
+msgid "Continuar"
+msgstr "Continue"
+
+msgid "Crie sua primeira ficha em Treinos."
+msgstr "Create your first plan in Workouts."
+
+msgid "Nenhum treino planejado para hoje. Toque para escolher uma ficha."
+msgstr "No workout planned for today. Tap to choose a plan."
+
+msgid "Dia livre"
+msgstr "Rest day"
+
+msgid "Treino do dia concluído"
+msgstr "Today's workout done"
+
+msgid "TREINO DE HOJE"
+msgstr "TODAY'S WORKOUT"
+
+msgid "TREINO DE HOJE · PRÓXIMO DA SEQUÊNCIA"
+msgstr "TODAY'S WORKOUT · NEXT IN SEQUENCE"
+
+msgid "{} exercício(s){}"
+msgstr "{} exercise(s){}"
+
+msgid " · já realizado hoje"
+msgstr " · already done today"
+
+msgid "ACESSO RÁPIDO · FICHAS FAVORITAS"
+msgstr "QUICK ACCESS · FAVORITE PLANS"
+
+msgid "+{} favorita(s)"
+msgstr "+{} favorite(s)"
+
+msgid "Toque para abrir"
+msgstr "Tap to open"
+
+msgid "Abrir"
+msgstr "Open"
+
+msgid "Próximo da sequência: {} ({})"
+msgstr "Next in sequence: {} ({})"
+
+msgid "PRÓXIMOS TREINOS"
+msgstr "UPCOMING WORKOUTS"
+
+msgid "ÚLTIMA SESSÃO"
+msgstr "LAST SESSION"
+
+msgid "{} · {} exercício(s) · {} série(s){}"
+msgstr "{} · {} exercise(s) · {} set(s){}"
+
+msgid "Detalhes"
+msgstr "Details"
+
+msgid "RECORDES RECENTES"
+msgstr "RECENT RECORDS"
+
+msgid "{} × {} em {}{}"
+msgstr "{} × {} on {}{}"
+
+msgid " · {} recorde(s) em 30 dias"
+msgstr " · {} record(s) in 30 days"
+
+msgid "SESSÕES NA SEMANA"
+msgstr "SESSIONS THIS WEEK"
+
+msgid "{} sessão(ões) concluída(s)"
+msgstr "{} session(s) completed"
+
+msgid "{} planejada(s) por dia da semana · {} séries registradas"
+msgstr "{} planned by weekday · {} sets logged"
+
+msgid "{} séries registradas"
+msgstr "{} sets logged"
+
+msgid "LEMBRETE · CÓPIA DO BACKUP"
+msgstr "REMINDER · BACKUP COPY"
+
+msgid "Última cópia salva por você fora do app: {}"
+msgstr "Last copy you saved outside the app: {}"
+
+msgid "Nenhuma cópia salva fora do app por aqui"
+msgstr "No copy saved outside the app from here"
+
+msgid "{} backup(s) no aparelho. Eles não protegem contra perda ou desinstalação: salve uma cópia fora do aparelho."
+msgstr "{} backup(s) on the device. They do not protect against loss or uninstalling: save a copy off the device."
+
+msgid "Sequência {}"
+msgstr "Sequence {}"
+
+msgid "{} dia(s) · {} exercício(s) · {}"
+msgstr "{} day(s) · {} exercise(s) · {}"
+
+msgid "Nova ficha {}"
+msgstr "New plan {}"
+
+msgid "Ficha criada. Dê um nome e adicione os dias de treino."
+msgstr "Plan created. Give it a name and add the workout days."
+
+msgid "Sem dia da semana definido — toque em editar"
+msgstr "No weekday set — tap edit"
+
+msgid "Posição {} na sequência"
+msgstr "Position {} in the sequence"
+
+msgid "Sugestão: aumentar de {} para {}"
+msgstr "Suggestion: increase from {} to {}"
+
+msgid "Ficha salva."
+msgstr "Plan saved."
+
+msgid "Sessão em andamento"
+msgstr "Session in progress"
+
+msgid "Já existe uma sessão em andamento. Continue-a ou finalize/descarte antes de iniciar outra."
+msgstr "There is already a session in progress. Continue it or finish/discard it before starting another."
+
+msgid "Abrir sessão"
+msgstr "Open session"
+
+msgid "Treino {}"
+msgstr "Workout {}"
+
+msgid "Editar dia"
+msgstr "Edit day"
+
+msgid "Novo dia de treino"
+msgstr "New workout day"
+
+msgid "Adicionar exercício"
+msgstr "Add exercise"
+
+msgid "Editar exercício"
+msgstr "Edit exercise"
+
+msgid "Escolha o exercício."
+msgstr "Choose the exercise."
+
+msgid "Séries: informe um número."
+msgstr "Sets: enter a number."
+
+msgid "Mostrando {} de {} exercício(s)"
+msgstr "Showing {} of {} exercise(s)"
+
+msgid "{} exercício(s)"
+msgstr "{} exercise(s)"
+
+msgid "Escolha um exercício diferente."
+msgstr "Choose a different exercise."
+
+msgid "Cadastrada pelo usuário"
+msgstr "Added by you"
+
+msgid "Alternativa cadastrada (vale nos dois sentidos)."
+msgstr "Alternative saved (works both ways)."
+
+msgid "Novo exercício"
+msgstr "New exercise"
+
+msgid "Exercício salvo."
+msgstr "Exercise saved."
+
+msgid "Todos"
+msgstr "All"
+
+msgid "Grupo muscular"
+msgstr "Muscle group"
+
+msgid "Tipo de exercício"
+msgstr "Exercise type"
+
+msgid "Padrão de movimento"
+msgstr "Movement pattern"
+
+msgid "Nenhuma sessão em andamento."
+msgstr "No session in progress."
+
+msgid "Última vez: {} × {} ({})"
+msgstr "Last time: {} × {} ({})"
+
+msgid "plan. {}{}"
+msgstr "plan. {}{}"
+
+msgid "{} × "
+msgstr "{} × "
+
+msgid "{} série(s) · {} reps{}{}"
+msgstr "{} set(s) · {} reps{}{}"
+
+msgid " · descanso {}"
+msgstr " · rest {}"
+
+msgid "Sem séries"
+msgstr "No sets"
+
+msgid "Substitui {} · só nesta sessão"
+msgstr "Replaces {} · this session only"
+
+msgid "Substitui {} · ficha atualizada"
+msgstr "Replaces {} · plan updated"
+
+msgid "{} · {}/{} séries"
+msgstr "{} · {}/{} sets"
+
+msgid "Série não encontrada."
+msgstr "Set not found."
+
+msgid "{} — após a série {}"
+msgstr "{} — after set {}"
+
+msgid "Série atualizada."
+msgstr "Set updated."
+
+msgid "Série registrada."
+msgstr "Set logged."
+
+msgid "Série registrada. Descanso de {} iniciado."
+msgstr "Set logged. {} rest started."
+
+msgid "★ Novo recorde: {}. {}"
+msgstr "★ New record: {}. {}"
+
+msgid "Registro da série"
+msgstr "Set log"
+
+msgid "Novo recorde: {}"
+msgstr "New record: {}"
+
+msgid "Sem séries — adicione na tela da sessão"
+msgstr "No sets — add them on the session screen"
+
+msgid "Planejado: {}{} reps"
+msgstr "Planned: {}{} reps"
+
+msgid "Última vez: {} × {}"
+msgstr "Last time: {} × {}"
+
+msgid "{} × {}"
+msgstr "{} × {}"
+
+msgid "Série {} de {}"
+msgstr "Set {} of {}"
+
+msgid "{} (original: {})"
+msgstr "{} (original: {})"
+
+msgid "Escolha o exercício substituto."
+msgstr "Choose the replacement exercise."
+
+msgid "Substituído. A ficha foi atualizada para as próximas sessões."
+msgstr "Replaced. The plan has been updated for upcoming sessions."
+
+msgid "Substituído somente nesta sessão. A ficha não mudou."
+msgstr "Replaced in this session only. The plan did not change."
+
+msgid "Sessão finalizada e salva no histórico."
+msgstr "Session finished and saved to history."
+
+msgid "Alerta com a tela bloqueada"
+msgstr "Alert with the screen locked"
+
+msgid "Para avisar o fim do descanso quando o app estiver em segundo plano ou com a tela bloqueada, o EMPETO precisa enviar notificações. Sem essa permissão, o cronômetro continua funcionando normalmente na tela (e a vibração, se ativada)."
+msgstr "To announce the end of rest when the app is in the background or the screen is locked, EMPETO needs to send notifications. Without this permission, the timer keeps working normally on screen (and the vibration, if enabled)."
+
+msgid "Permitir"
+msgstr "Allow"
+
+msgid "Agora não"
+msgstr "Not now"
+
+msgid "Descanso encerrado."
+msgstr "Rest finished."
+
+msgid "Hora de iniciar a série."
+msgstr "Time to start the set."
+
+msgid "Descanso"
+msgstr "Rest"
+
+msgid "Preparação — próxima série"
+msgstr "Get ready — next set"
+
+msgid "Notificações desativadas: com o app em segundo plano o alerta pode não aparecer. O cronômetro continua correto ao voltar."
+msgstr "Notifications are off: with the app in the background the alert may not appear. The timer is still correct when you come back."
+
+msgid "Alerta em segundo plano desativado nas preferências."
+msgstr "Background alert is turned off in preferences."
+
+msgid "{} s"
+msgstr "{} s"
+
+msgid "Hora de iniciar a série"
+msgstr "Time to start the set"
+
+msgid "Toque para abrir o EMPETO"
+msgstr "Tap to open EMPETO"
+
+msgid "Faltam {} s de descanso"
+msgstr "{} s of rest left"
+
+msgid "Descanso em andamento"
+msgstr "Rest in progress"
+
+msgid "O descanso terminou enquanto o app estava em segundo plano."
+msgstr "The rest ended while the app was in the background."
+
+msgid "{} sessão(ões), volume {}"
+msgstr "{} session(s), volume {}"
+
+msgid "{} · {} exercício(s) · {} série(s)"
+msgstr "{} · {} exercise(s) · {} set(s)"
+
+msgid " · próximo da sequência"
+msgstr " · next in sequence"
+
+msgid "Treino realizado: {}"
+msgstr "Workout done: {}"
+
+msgid "Treino: {}"
+msgstr "Workout: {}"
+
+msgid "Nenhum app de agenda encontrado no aparelho."
+msgstr "No calendar app found on the device."
+
+msgid "Versão do app: {}\nSchema do banco: {}\nIntegridade do banco: {}\nNotificações permitidas: {}\nCronômetro: {}\n\nEtapas da última abertura:\n{}"
+msgstr "App version: {}\nDatabase schema: {}\nDatabase integrity: {}\nNotifications allowed: {}\nTimer: {}\n\nSteps of the last launch:\n{}"
+
+msgid "sim"
+msgstr "yes"
+
+msgid "não"
+msgstr "no"
+
+msgid "Diagnóstico"
+msgstr "Diagnostics"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "{} exercício(s) · {} série(s) · volume {}{}"
+msgstr "{} exercise(s) · {} set(s) · volume {}{}"
+
+msgid "{} sessão(ões) · última em {}"
+msgstr "{} session(s) · last on {}"
+
+msgid "Substituiu {} (só nesta sessão)"
+msgstr "Replaced {} (this session only)"
+
+msgid "Substituiu {} (permanente)"
+msgstr "Replaced {} (permanent)"
+
+msgid "não registrada"
+msgstr "not logged"
+
+msgid " · intervalo {}"
+msgstr " · rest {}"
+
+msgid "Série {}: {}  (plan. {}{}){}"
+msgstr "Set {}: {}  (plan. {}{}){}"
+
+msgid "Não realizado nesta sessão."
+msgstr "Not done in this session."
+
+msgid " · descanso planejado {}"
+msgstr " · planned rest {}"
+
+msgid "{} · em andamento"
+msgstr "{} · in progress"
+
+msgid "{} série(s) · volume {}"
+msgstr "{} set(s) · volume {}"
+
+msgid "{} reps"
+msgstr "{} reps"
+
+msgid "Carga máxima"
+msgstr "Max load"
+
+msgid "1RM estimada"
+msgstr "Estimated 1RM"
+
+msgid "Maior carga: {} · Mais repetições: {} · Maior volume em uma série: {} · 1RM estimada: {}"
+msgstr "Heaviest load: {} · Most reps: {} · Highest single-set volume: {} · Estimated 1RM: {}"
+
+msgid "{} — {} ({} × {})"
+msgstr "{} — {} ({} × {})"
+
+msgid "{} sessão(ões) no período. Variação: {}{}{}"
+msgstr "{} session(s) in the period. Change: {}{}{}"
+
+msgid "1 sessão no período."
+msgstr "1 session in the period."
+
+msgid "{} série(s) · melhor {} reps"
+msgstr "{} set(s) · best {} reps"
+
+msgid "mín. {}"
+msgstr "min. {}"
+
+msgid "máx. {}"
+msgstr "max. {}"
+
+msgid "Em segundo plano, o alerta usa uma notificação do sistema."
+msgstr "In the background, the alert uses a system notification."
+
+msgid "Notificações permitidas. O Android pode atrasar o alerta alguns segundos em modo de economia de energia."
+msgstr "Notifications allowed. Android may delay the alert a few seconds in battery saver mode."
+
+msgid "Notificações não permitidas: em segundo plano, apenas a vibração (se ativada) pode ocorrer. O cronômetro continua correto na tela."
+msgstr "Notifications not allowed: in the background, only vibration (if enabled) can happen. The timer is still correct on screen."
+
+msgid "{} ficha(s) · {} exercício(s) na biblioteca · {} sessão(ões) · {} série(s) registradas. Tudo fica no armazenamento privado do app (sem internet, sem nuvem)."
+msgstr "{} plan(s) · {} exercise(s) in the library · {} session(s) · {} set(s) logged. Everything stays in the app's private storage (no internet, no cloud)."
+
+msgid "{} backup(s) no aparelho · {}\nÚltimo automático: {}\nÚltima cópia que você salvou fora do app: {}\n\nOs backups ficam na área privada do app: são apagados se o app for desinstalado."
+msgstr "{} backup(s) on the device · {}\nLast automatic: {}\nLast copy you saved outside the app: {}\n\nBackups are kept in the app's private area: they are deleted if the app is uninstalled."
+
+msgid "nenhum ainda"
+msgstr "none yet"
+
+msgid "nenhuma registrada"
+msgstr "none recorded"
+
+msgid "{} · {} ficha(s) · {} sessão(ões){}"
+msgstr "{} · {} plan(s) · {} session(s){}"
+
+msgid " · com senha"
+msgstr " · password protected"
+
+msgid "{} · arquivo ilegível (não pode ser restaurado)"
+msgstr "{} · unreadable file (cannot be restored)"
+
+msgid "Nenhum"
+msgstr "None"
+
+msgid "{} · {} arquivo(s)"
+msgstr "{} · {} file(s)"
+
+msgid "Quilogramas (kg)"
+msgstr "Kilograms (kg)"
+
+msgid "Libras (lb)"
+msgstr "Pounds (lb)"
+
+msgid "Seguir sistema"
+msgstr "Follow system"
+
+msgid "Claro"
+msgstr "Light"
+
+msgid "Escuro"
+msgstr "Dark"
+
+msgid "Nenhum treino planejado para hoje. Escolha uma ficha."
+msgstr "No workout planned for today. Choose a plan."
+
+msgid "Encontramos a sessão \"{} — {}\", iniciada em {}, que não foi finalizada (o app pode ter sido fechado ou o aparelho desligado).\n\n{} de {} série(s) registradas estão salvas. Deseja continuar de onde parou?"
+msgstr "We found the session \"{} — {}\", started on {}, which was not finished (the app may have been closed or the device turned off).\n\n{} of {} logged set(s) are saved. Do you want to continue where you left off?"
+
+msgid "Sessão interrompida"
+msgstr "Interrupted session"
+
+msgid "Descartar…"
+msgstr "Discard…"
+
+msgid "Modelos de fichas"
+msgstr "Plan templates"
+
+msgid "Escolha um modelo para ver a prévia. Nada é criado antes de confirmar."
+msgstr "Choose a template to see a preview. Nothing is created until you confirm."
+
+msgid "Atalho da posição {}"
+msgstr "Shortcut in position {}"
+
+msgid "Se o atalho já estiver em outra posição, os dois trocam de lugar."
+msgstr "If the shortcut is already in another position, the two swap places."
+
+msgid "Backup criado no aparelho. Salve uma cópia fora dele para mais segurança."
+msgstr "Backup created on the device. Save a copy elsewhere for extra safety."
+
+msgid "Cópia do backup salva"
+msgstr "Backup copy saved"
+
+msgid "Excluir o backup de {}{}? Esta ação não pode ser desfeita. Seus dados atuais não são afetados."
+msgstr "Delete the backup from {}{}? This cannot be undone. Your current data is not affected."
+
+msgid " (automático)"
+msgstr " (automatic)"
+
+msgid "Excluir backup"
+msgstr "Delete backup"
+
+msgid "Temporários limpos: {} liberados."
+msgstr "Temporary files cleared: {} freed."
+
+msgid "Permitir notificações"
+msgstr "Allow notifications"
+
+msgid "O alerta com o app em segundo plano é exibido como notificação. Ao continuar, o Android vai pedir sua autorização. Você pode negar: o restante do app continua funcionando."
+msgstr "The alert with the app in the background is shown as a notification. If you continue, Android will ask for your permission. You can refuse: the rest of the app keeps working."
+
+msgid "Os valores são guardados com precisão em gramas; trocar a unidade só muda a exibição."
+msgstr "Values are stored precisely in grams; changing the unit only changes the display."
+
+msgid "Muda os textos do aplicativo. Nomes de exercícios, fichas e anotações não são alterados."
+msgstr "Changes the app's text. Names of exercises, plans and notes are not changed."
+
+msgid "\"Seguir sistema\" acompanha o modo claro/escuro do Android."
+msgstr "\"Follow system\" matches Android's light/dark mode."
+
+msgid "Densidade da interface"
+msgstr "Interface density"
+
+msgid "A densidade compacta não reduz o tamanho mínimo dos botões."
+msgstr "Compact density does not reduce the minimum button size."
+
+msgid "\"Seguir sistema\" respeita a opção \"Remover animações\" do Android."
+msgstr "\"Follow system\" respects Android's \"Remove animations\" option."
+
+msgid "Incremento de carga"
+msgstr "Load increment"
+
+msgid "\nAtenção: {} exercício(s) não estão na biblioteca e serão criados como personalizados: {}."
+msgstr "\nNote: {} exercise(s) are not in the library and will be created as custom: {}."
+
+msgid "Modelo {}"
+msgstr "Template {}"
+
+msgid "Planilha exportada"
+msgstr "Spreadsheet exported"
+
+msgid "Modelo salvo"
+msgstr "Template saved"
+
+msgid "Senha do backup (opcional)"
+msgstr "Backup password (optional)"
+
+msgid "Com senha, o banco dentro do arquivo é criptografado (AES-256) e só pode ser restaurado com ela. Deixe em branco para não usar senha. Não há como recuperar uma senha esquecida."
+msgstr "With a password, the database inside the file is encrypted (AES-256) and can only be restored with it. Leave blank for no password. A forgotten password cannot be recovered."
+
+msgid "Backup criado"
+msgstr "Backup created"
+
+msgid "Calendário exportado"
+msgstr "Calendar exported"
+
+msgid "Não foi possível importar"
+msgstr "Could not import"
+
+msgid "Backup protegido por senha"
+msgstr "Password-protected backup"
+
+msgid "Backup de {}. Informe a senha usada ao criá-lo."
+msgstr "Backup from {}. Enter the password used to create it."
+
+msgid "Senha do backup incorreta. Tente novamente."
+msgstr "Wrong backup password. Try again."
+
+msgid "Senha incorreta. Informe novamente."
+msgstr "Wrong password. Enter it again."
+
+msgid "Backup de {} (app {}): {} ficha(s), {} sessão(ões), {} série(s).\n\nOs dados atuais serão substituídos por este backup. Uma cópia do estado atual é guardada para desfazer em caso de falha. Deseja continuar?"
+msgstr "Backup from {} (app {}): {} plan(s), {} session(s), {} set(s).\n\nYour current data will be replaced by this backup. A copy of the current state is kept to roll back in case of failure. Do you want to continue?"
+
+msgid "Restaurar backup"
+msgstr "Restore backup"
+
+msgid "Backup inválido"
+msgstr "Invalid backup"
+
+msgid "Coluna {}"
+msgstr "Column {}"
+
+msgid "Ex.: {}"
+msgstr "E.g.: {}"
+
+msgid "{} {}×{}{}"
+msgstr "{} {}×{}{}"
+
+msgid "{} linha(s) com dados, {} válida(s) → {} ficha(s), {} exercício(s). Nada é gravado até você confirmar."
+msgstr "{} row(s) with data, {} valid → {} plan(s), {} exercise(s). Nothing is saved until you confirm."
+
+msgid "Todas as abas ({})"
+msgstr "All sheets ({})"
+
+msgid "Confira os avisos antes de importar."
+msgstr "Check the warnings before importing."
+
+msgid "Importação concluída"
+msgstr "Import complete"
+
+msgid "{} ficha(s), {} dia(s) e {} exercício(s) importados.{}{}"
+msgstr "{} plan(s), {} day(s) and {} exercise(s) imported.{}{}"
+
+msgid "\n{} exercício(s) novo(s) adicionados à biblioteca."
+msgstr "\n{} new exercise(s) added to the library."
+
+msgid "\n{} ficha(s) substituída(s)."
+msgstr "\n{} plan(s) replaced."
+
+msgid "Importação não realizada"
+msgstr "Import not done"
+
+msgid "{}\n\nNenhum dado foi gravado."
+msgstr "{}\n\nNo data was saved."
+
+msgid "Backup restaurado"
+msgstr "Backup restored"
+
+msgid "Fichas, sessões, exercícios e preferências foram restaurados."
+msgstr "Plans, sessions, exercises and preferences were restored."
+
+msgid "Falha na restauração"
+msgstr "Restore failed"
+
+msgid "{}\n\nOs dados anteriores foram mantidos."
+msgstr "{}\n\nYour previous data was kept."
+
+msgid "Ficha excluída. Sessões já realizadas continuam no histórico."
+msgstr "Plan deleted. Sessions already done remain in history."
+
+msgid "{} removido da ficha."
+msgstr "{} removed from the plan."
+
+msgid "Remoção do exercício"
+msgstr "Exercise removal"
+
+msgid "Sessão descartada. Nada foi gravado no histórico."
+msgstr "Session discarded. Nothing was saved to history."
+
+msgid "Backup excluído."
+msgstr "Backup deleted."
+
+msgid "Exercício arquivado."
+msgstr "Exercise archived."
+
+msgid "Exercício reativado."
+msgstr "Exercise restored."
+
+msgid "Arquivamento"
+msgstr "Archiving"
+
+msgid "Reativação"
+msgstr "Restoring"
+
+msgid "A senha deve ter pelo menos 4 caracteres (ou deixe em branco)."
+msgstr "The password must have at least 4 characters (or leave it blank)."
+
+msgid "Informe pelo menos 1 segundo."
+msgstr "Enter at least 1 second."
+
+msgid "Ficha criada a partir do modelo. Ajuste à vontade — o modelo não muda."
+msgstr "Plan created from the template. Adjust it as you like — the template does not change."
+
+msgid "Descartar sessão"
+msgstr "Discard session"
+
+msgid "Descartar a sessão interrompida? As séries registradas nela não irão para o histórico. Para guardá-las, escolha Cancelar e finalize a sessão."
+msgstr "Discard the interrupted session? The sets logged in it will not go to history. To keep them, choose Cancel and finish the session."
+
+msgid "Notificações permitidas. Você receberá o alerta com a tela bloqueada."
+msgstr "Notifications allowed. You will get the alert with the screen locked."
+
+msgid "Permissão negada. O cronômetro continua funcionando na tela; em segundo plano o alerta pode não aparecer."
+msgstr "Permission denied. The timer keeps working on screen; in the background the alert may not appear."
+
+msgid "Seguir o sistema"
+msgstr "Follow the system"
+
+msgid "Erro ao abrir os dados"
+msgstr "Error opening the data"
+
+msgid "{}\n\nO app abriu em modo temporário (nada será salvo). Restaure um backup ou reinstale o app."
+msgstr "{}\n\nThe app opened in temporary mode (nothing will be saved). Restore a backup or reinstall the app."
+
+msgid "Ficha duplicada."
+msgstr "Plan duplicated."
+
+msgid "Excluir ficha"
+msgstr "Delete plan"
+
+msgid "Excluir \"{}\"? As sessões já realizadas com esta ficha continuam no histórico."
+msgstr "Delete \"{}\"? Sessions already done with this plan remain in history."
+
+msgid "Excluir dia"
+msgstr "Delete day"
+
+msgid "Excluir \"{}\" e seus exercícios desta ficha? O histórico não é afetado."
+msgstr "Delete \"{}\" and its exercises from this plan? History is not affected."
+
+msgid "Remover exercício"
+msgstr "Remove exercise"
+
+msgid "Remover este exercício da ficha? O histórico não é afetado."
+msgstr "Remove this exercise from the plan? History is not affected."
+
+msgid "Atalhos padrão restaurados."
+msgstr "Default shortcuts restored."
+
+msgid "Reativar exercício"
+msgstr "Restore exercise"
+
+msgid "Arquivar exercício"
+msgstr "Archive exercise"
+
+msgid "O exercício volta a aparecer na biblioteca."
+msgstr "The exercise will appear in the library again."
+
+msgid "O exercício deixa de aparecer na biblioteca. O histórico continua com os registros."
+msgstr "The exercise will no longer appear in the library. History keeps its records."
+
+msgid "Registro da série desfeito."
+msgstr "Set log undone."
+
+msgid "Desfazer registro"
+msgstr "Undo log"
+
+msgid "Série removida."
+msgstr "Set removed."
+
+msgid "Remoção da série"
+msgstr "Set removal"
+
+msgid "Exercício original restaurado nesta sessão."
+msgstr "Original exercise restored in this session."
+
+msgid "Observação do exercício"
+msgstr "Exercise note"
+
+msgid "Registre pelo menos uma série antes de finalizar, ou descarte a sessão."
+msgstr "Log at least one set before finishing, or discard the session."
+
+msgid "{} série(s) não registrada(s) serão descartadas. Após finalizar, a sessão vira registro histórico e não pode ser alterada."
+msgstr "{} unlogged set(s) will be discarded. After finishing, the session becomes a historical record and cannot be changed."
+
+msgid "Após finalizar, a sessão vira registro histórico e não pode ser alterada."
+msgstr "After finishing, the session becomes a historical record and cannot be changed."
+
+msgid "Finalizar"
+msgstr "Finish"
+
+msgid "Descartar esta sessão? Nada dela será salvo no histórico."
+msgstr "Discard this session? Nothing from it will be saved to history."
+
+msgid "Sem valores para preencher."
+msgstr "No values to fill in."
+
+msgid "{} — descanso"
+msgstr "{} — rest"
+
+msgid "Duração do cronômetro"
+msgstr "Timer duration"
+
+msgid "Em segundos (ex.: 75) ou minutos:segundos (ex.: 1:15)."
+msgstr "In seconds (e.g.: 75) or minutes:seconds (e.g.: 1:15)."
+
+msgid "Sugestão indisponível."
+msgstr "Suggestion unavailable."
+
+msgid "Carga-alvo atualizada na ficha."
+msgstr "Target load updated in the plan."
+
+msgid "Escolha o exercício alternativo."
+msgstr "Choose the alternative exercise."
+
+msgid "Som e vibração estão desligados."
+msgstr "Sound and vibration are off."
+
+msgid "Exportar planilha"
+msgstr "Export spreadsheet"
+
+msgid "Escolha o que exportar. Depois você escolhe onde salvar o arquivo."
+msgstr "Choose what to export. Then you choose where to save the file."
+
+msgid "Fichas de treino"
+msgstr "Workout plans"
+
+msgid "Histórico de sessões"
+msgstr "Session history"
+
+msgid "Tudo (fichas + histórico)"
+msgstr "Everything (plans + history)"
+
+msgid "Todas as abas (juntar)"
+msgstr "All sheets (combine)"
+
+msgid "Aba da planilha"
+msgstr "Spreadsheet sheet"
+
+msgid "Ignorar esta coluna"
+msgstr "Ignore this column"
+
+msgid "Campo da coluna"
+msgstr "Column field"
+
+msgid "Pequena"
+msgstr "Small"
+
+msgid "Média"
+msgstr "Medium"
+
+msgid "Grande"
+msgstr "Large"
+
+msgid "Extragrande"
+msgstr "Extra large"
+
+msgid "Compacta"
+msgstr "Compact"
+
+msgid "Padrão"
+msgstr "Default"
+
+msgid "Espaçosa"
+msgstr "Spacious"
+
+msgid "Normais"
+msgstr "Normal"
+
+msgid "Reduzidas"
+msgstr "Reduced"
+
+msgid "Desativadas"
+msgstr "Off"
+
+msgid "Rápida"
+msgstr "Fast"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Lenta"
+msgstr "Slow"
+
+msgid "Bipe curto"
+msgstr "Short beep"
+
+msgid "Bipe duplo"
+msgstr "Double beep"
+
+msgid "Bipe longo"
+msgstr "Long beep"
+
+msgid "Sinal suave"
+msgstr "Soft tone"
+
+msgid "Ficha"
+msgstr "Plan"
+
+msgid "Sessão"
+msgstr "Session"
+
+msgid "{} dia(s){}"
+msgstr "{} day(s){}"
+
+msgid " · favorita"
+msgstr " · favorite"
+
+msgid "{:02}/{:02}/{} · {} série(s)"
+msgstr "{:02}/{:02}/{} · {} set(s)"
+
+msgid "Próximo treino"
+msgstr "Next workout"
+
+msgid "{} B"
+msgstr "{} B"
+
+msgid "{:.0} KB"
+msgstr "{:.0} KB"
+
+msgid "{:.1} MB"
+msgstr "{:.1} MB"
+
+msgid "Backup não encontrado."
+msgstr "Backup not found."
+
+msgid "Arquivo fora da pasta de backups."
+msgstr "File outside the backups folder."
+
+msgid "{} de {}"
+msgstr "{} {}"
+
+msgid "{}, {} de {} de {}"
+msgstr "{}, {} {} {}"
+
+msgid "Janeiro"
+msgstr "January"
+
+msgid "Fevereiro"
+msgstr "February"
+
+msgid "Março"
+msgstr "March"
+
+msgid "Abril"
+msgstr "April"
+
+msgid "Maio"
+msgstr "May"
+
+msgid "Junho"
+msgstr "June"
+
+msgid "Julho"
+msgstr "July"
+
+msgid "Agosto"
+msgstr "August"
+
+msgid "Setembro"
+msgstr "September"
+
+msgid "Outubro"
+msgstr "October"
+
+msgid "Novembro"
+msgstr "November"
+
+msgid "Dezembro"
+msgstr "December"
+
+msgid "Informe as repetições realizadas."
+msgstr "Enter the reps done."
+
+msgid "Repetições devem estar entre 0 e 1000."
+msgstr "Reps must be between 0 and 1000."
+
+msgid "Sessões concluídas fazem parte do histórico e não podem ser alteradas."
+msgstr "Completed sessions are part of history and cannot be changed."
+
+msgid "Já existe um exercício com esse nome."
+msgstr "An exercise with that name already exists."
+
+msgid "O registro está em uso e não pode ser removido."
+msgstr "The record is in use and cannot be removed."
+
+msgid "Erro no banco de dados: {}"
+msgstr "Database error: {}"
+
+msgid "Erro de arquivo: {}"
+msgstr "File error: {}"
+
+msgid "Erro de serialização: {}"
+msgstr "Serialization error: {}"
+
+msgid "Sequência (A/B/C…)"
+msgstr "Sequence (A/B/C…)"
+
+msgid "Informe o nome do exercício."
+msgstr "Enter the exercise name."
+
+msgid "Séries devem estar entre 1 e 50."
+msgstr "Sets must be between 1 and 50."
+
+msgid "Carga fora do intervalo permitido (0 a 2000 kg)."
+msgstr "Load out of the allowed range (0 to 2000 kg)."
+
+msgid "Descanso deve estar entre 0 e 3600 segundos."
+msgstr "Rest must be between 0 and 3600 seconds."
+
+msgid "Substituição só nesta sessão"
+msgstr "Replacement for this session only"
+
+msgid "Substituição permanente na ficha"
+msgstr "Permanent replacement in the plan"
+
+msgid "Carga inválida: \"{}\""
+msgstr "Invalid load: \"{}\""
+
+msgid "Carga acima do limite (2000 kg)."
+msgstr "Load above the limit (2000 kg)."
+
+msgid "Informe as repetições."
+msgstr "Enter the reps."
+
+msgid "Repetições inválidas: \"{}\""
+msgstr "Invalid reps: \"{}\""
+
+msgid "Descanso inválido: \"{}\""
+msgstr "Invalid rest: \"{}\""
+
+msgid "Seg"
+msgstr "Mon"
+
+msgid "Ter"
+msgstr "Tue"
+
+msgid "Qua"
+msgstr "Wed"
+
+msgid "Qui"
+msgstr "Thu"
+
+msgid "Sex"
+msgstr "Fri"
+
+msgid "Sáb"
+msgstr "Sat"
+
+msgid "Dom"
+msgstr "Sun"
+
+msgid "maior carga"
+msgstr "heaviest load"
+
+msgid "mais repetições"
+msgstr "most reps"
+
+msgid "maior volume em uma série"
+msgstr "highest single-set volume"
+
+msgid "maior 1RM estimada"
+msgstr "highest estimated 1RM"
+
+msgid "Arquivo de backup inválido: {}"
+msgstr "Invalid backup file: {}"
+
+msgid "A senha do backup deve ter pelo menos 4 caracteres."
+msgstr "The backup password must have at least 4 characters."
+
+msgid "O arquivo selecionado não é um backup do EMPETO (.zip)."
+msgstr "The selected file is not an EMPETO backup (.zip)."
+
+msgid "Backup sem manifesto (manifest.json)."
+msgstr "Backup without manifest (manifest.json)."
+
+msgid "Manifesto do backup inválido."
+msgstr "Invalid backup manifest."
+
+msgid "Não foi possível ler o arquivo."
+msgstr "Could not read the file."
+
+msgid "Arquivo grande demais para ser um backup do EMPETO."
+msgstr "File too large to be an EMPETO backup."
+
+msgid "Backup com conteúdo inesperado."
+msgstr "Backup with unexpected content."
+
+msgid "O arquivo não é um backup do EMPETO."
+msgstr "The file is not an EMPETO backup."
+
+msgid "Este backup foi criado por uma versão mais nova do app. Atualize o aplicativo para restaurá-lo."
+msgstr "This backup was created by a newer version of the app. Update the app to restore it."
+
+msgid "Este backup é protegido por senha. Informe a senha."
+msgstr "This backup is password protected. Enter the password."
+
+msgid "Senha do backup incorreta."
+msgstr "Wrong backup password."
+
+msgid "Backup sem banco de dados."
+msgstr "Backup without database."
+
+msgid "Banco de dados do backup grande demais."
+msgstr "Backup database too large."
+
+msgid "Backup corrompido: a verificação de integridade (SHA-256) falhou."
+msgstr "Corrupted backup: the integrity check (SHA-256) failed."
+
+msgid "Backup corrompido: o banco de dados não passou na verificação."
+msgstr "Corrupted backup: the database failed the check."
+
+msgid "Versão de banco de dados não suportada no backup."
+msgstr "Unsupported database version in the backup."
+
+msgid "Backup inconsistente: referências inválidas."
+msgstr "Inconsistent backup: invalid references."
+
+msgid "Restauração indisponível para banco em memória."
+msgstr "Restore unavailable for an in-memory database."
+
+msgid "Falha na verificação após restaurar."
+msgstr "Verification failed after restoring."
+
+msgid "Dia"
+msgstr "Day"
+
+msgid "Ordem"
+msgstr "Order"
+
+msgid "Não foi possível ler o arquivo selecionado."
+msgstr "Could not read the selected file."
+
+msgid "O arquivo está vazio."
+msgstr "The file is empty."
+
+msgid "Arquivo muito grande (limite de 10 MB)."
+msgstr "File too large (10 MB limit)."
+
+msgid "Formato não reconhecido. Selecione uma planilha .xlsx (Excel), .ods ou .xls."
+msgstr "Format not recognized. Select an .xlsx (Excel), .ods or .xls spreadsheet."
+
+msgid "Não foi possível abrir a planilha: o arquivo parece corrompido ou não é uma planilha."
+msgstr "Could not open the spreadsheet: the file seems corrupted or is not a spreadsheet."
+
+msgid "A planilha não contém abas."
+msgstr "The spreadsheet has no sheets."
+
+msgid "A aba \"{}\" tem mais de {} linhas. Divida a planilha em arquivos menores."
+msgstr "Sheet \"{}\" has more than {} rows. Split the spreadsheet into smaller files."
+
+msgid "Nenhuma aba pôde ser lida."
+msgstr "No sheet could be read."
+
+msgid "… outras mensagens omitidas."
+msgstr "… other messages omitted."
+
+msgid "Nenhuma coluna foi associada a \"Exercício\". Ajuste o mapeamento: essa coluna é obrigatória."
+msgstr "No column was mapped to \"Exercise\". Adjust the mapping: this column is required."
+
+msgid "séries"
+msgstr "sets"
+
+msgid "repetições"
+msgstr "reps"
+
+msgid "Coluna de {} não identificada: será usado o valor padrão para todos os exercícios."
+msgstr "Column for {} not identified: the default value will be used for all exercises."
+
+msgid "Linha {}: sem nome de exercício — linha ignorada."
+msgstr "Row {}: no exercise name — row ignored."
+
+msgid "Treino A"
+msgstr "Workout A"
+
+msgid "Linha {}: séries não informadas — usado {}."
+msgstr "Row {}: sets not given — used {}."
+
+msgid "Linha {}: séries inválidas (\"{}\") — usado {}."
+msgstr "Row {}: invalid sets (\"{}\") — used {}."
+
+msgid "Linha {}: repetições não informadas — usado {}."
+msgstr "Row {}: reps not given — used {}."
+
+msgid "Linha {}: repetições inválidas (\"{}\") — usado padrão."
+msgstr "Row {}: invalid reps (\"{}\") — default used."
+
+msgid "Linha {}: carga inválida (\"{}\") — usado 0."
+msgstr "Row {}: invalid load (\"{}\") — used 0."
+
+msgid "Linha {}: descanso inválido (\"{}\") — usado {} s."
+msgstr "Row {}: invalid rest (\"{}\") — used {} s."
+
+msgid "Linha {}: {} — linha ignorada."
+msgstr "Row {}: {} — row ignored."
+
+msgid "{} linha(s) sem descanso informado — usado {} s."
+msgstr "{} row(s) without rest given — used {} s."
+
+msgid "Nenhuma linha válida encontrada. Verifique a aba selecionada e o mapeamento."
+msgstr "No valid rows found. Check the selected sheet and the mapping."
+
+msgid "Colunas não reconhecidas (serão ignoradas): {}."
+msgstr "Unrecognized columns (will be ignored): {}."
+
+msgid "todas as abas"
+msgstr "all sheets"
+
+msgid "sem linhas válidas"
+msgstr "no valid rows"
+
+msgid "Aba \"{}\" ignorada: {}"
+msgstr "Sheet \"{}\" ignored: {}"
+
+msgid "[{}] {}"
+msgstr "[{}] {}"
+
+msgid "Nenhuma aba tem linhas válidas para importar."
+msgstr "No sheet has valid rows to import."
+
+msgid "A prévia contém erros. Corrija o mapeamento antes de importar."
+msgstr "The preview has errors. Fix the mapping before importing."
+
+msgid "A ficha \"{}\" está em uma sessão em andamento e não pode ser substituída."
+msgstr "Plan \"{}\" is in a session in progress and cannot be replaced."
+
+msgid "{} (importada)"
+msgstr "{} (imported)"
+
+msgid "{} (importada {})"
+msgstr "{} (imported {})"
+
+msgid "Importada da aba \"{}\""
+msgstr "Imported from sheet \"{}\""
+
+msgid "O banco de dados é de uma versão mais nova do app (schema {}). Atualize o aplicativo."
+msgstr "The database is from a newer version of the app (schema {}). Update the app."
+
+msgid "Exercício não encontrado."
+msgstr "Exercise not found."
+
+msgid "Ficha não encontrada."
+msgstr "Plan not found."
+
+msgid "Este exercício está em uma ficha. Remova-o das fichas antes de arquivar."
+msgstr "This exercise is in a plan. Remove it from the plans before archiving."
+
+msgid "Mesmo grupo muscular"
+msgstr "Same muscle group"
+
+msgid "Um exercício não pode ser alternativa de si mesmo."
+msgstr "An exercise cannot be an alternative to itself."
+
+msgid "Informe o nome da ficha."
+msgstr "Enter the plan name."
+
+msgid "Há uma sessão em andamento com esta ficha. Finalize ou descarte a sessão antes de excluir."
+msgstr "There is a session in progress with this plan. Finish or discard the session before deleting."
+
+msgid "{} (cópia)"
+msgstr "{} (copy)"
+
+msgid "{} (cópia {})"
+msgstr "{} (copy {})"
+
+msgid "Dia da ficha não encontrado."
+msgstr "Plan day not found."
+
+msgid "Informe o nome do dia (ex.: Treino A, Peito e tríceps)."
+msgstr "Enter the day name (e.g.: Workout A, Chest and triceps)."
+
+msgid "Informe o nome do dia."
+msgstr "Enter the day name."
+
+msgid "Exercício da ficha não encontrado."
+msgstr "Plan exercise not found."
+
+msgid "Este exercício está arquivado."
+msgstr "This exercise is archived."
+
+msgid "Na última sessão você fez {} série(s) com {} reps ({}), no topo da faixa {}."
+msgstr "In the last session you did {} set(s) with {} reps ({}), at the top of the {} range."
+
+msgid "Já existe uma sessão em andamento. Finalize-a ou descarte-a antes de iniciar outra."
+msgstr "There is already a session in progress. Finish or discard it before starting another."
+
+msgid "Este dia não tem exercícios. Adicione exercícios antes de iniciar."
+msgstr "This day has no exercises. Add exercises before starting."
+
+msgid "Sessão não encontrada."
+msgstr "Session not found."
+
+msgid "A sessão já foi concluída."
+msgstr "The session is already completed."
+
+msgid "Exercício da sessão não encontrado."
+msgstr "Session exercise not found."
+
+msgid "Carga fora do intervalo permitido."
+msgstr "Load out of the allowed range."
+
+msgid "Limite de 50 séries por exercício."
+msgstr "Limit of 50 sets per exercise."
+
+msgid "A última série já foi registrada; desfaça o registro antes de removê-la."
+msgstr "The last set is already logged; undo the log before removing it."
+
+msgid "A substituição permanente já alterou a ficha. Edite a ficha para voltar ao exercício anterior."
+msgstr "The permanent replacement already changed the plan. Edit the plan to go back to the previous exercise."
+
+msgid "Sessões concluídas não podem ser descartadas."
+msgstr "Completed sessions cannot be discarded."
+
+msgid "Modelo sem dias."
+msgstr "Template without days."
+
+msgid "O dia \"{}\" do modelo não tem exercícios."
+msgstr "Template day \"{}\" has no exercises."
+
+msgid "Modelo não encontrado."
+msgstr "Template not found."
+
+msgid "{}\n"
+msgstr "{}\n"
+
+msgid "\n{}\n"
+msgstr "\n{}\n"
+
+msgid "  • {} — {} × {}{}\n"
+msgstr "  • {} — {} × {}{}\n"
+
+msgid " (será adicionado à biblioteca)"
+msgstr " (will be added to the library)"
+
+msgid "{} ({})"
+msgstr "{} ({})"
+
+msgid "Criada a partir do modelo {} (v{}). {}"
+msgstr "Created from template {} (v{}). {}"
+
+msgid "ABC"
+msgstr "ABC"
+
+msgid "Divisão em três dias: A peito/ombros/tríceps, B costas/bíceps, C pernas."
+msgstr "Three-day split: A chest/shoulders/triceps, B back/biceps, C legs."
+
+msgid "A — Peito, ombros e tríceps"
+msgstr "A — Chest, shoulders and triceps"
+
+msgid "B — Costas e bíceps"
+msgstr "B — Back and biceps"
+
+msgid "C — Pernas"
+msgstr "C — Legs"
+
+msgid "Full Body"
+msgstr "Full Body"
+
+msgid "Corpo inteiro em cada treino, alternando dois dias (A/B)."
+msgstr "Whole body in every workout, alternating two days (A/B)."
+
+msgid "Full Body A"
+msgstr "Full Body A"
+
+msgid "Full Body B"
+msgstr "Full Body B"
+
+msgid "Push/Pull/Legs"
+msgstr "Push/Pull/Legs"
+
+msgid "Empurrar, puxar e pernas em sequência."
+msgstr "Push, pull and legs in sequence."
+
+msgid "Push — Empurrar"
+msgstr "Push"
+
+msgid "Pull — Puxar"
+msgstr "Pull"
+
+msgid "Legs — Pernas"
+msgstr "Legs"
+

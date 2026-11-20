@@ -20,7 +20,7 @@ component ValueBox inherits Rectangle {
     border-width: active ? 2.5px : 1px;
     border-color: active ? Theme.text : Theme.border;
     accessible-role: button;
-    accessible-label: label + ": " + (value == "" ? "vazio" : value + " " + unit) + (active ? ", selecionado" : "");
+    accessible-label: label + ": " + (value == "" ? @tr("vazio") : value + " " + unit) + (active ? @tr(", selecionado") : "");
     accessible-action-default => { clicked(); }
     TouchArea {
         clicked => { root.clicked(); }
@@ -114,7 +114,7 @@ export component FocusScreen inherits Rectangle {
                 spacing: 6px;
                 IconBtn {
                     icon: Icons.back;
-                    label: "Série anterior";
+                    label: @tr("Série anterior");
                     enabled: Bridge.focus-can-prev-set;
                     clicked => { Bridge.focus-nav("prev-set"); }
                 }
@@ -137,7 +137,7 @@ export component FocusScreen inherits Rectangle {
                 }
                 IconBtn {
                     icon: Icons.forward;
-                    label: "Próxima série";
+                    label: @tr("Próxima série");
                     enabled: Bridge.focus-can-next-set;
                     clicked => { Bridge.focus-nav("next-set"); }
                 }
@@ -145,9 +145,9 @@ export component FocusScreen inherits Rectangle {
             if Bridge.focus-done: HorizontalLayout {
                 alignment: center;
                 spacing: 8px;
-                Badge { text: "✓ Registrada: " + Bridge.focus-done-text; }
+                Badge { text: @tr("✓ Registrada: ") + Bridge.focus-done-text; }
                 Btn {
-                    text: "Desfazer";
+                    text: @tr("Desfazer");
                     compact: true;
                     horizontal-stretch: 0;
                     clicked => { Bridge.focus-undo-set(); }
@@ -173,7 +173,7 @@ export component FocusScreen inherits Rectangle {
             HorizontalLayout {
                 spacing: 10px;
                 ValueBox {
-                    label: "Carga";
+                    label: @tr("Carga");
                     value: Bridge.focus-load;
                     unit: Bridge.session-unit;
                     active: Bridge.focus-field == "load";
@@ -182,9 +182,9 @@ export component FocusScreen inherits Rectangle {
                     edited(t) => { Bridge.focus-typed("load", t); }
                 }
                 ValueBox {
-                    label: "Repetições";
+                    label: @tr("Repetições");
                     value: Bridge.focus-reps;
-                    unit: "reps";
+                    unit: @tr("reps");
                     active: Bridge.focus-field == "reps";
                     editable: !Bridge.use-app-keypad;
                     clicked => { Bridge.focus-field-select("reps"); }
@@ -201,19 +201,19 @@ export component FocusScreen inherits Rectangle {
             HorizontalLayout {
                 spacing: 6px;
                 Btn {
-                    text: "Repetir anterior";
+                    text: @tr("Repetir anterior");
                     icon: Icons.repeat;
                     compact: true;
                     enabled: Bridge.focus-has-previous;
                     clicked => { Bridge.focus-fill("previous"); }
                 }
                 Btn {
-                    text: "Planejado";
+                    text: @tr("Planejado");
                     compact: true;
                     clicked => { Bridge.focus-fill("planned"); }
                 }
                 if Bridge.focus-has-last: Btn {
-                    text: "Última vez";
+                    text: @tr("Última vez");
                     compact: true;
                     clicked => { Bridge.focus-fill("last"); }
                 }
@@ -222,14 +222,14 @@ export component FocusScreen inherits Rectangle {
             if Bridge.use-app-keypad: NumericKeypad {
                 allow-decimal: Bridge.focus-field == "load";
                 step-label: Bridge.focus-field == "load" ? Bridge.focus-step-label : "1";
-                confirm-text: "Registrar série";
+                confirm-text: @tr("Registrar série");
                 key(k) => { Bridge.focus-key(k); }
                 step(d) => { Bridge.focus-step(d); }
                 confirm => { Bridge.focus-confirm(); }
             }
             if !Bridge.use-app-keypad: Btn {
                 min-height: 64px;
-                text: Bridge.focus-done ? "Atualizar série" : "Registrar série";
+                text: Bridge.focus-done ? @tr("Atualizar série") : @tr("Registrar série");
                 icon: Icons.check;
                 kind: "primary";
                 font-size: Theme.fs-l;
@@ -239,23 +239,23 @@ export component FocusScreen inherits Rectangle {
                 spacing: 8px;
                 Btn {
                     icon: Icons.back;
-                    text: "Exercício";
+                    text: @tr("Exercício");
                     compact: true;
                     enabled: Bridge.focus-can-prev-ex;
-                    accessible-label: "Exercício anterior";
+                    accessible-label: @tr("Exercício anterior");
                     clicked => { Bridge.focus-nav("prev-ex"); }
                 }
                 Btn {
-                    text: "Sair do foco";
+                    text: @tr("Sair do foco");
                     compact: true;
                     clicked => { Bridge.focus-exit(); }
                 }
                 Btn {
                     icon: Icons.forward;
-                    text: "Exercício";
+                    text: @tr("Exercício");
                     compact: true;
                     enabled: Bridge.focus-can-next-ex;
-                    accessible-label: "Próximo exercício";
+                    accessible-label: @tr("Próximo exercício");
                     clicked => { Bridge.focus-nav("next-ex"); }
                 }
             }

@@ -4,6 +4,7 @@
 //! avisos/erros e colunas não reconhecidas → usuário confirma (pode remapear) →
 //! gravação em uma única transação.
 
+use crate::i18n::tr;
 use crate::domain::*;
 use crate::persistence::Db;
 use calamine::{open_workbook_auto, Data, Reader};
@@ -53,20 +54,20 @@ impl Field {
 
     pub fn label(self) -> &'static str {
         match self {
-            Field::Plan => "Ficha",
-            Field::Day => "Dia",
-            Field::Weekdays => "Dias da semana",
-            Field::Order => "Ordem",
-            Field::Exercise => "Exercício",
-            Field::Muscle => "Grupo muscular",
-            Field::Type => "Tipo",
-            Field::Equipment => "Equipamento",
-            Field::Pattern => "Padrão de movimento",
-            Field::Sets => "Séries",
-            Field::Reps => "Repetições",
-            Field::Load => "Carga",
-            Field::Rest => "Descanso",
-            Field::Notes => "Observações",
+            Field::Plan => tr("Ficha"),
+            Field::Day => tr("Dia"),
+            Field::Weekdays => tr("Dias da semana"),
+            Field::Order => tr("Ordem"),
+            Field::Exercise => tr("Exercício"),
+            Field::Muscle => tr("Grupo muscular"),
+            Field::Type => tr("Tipo"),
+            Field::Equipment => tr("Equipamento"),
+            Field::Pattern => tr("Padrão de movimento"),
+            Field::Sets => tr("Séries"),
+            Field::Reps => tr("Repetições"),
+            Field::Load => tr("Carga"),
+            Field::Rest => tr("Descanso"),
+            Field::Notes => tr("Observações"),
         }
     }
 
@@ -167,7 +168,7 @@ fn cell_text(d: &Data) -> String {
             if f.fract() == 0.0 && f.abs() < 1e15 {
                 format!("{}", *f as i64)
             } else {
-                let mut s = format!("{f:.3}");
+                let mut s = format!("{:.3}", f);
                 while s.ends_with('0') {
                     s.pop();
                 }
@@ -198,12 +199,12 @@ fn cell_text(d: &Data) -> String {
 
 /// Lê a pasta de trabalho validando extensão, tamanho e estrutura (seção 3.8).
 pub fn read_workbook(path: &Path) -> AppResult<Workbook> {
-    let meta = std::fs::metadata(path).map_err(|_| AppError::File("Não foi possível ler o arquivo selecionado.".into()))?;
+    let meta = std::fs::metadata(path).map_err(|_| AppError::File(tr("Não foi possível ler o arquivo selecionado.").into()))?;
     if meta.len() == 0 {
-        return Err(AppError::File("O arquivo está vazio.".into()));
+        return Err(AppError::File(tr("O arquivo está vazio.").into()));
     }
     if meta.len() > MAX_FILE_BYTES {
-        return Err(AppError::File("Arquivo muito grande (limite de 10 MB).".into()));
+        return Err(AppError::File(tr("Arquivo muito grande (limite de 10 MB).").into()));
     }
     let mut head = [0u8; 4];
     {
@@ -215,16 +216,16 @@ pub fn read_workbook(path: &Path) -> AppResult<Workbook> {
     let is_ole = head == [0xd0, 0xcf, 0x11, 0xe0];
     if !is_zip && !is_ole {
         return Err(AppError::File(
-            "Formato não reconhecido. Selecione uma planilha .xlsx (Excel), .ods ou .xls.".into(),
+            tr("Formato não reconhecido. Selecione uma planilha .xlsx (Excel), .ods ou .xls.").into(),
         ));
     }
     let mut wb = open_workbook_auto(path).map_err(|e| {
         log::warn!("calamine: {e}");
-        AppError::File("Não foi possível abrir a planilha: o arquivo parece corrompido ou não é uma planilha.".into())
+        AppError::File(tr("Não foi possível abrir a planilha: o arquivo parece corrompido ou não é uma planilha.").into())
     })?;
     let names = wb.sheet_names().to_vec();
     if names.is_empty() {
-        return Err(AppError::File("A planilha não contém abas.".into()));
+        return Err(AppError::File(tr("A planilha não contém abas.").into()));
     }
     let mut sheets = Vec::new();
     for name in names.into_iter().take(MAX_SHEETS) {
@@ -236,9 +237,7 @@ pub fn read_workbook(path: &Path) -> AppResult<Workbook> {
             }
         };
         if range.height() > MAX_ROWS {
-            return Err(AppError::File(format!(
-                "A aba \"{name}\" tem mais de {MAX_ROWS} linhas. Divida a planilha em arquivos menores."
-            )));
+            return Err(AppError::File(trf!("A aba \"{}\" tem mais de {} linhas. Divida a planilha em arquivos menores.", name, MAX_ROWS)));
         }
         let rows: Vec<Vec<String>> = range
             .rows()
@@ -247,7 +246,7 @@ pub fn read_workbook(path: &Path) -> AppResult<Workbook> {
         sheets.push(SheetData { name, rows });
     }
     if sheets.is_empty() {
-        return Err(AppError::File("Nenhuma aba pôde ser lida.".into()));
+        return Err(AppError::File(tr("Nenhuma aba pôde ser lida.").into()));
     }
     Ok(Workbook { sheets })
 }
@@ -375,7 +374,7 @@ fn push_limited(v: &mut Vec<String>, msg: String) {
     if v.len() < MAX_MESSAGES {
         v.push(msg);
     } else if v.len() == MAX_MESSAGES {
-        v.push("… outras mensagens omitidas.".into());
+        v.push(tr("… outras mensagens omitidas.").into());
     }
 }
 
@@ -389,15 +388,15 @@ pub fn build_preview(db: &Db, sheet: &SheetData, mapping: &Mapping, defaults: Im
     }
     let Some(ex_col) = mapping.column_of(Field::Exercise) else {
         p.errors.push(
-            "Nenhuma coluna foi associada a \"Exercício\". Ajuste o mapeamento: essa coluna é obrigatória.".into(),
+            tr("Nenhuma coluna foi associada a \"Exercício\". Ajuste o mapeamento: essa coluna é obrigatória.").into(),
         );
         return p;
     };
-    for (f, what) in [(Field::Sets, "séries"), (Field::Reps, "repetições")] {
+    for (f, what) in [(Field::Sets, tr("séries")), (Field::Reps, tr("repetições"))] {
         if mapping.column_of(f).is_none() {
             push_limited(
                 &mut p.warnings,
-                format!("Coluna de {what} não identificada: será usado o valor padrão para todos os exercícios."),
+                trf!("Coluna de {} não identificada: será usado o valor padrão para todos os exercícios.", what),
             );
         }
     }
@@ -426,16 +425,16 @@ pub fn build_preview(db: &Db, sheet: &SheetData, mapping: &Mapping, defaults: Im
         }
         let name = clean_text(row.get(ex_col).map(String::as_str).unwrap_or(""), 80);
         if name.is_empty() {
-            push_limited(&mut p.warnings, format!("Linha {line}: sem nome de exercício — linha ignorada."));
+            push_limited(&mut p.warnings, trf!("Linha {}: sem nome de exercício — linha ignorada.", line));
             continue;
         }
         let plan_name = if cur_plan.is_empty() { default_plan.clone() } else { cur_plan.clone() };
-        let day_name = if cur_day.is_empty() { "Treino A".to_string() } else { cur_day.clone() };
+        let day_name = if cur_day.is_empty() { tr("Treino A").to_string() } else { cur_day.clone() };
 
         let sets = match get(row, Field::Sets) {
             s if s.is_empty() => {
                 if mapping.column_of(Field::Sets).is_some() {
-                    push_limited(&mut p.warnings, format!("Linha {line}: séries não informadas — usado {}.", defaults.sets));
+                    push_limited(&mut p.warnings, trf!("Linha {}: séries não informadas — usado {}.", line, defaults.sets));
                 }
                 defaults.sets
             }
@@ -445,7 +444,7 @@ pub fn build_preview(db: &Db, sheet: &SheetData, mapping: &Mapping, defaults: Im
                     // "3x10" em uma coluna só
                     Ok((a, _)) if (1..=50).contains(&a) => a,
                     _ => {
-                        push_limited(&mut p.warnings, format!("Linha {line}: séries inválidas (\"{s}\") — usado {}.", defaults.sets));
+                        push_limited(&mut p.warnings, trf!("Linha {}: séries inválidas (\"{}\") — usado {}.", line, s, defaults.sets));
                         defaults.sets
                     }
                 },
@@ -454,14 +453,14 @@ pub fn build_preview(db: &Db, sheet: &SheetData, mapping: &Mapping, defaults: Im
         let reps = match get(row, Field::Reps) {
             s if s.is_empty() => {
                 if mapping.column_of(Field::Reps).is_some() {
-                    push_limited(&mut p.warnings, format!("Linha {line}: repetições não informadas — usado {}.", format_reps(defaults.reps.0, defaults.reps.1)));
+                    push_limited(&mut p.warnings, trf!("Linha {}: repetições não informadas — usado {}.", line, format_reps(defaults.reps.0, defaults.reps.1)));
                 }
                 defaults.reps
             }
             s => match parse_reps(&s) {
                 Ok(r) => r,
                 Err(_) => {
-                    push_limited(&mut p.warnings, format!("Linha {line}: repetições inválidas (\"{s}\") — usado padrão."));
+                    push_limited(&mut p.warnings, trf!("Linha {}: repetições inválidas (\"{}\") — usado padrão.", line, s));
                     defaults.reps
                 }
             },
@@ -471,7 +470,7 @@ pub fn build_preview(db: &Db, sheet: &SheetData, mapping: &Mapping, defaults: Im
             s => match parse_load(&s, defaults.unit) {
                 Ok(g) => g,
                 Err(_) => {
-                    push_limited(&mut p.warnings, format!("Linha {line}: carga inválida (\"{s}\") — usado 0."));
+                    push_limited(&mut p.warnings, trf!("Linha {}: carga inválida (\"{}\") — usado 0.", line, s));
                     0
                 }
             },
@@ -484,7 +483,7 @@ pub fn build_preview(db: &Db, sheet: &SheetData, mapping: &Mapping, defaults: Im
             s => match parse_rest(&s) {
                 Ok(r) => r,
                 Err(_) => {
-                    push_limited(&mut p.warnings, format!("Linha {line}: descanso inválido (\"{s}\") — usado {} s.", defaults.rest_seconds));
+                    push_limited(&mut p.warnings, trf!("Linha {}: descanso inválido (\"{}\") — usado {} s.", line, s, defaults.rest_seconds));
                     defaults.rest_seconds
                 }
             },
@@ -492,7 +491,7 @@ pub fn build_preview(db: &Db, sheet: &SheetData, mapping: &Mapping, defaults: Im
         let target = match (Target { sets, reps_min: reps.0, reps_max: reps.1, load_g }).validated() {
             Ok(t) => t,
             Err(e) => {
-                push_limited(&mut p.warnings, format!("Linha {line}: {e} — linha ignorada."));
+                push_limited(&mut p.warnings, trf!("Linha {}: {} — linha ignorada.", line, e));
                 continue;
             }
         };
@@ -531,7 +530,7 @@ pub fn build_preview(db: &Db, sheet: &SheetData, mapping: &Mapping, defaults: Im
     if rest_defaulted > 0 && mapping.column_of(Field::Rest).is_some() {
         push_limited(
             &mut p.warnings,
-            format!("{rest_defaulted} linha(s) sem descanso informado — usado {} s.", defaults.rest_seconds),
+            trf!("{} linha(s) sem descanso informado — usado {} s.", rest_defaulted, defaults.rest_seconds),
         );
     }
     for plan in plans.iter_mut() {
@@ -543,11 +542,11 @@ pub fn build_preview(db: &Db, sheet: &SheetData, mapping: &Mapping, defaults: Im
         plan.exists = db.find_plan_by_name(&plan.name).ok().flatten().is_some();
     }
     if p.valid_rows == 0 && p.errors.is_empty() {
-        p.errors.push("Nenhuma linha válida encontrada. Verifique a aba selecionada e o mapeamento.".into());
+        p.errors.push(tr("Nenhuma linha válida encontrada. Verifique a aba selecionada e o mapeamento.").into());
     }
     if !p.unrecognized_columns.is_empty() {
         let cols = p.unrecognized_columns.join(", ");
-        p.warnings.insert(0, format!("Colunas não reconhecidas (serão ignoradas): {cols}."));
+        p.warnings.insert(0, trf!("Colunas não reconhecidas (serão ignoradas): {}.", cols));
     }
     p.plans = plans;
     p
@@ -556,17 +555,17 @@ pub fn build_preview(db: &Db, sheet: &SheetData, mapping: &Mapping, defaults: Im
 /// Junta as prévias de várias abas em uma só. Abas com erro (ex.: sem coluna de exercício)
 /// são ignoradas com aviso; fichas e dias de mesmo nome são agrupados.
 pub fn merge_previews(parts: Vec<ImportPreview>) -> ImportPreview {
-    let mut out = ImportPreview { sheet_name: "todas as abas".into(), ..Default::default() };
+    let mut out = ImportPreview { sheet_name: tr("todas as abas").into(), ..Default::default() };
     for p in parts {
         if !p.can_import() {
-            let why = p.errors.first().cloned().unwrap_or_else(|| "sem linhas válidas".into());
-            push_limited(&mut out.warnings, format!("Aba \"{}\" ignorada: {why}", p.sheet_name));
+            let why = p.errors.first().cloned().unwrap_or_else(|| tr("sem linhas válidas").into());
+            push_limited(&mut out.warnings, trf!("Aba \"{}\" ignorada: {}", p.sheet_name, why));
             continue;
         }
         out.data_rows += p.data_rows;
         out.valid_rows += p.valid_rows;
         for w in p.warnings {
-            push_limited(&mut out.warnings, format!("[{}] {w}", p.sheet_name));
+            push_limited(&mut out.warnings, trf!("[{}] {}", p.sheet_name, w));
         }
         for c in p.unrecognized_columns {
             if !out.unrecognized_columns.contains(&c) {
@@ -596,7 +595,7 @@ pub fn merge_previews(parts: Vec<ImportPreview>) -> ImportPreview {
         }
     }
     if out.valid_rows == 0 {
-        out.errors.push("Nenhuma aba tem linhas válidas para importar.".into());
+        out.errors.push(tr("Nenhuma aba tem linhas válidas para importar.").into());
     }
     out
 }
@@ -621,7 +620,7 @@ pub struct ImportResult {
 /// Grava a prévia confirmada em uma única transação (nada parcial em caso de erro — CT-09).
 pub fn apply_import(db: &mut Db, preview: &ImportPreview, policy: ConflictPolicy) -> AppResult<ImportResult> {
     if !preview.can_import() {
-        return Err(AppError::Validation("A prévia contém erros. Corrija o mapeamento antes de importar.".into()));
+        return Err(AppError::Validation(tr("A prévia contém erros. Corrija o mapeamento antes de importar.").into()));
     }
     let now = now_ms();
     let mut res = ImportResult::default();
@@ -640,7 +639,7 @@ pub fn apply_import(db: &mut Db, preview: &ImportPreview, policy: ConflictPolicy
                         |r| r.get(0),
                     )?;
                     if busy > 0 {
-                        return Err(AppError::Conflict(format!(
+                        return Err(AppError::Conflict(trf!(
                             "A ficha \"{}\" está em uma sessão em andamento e não pode ser substituída.",
                             plan.name
                         )));
@@ -651,7 +650,7 @@ pub fn apply_import(db: &mut Db, preview: &ImportPreview, policy: ConflictPolicy
                 ConflictPolicy::CreateNew => {
                     let mut n = 1;
                     loop {
-                        name = if n == 1 { format!("{} (importada)", plan.name) } else { format!("{} (importada {n})", plan.name) };
+                        name = if n == 1 { trf!("{} (importada)", plan.name) } else { trf!("{} (importada {})", plan.name, n) };
                         let taken: i64 = tx.query_row(
                             "SELECT COUNT(*) FROM workout_plan WHERE name = ?1 COLLATE NOCASE",
                             params![name],
@@ -668,7 +667,7 @@ pub fn apply_import(db: &mut Db, preview: &ImportPreview, policy: ConflictPolicy
         tx.execute(
             "INSERT INTO workout_plan(name, description, schedule_type, active, created_at, updated_at)
              VALUES (?1, ?2, ?3, 1, ?4, ?4)",
-            params![name, format!("Importada da aba \"{}\"", preview.sheet_name), plan.schedule.as_str(), now],
+            params![name, trf!("Importada da aba \"{}\"", preview.sheet_name), plan.schedule.as_str(), now],
         )?;
         let plan_id = tx.last_insert_rowid();
         res.plans += 1;

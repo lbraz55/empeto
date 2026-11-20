@@ -1,5 +1,6 @@
 //! Execução de sessão (RF-04..RF-08, RN-01..RN-05).
 
+use crate::i18n::tr;
 use crate::domain::*;
 use crate::persistence::Db;
 use rusqlite::{params, OptionalExtension, Row};
@@ -42,14 +43,14 @@ impl Db {
     pub fn start_session(&mut self, day_id: Id) -> AppResult<Id> {
         if self.active_session_id()?.is_some() {
             return Err(AppError::Conflict(
-                "Já existe uma sessão em andamento. Finalize-a ou descarte-a antes de iniciar outra.".into(),
+                tr("Já existe uma sessão em andamento. Finalize-a ou descarte-a antes de iniciar outra.").into(),
             ));
         }
         let day = self.get_day(day_id)?;
         let plan = self.get_plan(day.plan_id)?;
         let exercises = self.list_plan_exercises(day_id)?;
         if exercises.is_empty() {
-            return validation("Este dia não tem exercícios. Adicione exercícios antes de iniciar.");
+            return validation(tr("Este dia não tem exercícios. Adicione exercícios antes de iniciar."));
         }
         let now = now_ms();
         let day_full = DayFull { day: day.clone(), exercises };
@@ -90,7 +91,7 @@ impl Db {
         self.conn
             .query_row(&format!("SELECT {SESSION_COLS} FROM workout_session WHERE id = ?1"), params![id], row_session)
             .optional()?
-            .ok_or_else(|| AppError::NotFound("Sessão não encontrada.".into()))
+            .ok_or_else(|| AppError::NotFound(tr("Sessão não encontrada.").into()))
     }
 
     pub fn get_session_full(&self, id: Id) -> AppResult<SessionFull> {
@@ -158,9 +159,9 @@ impl Db {
                 |r| Ok((r.get(0)?, r.get(1)?)),
             )
             .optional()?
-            .ok_or_else(|| AppError::NotFound("Série não encontrada.".into()))?;
+            .ok_or_else(|| AppError::NotFound(tr("Série não encontrada.").into()))?;
         if status != "in_progress" {
-            return Err(AppError::Conflict("A sessão já foi concluída.".into()));
+            return Err(AppError::Conflict(tr("A sessão já foi concluída.").into()));
         }
         Ok(seid)
     }
@@ -174,9 +175,9 @@ impl Db {
                 |r| Ok((r.get(0)?, r.get(1)?)),
             )
             .optional()?
-            .ok_or_else(|| AppError::NotFound("Exercício da sessão não encontrado.".into()))?;
+            .ok_or_else(|| AppError::NotFound(tr("Exercício da sessão não encontrado.").into()))?;
         if status != "in_progress" {
-            return Err(AppError::Conflict("A sessão já foi concluída.".into()));
+            return Err(AppError::Conflict(tr("A sessão já foi concluída.").into()));
         }
         Ok(sid)
     }
@@ -185,10 +186,10 @@ impl Db {
     pub fn record_set(&self, set_id: Id, reps: i64, load_g: i64) -> AppResult<()> {
         self.ensure_in_progress_for_set(set_id)?;
         if !(0..=1000).contains(&reps) {
-            return validation("Repetições devem estar entre 0 e 1000.");
+            return validation(tr("Repetições devem estar entre 0 e 1000."));
         }
         if !(0..=MAX_LOAD_G).contains(&load_g) {
-            return validation("Carga fora do intervalo permitido.");
+            return validation(tr("Carga fora do intervalo permitido."));
         }
         self.conn.execute(
             "UPDATE session_set SET actual_reps=?2, actual_load_g=?3, completed_at=COALESCE(completed_at, ?4) WHERE id=?1",
@@ -231,7 +232,7 @@ impl Db {
             .optional()?;
         let (n, a, b, l) = last.map(|(n, a, b, l)| (n + 1, a, b, l)).unwrap_or((1, 10, 10, 0));
         if n > 50 {
-            return validation("Limite de 50 séries por exercício.");
+            return validation(tr("Limite de 50 séries por exercício."));
         }
         self.conn.execute(
             "INSERT INTO session_set(session_exercise_id, set_number, planned_reps_min, planned_reps_max, planned_load_g)
@@ -257,7 +258,7 @@ impl Db {
                 self.conn.execute("DELETE FROM session_set WHERE id = ?1", params![id])?;
                 Ok(())
             }
-            Some((_, Some(_))) => validation("A última série já foi registrada; desfaça o registro antes de removê-la."),
+            Some((_, Some(_))) => validation(tr("A última série já foi registrada; desfaça o registro antes de removê-la.")),
             None => Ok(()),
         }
     }
@@ -280,7 +281,7 @@ impl Db {
     pub fn set_session_notes(&self, session_id: Id, notes: &str) -> AppResult<()> {
         let s = self.get_session(session_id)?;
         if s.status != SessionStatus::InProgress {
-            return Err(AppError::Conflict("A sessão já foi concluída.".into()));
+            return Err(AppError::Conflict(tr("A sessão já foi concluída.").into()));
         }
         self.conn.execute("UPDATE workout_session SET notes=?2 WHERE id=?1", params![session_id, clean_notes(notes)])?;
         Ok(())
@@ -328,7 +329,7 @@ impl Db {
         )?;
         if sub == "permanent" {
             return Err(AppError::Conflict(
-                "A substituição permanente já alterou a ficha. Edite a ficha para voltar ao exercício anterior.".into(),
+                tr("A substituição permanente já alterou a ficha. Edite a ficha para voltar ao exercício anterior.").into(),
             ));
         }
         let (m, t, e) = match orig_id.and_then(|id| self.get_exercise(id).ok()) {
@@ -347,11 +348,11 @@ impl Db {
     pub fn finish_session(&mut self, session_id: Id, notes: &str) -> AppResult<()> {
         let s = self.get_session(session_id)?;
         if s.status != SessionStatus::InProgress {
-            return Err(AppError::Conflict("A sessão já foi concluída.".into()));
+            return Err(AppError::Conflict(tr("A sessão já foi concluída.").into()));
         }
         let full = self.get_session_full(session_id)?;
         if full.completed_sets() == 0 {
-            return validation("Registre pelo menos uma série antes de finalizar, ou descarte a sessão.");
+            return validation(tr("Registre pelo menos uma série antes de finalizar, ou descarte a sessão."));
         }
         let tx = self.conn.transaction()?;
         // Séries não registradas são removidas: o que fica no histórico é o que foi realizado.
@@ -377,7 +378,7 @@ impl Db {
     pub fn discard_session(&mut self, session_id: Id) -> AppResult<()> {
         let s = self.get_session(session_id)?;
         if s.status != SessionStatus::InProgress {
-            return Err(AppError::Conflict("Sessões concluídas não podem ser descartadas.".into()));
+            return Err(AppError::Conflict(tr("Sessões concluídas não podem ser descartadas.").into()));
         }
         let tx = self.conn.transaction()?;
         tx.execute("DELETE FROM workout_session WHERE id = ?1", params![session_id])?;
@@ -409,7 +410,7 @@ impl Db {
                 |r| Ok((r.get(0)?, r.get(1)?)),
             )
             .optional()?
-            .ok_or_else(|| AppError::NotFound("Série não encontrada.".into()))
+            .ok_or_else(|| AppError::NotFound(tr("Série não encontrada.").into()))
     }
 
     /// Valores da mesma série na última execução concluída do exercício.
@@ -467,7 +468,7 @@ impl Db {
                 },
             )
             .optional()?
-            .ok_or_else(|| AppError::NotFound("Série não encontrada.".into()))
+            .ok_or_else(|| AppError::NotFound(tr("Série não encontrada.").into()))
     }
 
     /// Último desempenho concluído de um exercício (por id do exercício realizado).

@@ -62,7 +62,7 @@ impl Db {
             based_on_session: session_id,
             current_load_g: pe.target.load_g,
             suggested_load_g: new_load,
-            justification: format!(
+            justification: trf!(
                 "Na última sessão você fez {} série(s) com {} reps ({}), no topo da faixa {}.",
                 results.len(),
                 reps.iter().map(|r| r.to_string()).collect::<Vec<_>>().join(", "),

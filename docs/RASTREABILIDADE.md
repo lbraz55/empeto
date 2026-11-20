@@ -42,6 +42,10 @@
 | 9.2 Gerenciamento de backups | `storage::list/create/delete_local_backup`, Configurações › Backups | `storage::tests` |
 | 9.3 Backup automático semanal | `storage::run_auto_backup`, `prune_automatic` | `auto_backup_weekly_keeps_four_and_spares_manual`, `due_rules_and_empty_db` |
 | 8.12 (v1.1) Recuperação de sessão interrompida | `Controller::offer_session_recovery`, `synchronous=FULL` | `interrupted_session_is_recovered_after_reopen` + manual |
+| 3.1 (v1.1) Tela de abertura | `res/drawable/splash_background.xml`, `values-v31/styles.xml`, sobreposição em `app.slint` | manual |
+| 3.2 (v1.1) Boas-vindas | `ui/screens/onboarding.slint`, `Controller::maybe_onboarding` | `prefs::tests::round_trip` + visual |
+| 4.1 (v1.1) Idiomas pt/en/es | `src/i18n`, `resources/i18n`, `scripts/i18n.py` | `tests/i18n.rs`, `i18n::tests`, CI `i18n.py check` |
+| 4.2 (v1.1) Tamanho da fonte | `Prefs::text_size` (`ui.font_size`), `Theme.k` × `font-scale` | `legacy_large_text_maps_to_grande` |
 | 9.4 Widget Android | `application/widget.rs`, `EmpetoWidget.java` | `widget::tests` + manual |
 
 ## Regras de negócio
