@@ -20,6 +20,7 @@ pub const SHORTCUTS: &[(&str, &str, &str)] = &[
     ("templates", "Modelos", "template"),
     ("backups", "Backups", "database"),
     ("tools", "Anilhas e aquecimento", "tools"),
+    ("wellhub", "WellHub (check-in)", "link"),
 ];
 
 pub const DEFAULT_SHORTCUTS: &[&str] = &["next_workout", "timer", "library", "evolution"];

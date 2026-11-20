@@ -191,6 +191,8 @@ pub struct Controller {
     cmp: Option<(Id, Id)>,
     /// Sessões carregadas na lista do histórico (paginação).
     hist_limit: usize,
+    /// Atualizações (7.1/7.2).
+    upd: UpdateState,
     /// Mês do relatório (ano, mês).
     rep_month: (i32, u32),
     /// Última operação reversível (aviso "Desfazer").
@@ -699,6 +701,13 @@ impl Controller {
             }
         }
 
+        if let Some((m, _)) = &self.upd.available {
+            cards.insert(
+                0,
+                card("update", tr("ATUALIZAÇÃO DISPONÍVEL"), trf!("EMPETO {}", m.version), tr("Veja as novidades e instale quando quiser.").to_string(), tr("Ver"), 0),
+            );
+        }
+
         let sc: Vec<ShortcutRow> = self
             .home_shortcuts()
             .iter()
@@ -728,6 +737,12 @@ impl Controller {
                 self.navigate(P_HIST);
             }
             "backup" => self.home_shortcut("backups"),
+            "update" => {
+                self.with_bridge(|b| b.set_settings_section(7));
+                self.navigate(P_SETTINGS);
+                let r = self.refresh_settings();
+                self.report(r);
+            }
             _ => {}
         }
     }
@@ -2998,16 +3013,10 @@ impl Controller {
         });
         let version = self.platform.app_version();
         let schema = schema_version(&self.db.conn).unwrap_or(0);
-        let about = format!(
-            "Versão do app: {version}\nVersão do banco de dados (schema): {schema}\n\n\
-             Aplicativo pessoal e offline: não usa internet, não tem conta, anúncios nem sincronização. \
-             Os dados ficam somente neste aparelho — faça backups periódicos.\n\n\
-             O EMPETO é um organizador de treinos. Não é ferramenta de diagnóstico, prescrição ou recomendação médica \
-             e não substitui orientação de profissional de educação física ou saúde.\n\n\
-             Alternativas de exercícios são sugestões organizacionais e não indicam equivalência biomecânica.\n\n\
-             A precisão dos alertas em segundo plano depende das políticas e permissões do Android.\n\n\
-             Permissões usadas: notificações (alerta do cronômetro, opcional) e vibração.\n\n\
-             Feito com Rust, Slint e SQLite. Licenças de terceiros: veja o repositório do projeto."
+        let about = trf!(
+            "Versão do app: {}\nVersão do banco de dados (schema): {}\n\nAplicativo pessoal e offline: seus treinos ficam somente neste aparelho, sem conta, anúncios nem sincronização — faça backups periódicos. A internet é usada apenas para verificar e baixar atualizações do EMPETO, se você permitir.\n\nO EMPETO é um organizador de treinos. Não é ferramenta de diagnóstico, prescrição ou recomendação médica e não substitui orientação de profissional de educação física ou saúde.\n\nAlternativas de exercícios são sugestões organizacionais e não indicam equivalência biomecânica.\n\nA precisão dos alertas em segundo plano depende das políticas e permissões do Android.\n\nPermissões usadas: notificações (alerta do cronômetro, opcional), vibração, internet (só atualizações) e instalação de apps (só para instalar a atualização que você confirmar).\n\nFeito com Rust, Slint e SQLite. Ilustrações próprias. Licenças de terceiros: veja o repositório do projeto.",
+            version,
+            schema
         );
         let step = format_load_unit(p.load_step_g, p.unit);
         self.with_bridge(|b| {
@@ -3051,6 +3060,7 @@ impl Controller {
             b.set_app_version(ss(&version));
             b.set_about_text(ss(about));
         });
+        self.refresh_update_ui();
         Ok(())
     }
 
@@ -3146,6 +3156,12 @@ impl Controller {
             "new_plan" => self.new_plan(),
             "templates" => self.open_templates(),
             "tools" => self.open_tools(0),
+            "wellhub" => {
+                // Integração honesta (evolução 6.1): só abre o destino oficial; nenhum check-in é feito aqui.
+                if !self.platform.open_url(WELLHUB_URL) {
+                    self.toast(tr("Não foi possível abrir o WellHub. Acesse pelo app ou site oficial."));
+                }
+            }
             "backups" => {
                 self.with_bridge(|b| b.set_settings_section(10));
                 self.navigate(P_SETTINGS);
@@ -3154,6 +3170,205 @@ impl Controller {
             }
             _ => {}
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Atualizações (evolução 7.1/7.2)
+    // ------------------------------------------------------------------
+
+    fn update_auto_enabled(&self) -> bool {
+        self.db.get_pref(crate::updater::PREF_AUTO).ok().flatten().as_deref() != Some("0")
+    }
+
+    /// Ao abrir o app: verifica no máximo uma vez por semana (se ligado).
+    fn maybe_auto_update_check(&mut self) {
+        if !self.platform.supports_updates() {
+            return;
+        }
+        let last = self.db.get_pref(crate::updater::PREF_LAST_CHECK).ok().flatten().and_then(|v| v.parse().ok());
+        if crate::updater::auto_check_due(self.update_auto_enabled(), last, now_ms()) {
+            self.start_update_check(false);
+        }
+    }
+
+    fn start_update_check(&mut self, manual: bool) {
+        if !self.platform.supports_updates() {
+            self.upd.status = tr("A verificação de atualizações está disponível no app Android.").to_string();
+            self.refresh_update_ui();
+            return;
+        }
+        if self.upd.checking || self.upd.downloading {
+            return;
+        }
+        self.upd.checking = true;
+        self.upd.manual = manual;
+        self.upd.status = tr("Verificando atualizações…").to_string();
+        self.platform.update_check(crate::updater::METADATA_URL);
+        self.refresh_update_ui();
+    }
+
+    fn poll_update(&mut self) {
+        if self.upd.checking {
+            if let Some(res) = self.platform.poll_update_check() {
+                self.upd.checking = false;
+                let r = self.db.set_pref(crate::updater::PREF_LAST_CHECK, &now_ms().to_string());
+                self.report(r);
+                let version = self.platform.app_version();
+                let code = self.platform.version_code();
+                let abis = self.platform.device_abis();
+                use crate::updater::*;
+                match res.map_err(|_| ()).and_then(|j| parse_metadata(&j).map_err(|_| ())) {
+                    Ok(m) => match evaluate(m, &version, code, &abis) {
+                        CheckOutcome::UpToDate => {
+                            self.upd.available = None;
+                            self.upd.status = trf!("Você está na versão mais recente ({}).", version);
+                        }
+                        CheckOutcome::Available { meta, apk } => {
+                            self.upd.status = trf!("Nova versão disponível: {}.", meta.version);
+                            self.upd.available = Some((meta, apk));
+                        }
+                        CheckOutcome::Incompatible { meta } => {
+                            self.upd.available = None;
+                            self.upd.status = trf!("A versão {} não tem pacote para este aparelho.", meta.version);
+                        }
+                    },
+                    Err(()) => {
+                        self.upd.status = tr("Não foi possível verificar agora (sem internet ou página indisponível). O app continua funcionando normalmente.").to_string();
+                    }
+                }
+                if self.upd.manual {
+                    let msg = self.upd.status.clone();
+                    self.toast(msg);
+                }
+                self.refresh_update_ui();
+                if self.page() == P_HOME {
+                    let r = self.refresh_home();
+                    self.report(r);
+                }
+            }
+        }
+        if self.upd.downloading {
+            if let Some(s) = self.platform.poll_update_download() {
+                if let Some(p) = s.strip_prefix("progress:") {
+                    self.upd.progress = p.parse().unwrap_or(0);
+                    self.refresh_update_ui();
+                } else if let Some(path) = s.strip_prefix("ok:") {
+                    self.upd.downloading = false;
+                    self.upd.apk_path = Some(path.to_string());
+                    self.upd.progress = 100;
+                    self.upd.status = tr("Atualização baixada e verificada (SHA-256, pacote, versão e assinatura).").to_string();
+                    self.refresh_update_ui();
+                    self.update_install();
+                } else {
+                    self.upd.downloading = false;
+                    self.upd.progress = -1;
+                    let code = s.trim_start_matches("error:");
+                    self.upd.status = match code.split(':').next().unwrap_or("") {
+                        "hash" | "size" => tr("O arquivo baixado não confere com o publicado (SHA-256). Ele foi apagado e nada foi instalado."),
+                        "signature" => tr("A atualização não tem a mesma assinatura do app instalado. Por segurança ela não será instalada; baixe manualmente pela página de Releases."),
+                        "package" => tr("O arquivo baixado não é o EMPETO. Ele foi apagado."),
+                        "version" => tr("O arquivo baixado não é mais novo que a versão instalada."),
+                        "space" => tr("Espaço insuficiente para baixar a atualização."),
+                        _ => tr("Falha no download. Verifique a conexão e tente de novo."),
+                    }
+                    .to_string();
+                    let msg = self.upd.status.clone();
+                    self.toast(msg);
+                    self.refresh_update_ui();
+                }
+            }
+        }
+        if let Some(st) = self.platform.poll_install_status() {
+            self.upd.status = match st.as_str() {
+                "ok" => tr("Atualização instalada."),
+                "cancelled" => tr("Instalação cancelada. Você pode instalar depois em Configurações › Sobre."),
+                _ => tr("O Android não concluiu a instalação. Seus dados não foram alterados."),
+            }
+            .to_string();
+            self.refresh_update_ui();
+        }
+    }
+
+    fn update_download(&mut self) {
+        let Some((_, apk)) = self.upd.available.clone() else { return };
+        if self.upd.downloading {
+            return;
+        }
+        self.upd.downloading = true;
+        self.upd.progress = 0;
+        self.upd.status = tr("Baixando atualização…").to_string();
+        self.platform.update_download(&apk.url, &apk.sha256, apk.size);
+        self.refresh_update_ui();
+    }
+
+    fn update_install(&mut self) {
+        let Some(path) = self.upd.apk_path.clone() else { return };
+        if !self.platform.can_install_packages() {
+            self.show_info(
+                InfoCtx::Plain,
+                tr("Permitir instalação"),
+                tr("Para instalar a atualização, o Android precisa que você permita que o EMPETO instale apps. Na tela que vai abrir, ative \"Permitir desta fonte\" e volte para tocar em \"Instalar atualização\"."),
+                tr("OK"),
+                "",
+            );
+            self.platform.open_install_settings();
+            return;
+        }
+        if self.platform.install_apk(&path) {
+            self.upd.status = tr("Confirme a instalação na tela do Android.").to_string();
+        } else {
+            self.upd.status = tr("Não foi possível iniciar o instalador do Android.").to_string();
+        }
+        self.refresh_update_ui();
+    }
+
+    fn refresh_update_ui(&mut self) {
+        let supported = self.platform.supports_updates();
+        let auto = self.update_auto_enabled();
+        let version = self.platform.app_version();
+        let status = if self.upd.status.is_empty() {
+            if supported {
+                let last = self.db.get_pref(crate::updater::PREF_LAST_CHECK).ok().flatten().and_then(|v| v.parse::<i64>().ok());
+                match last {
+                    Some(t) => trf!("Versão instalada: {}. Última verificação: {}.", version, fmt_date_time(t)),
+                    None => trf!("Versão instalada: {}.", version),
+                }
+            } else {
+                tr("A verificação de atualizações está disponível no app Android.").to_string()
+            }
+        } else {
+            self.upd.status.clone()
+        };
+        let (avail, title, details, notes) = match &self.upd.available {
+            Some((m, a)) => (
+                true,
+                trf!("EMPETO {}", m.version),
+                trf!(
+                    "Instalada: {} · Disponível: {}{} · Tamanho: {}",
+                    version,
+                    m.version,
+                    if m.published_at.is_empty() { String::new() } else { format!(" ({})", m.published_at.chars().take(10).collect::<String>()) },
+                    crate::application::storage::fmt_bytes(a.size)
+                ),
+                m.notes.chars().take(1500).collect::<String>(),
+            ),
+            None => (false, String::new(), String::new(), String::new()),
+        };
+        let busy = self.upd.checking || self.upd.downloading;
+        let progress = if self.upd.downloading || self.upd.apk_path.is_some() { self.upd.progress } else { -1 };
+        let ready = self.upd.apk_path.is_some();
+        self.with_bridge(|b| {
+            b.set_upd_supported(supported);
+            b.set_upd_auto(auto);
+            b.set_upd_status(ss(status));
+            b.set_upd_available(avail);
+            b.set_upd_title(ss(title));
+            b.set_upd_details(ss(details));
+            b.set_upd_notes(ss(notes));
+            b.set_upd_busy(busy);
+            b.set_upd_progress(progress);
+            b.set_upd_ready(ready);
+        });
     }
 
     /// Boas-vindas (evolução 3.2): só no primeiro acesso. Quem atualiza o app e já tem dados não
@@ -3416,6 +3631,13 @@ impl Controller {
             "keep-screen" => p.keep_screen_on = !p.keep_screen_on,
             "confirm-finish" => p.confirm_finish = !p.confirm_finish,
             "effort" => p.effort = !p.effort,
+            "update-auto" => {
+                let on = self.db.get_pref(crate::updater::PREF_AUTO).ok().flatten().as_deref() != Some("0");
+                let r = self.db.set_pref(crate::updater::PREF_AUTO, if on { "0" } else { "1" });
+                self.report(r);
+                self.refresh_update_ui();
+                return;
+            }
             "mod-records" => p.module_records = !p.module_records,
             "mod-heatmap" => p.module_heatmap = !p.module_heatmap,
             "mod-progression" => p.module_progression = !p.module_progression,
@@ -4272,6 +4494,7 @@ impl Controller {
             self.update_elapsed();
         }
         self.poll_files();
+        self.poll_update();
         self.poll_permission();
         if self.toast_ticks > 0 {
             self.toast_ticks -= 1;
@@ -4326,6 +4549,22 @@ fn ring_path(remaining: f32) -> String {
     let a = std::f64::consts::TAU * f;
     let (x, y) = (50.0 + 42.0 * a.sin(), 50.0 - 42.0 * a.cos());
     format!("M 50 8 A 42 42 0 {} 1 {:.2} {:.2}", if f > 0.5 { 1 } else { 0 }, x, y)
+}
+
+/// Destino oficial do WellHub (evolução 6.1). O Android abre o app instalado se ele tratar esse endereço;
+/// senão, o navegador. O EMPETO não acessa conta, não guarda credenciais e não faz check-in.
+const WELLHUB_URL: &str = "https://wellhub.com";
+
+/// Estado do atualizador (7.1/7.2).
+#[derive(Debug, Clone, Default)]
+struct UpdateState {
+    checking: bool,
+    manual: bool,
+    available: Option<(crate::updater::UpdateMetadata, crate::updater::ApkInfo)>,
+    downloading: bool,
+    progress: i32,
+    apk_path: Option<String>,
+    status: String,
 }
 
 /// Estado das calculadoras de anilhas e aquecimento (8.5/8.6).
@@ -4457,6 +4696,7 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         tools: ToolsState::default(),
         cmp: None,
         hist_limit: 100,
+        upd: UpdateState::default(),
         rep_month: (today.year(), today.month()),
         undo: None,
         focus_fresh: true,
@@ -4484,6 +4724,7 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         if !c.maybe_onboarding() {
             c.offer_session_recovery();
         }
+        c.maybe_auto_update_check();
         if let Some(err) = open_error {
             c.show_info(
                 InfoCtx::Plain,
@@ -4701,6 +4942,9 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
         c.ask_choice(ChoiceCtx::Feeling, tr("Como foi o treino?"), tr("Fica no diário de treinamento junto das observações."), opts, sel);
     });
     cb!(b, ctrl, on_detail_compare, |c| { c.detail_compare(); });
+    cb!(b, ctrl, on_upd_check, |c| { c.start_update_check(true); });
+    cb!(b, ctrl, on_upd_download, |c| { c.update_download(); });
+    cb!(b, ctrl, on_upd_install, |c| { c.update_install(); });
     cb!(b, ctrl, on_hist_more, |c| {
         c.hist_limit += 100;
         let r = c.refresh_history();

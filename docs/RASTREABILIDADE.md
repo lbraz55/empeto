@@ -59,6 +59,10 @@
 | 8.8 (v1.1) Relatórios mensais | `month_report`, Histórico › Mensal | `stats_compare_report_diary` |
 | 8.9 (v1.1) Diário | `workout_session.feeling`, `diary`, Histórico › Diário | `stats_compare_report_diary` |
 | 12 (v1.1) Desempenho | índices (0007), paginação do histórico, busca otimizada | `tests/bench.rs` (manual) |
+| 6.1 (v1.1) WellHub | atalho `wellhub` → `Platform::open_url(WELLHUB_URL)` | manual (aparelho) |
+| 7.1 (v1.1) Verificação de atualizações | `src/updater`, `scripts/update-metadata.py`, Sobre › Atualizações | `updater::tests` |
+| 7.2 (v1.1) Instalação e segurança | `MainActivity.updateDownload/verifyApk/installApk`, `UpdateInstallReceiver` | `parse_evaluate_and_safety` + manual |
+| 13 (v1.1) Permissões | manifesto (INTERNET, REQUEST_INSTALL_PACKAGES, sem cleartext) | `android_manifest_is_minimal` |
 | 9.4 Widget Android | `application/widget.rs`, `EmpetoWidget.java` | `widget::tests` + manual |
 
 ## Regras de negócio

@@ -108,6 +108,37 @@ pub trait Platform {
         log::info!("compartilhar: {subject}\n{text}");
         true
     }
+    // ---- Atualizações (evolução 7.1/7.2): só no Android ----
+    fn supports_updates(&self) -> bool {
+        false
+    }
+    fn device_abis(&self) -> Vec<String> {
+        vec![]
+    }
+    fn version_code(&self) -> i64 {
+        0
+    }
+    /// Inicia o download dos metadados; resultado em `poll_update_check`.
+    fn update_check(&self, _url: &str) {}
+    /// `Some(Ok(json))`, `Some(Err(motivo))` ou `None` (ainda em andamento).
+    fn poll_update_check(&self) -> Option<Result<String, String>> {
+        None
+    }
+    fn update_download(&self, _url: &str, _sha256: &str, _size: u64) {}
+    /// "progress:N", "ok:<caminho>", "error:<código>" ou None.
+    fn poll_update_download(&self) -> Option<String> {
+        None
+    }
+    fn poll_install_status(&self) -> Option<String> {
+        None
+    }
+    fn can_install_packages(&self) -> bool {
+        false
+    }
+    fn open_install_settings(&self) {}
+    fn install_apk(&self, _path: &str) -> bool {
+        false
+    }
     /// Pede ao widget da tela inicial para reler o resumo (`application::widget`).
     fn update_widget(&self) {}
 }

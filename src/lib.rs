@@ -21,6 +21,7 @@ pub mod history;
 pub mod import_export;
 pub mod persistence;
 pub mod training;
+pub mod updater;
 
 pub mod ui {
     slint::include_modules!();

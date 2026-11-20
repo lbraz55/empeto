@@ -32,8 +32,10 @@ Android SDK/NDK (sem Gradle).
 
 ## Permissões Android (menor privilégio)
 
-Somente `POST_NOTIFICATIONS` (pedida no contexto, ao ativar o alerta em segundo plano) e `VIBRATE`.
-Sem `INTERNET`, agenda, armazenamento amplo, alarmes exatos, localização, câmera etc. Arquivos são
+`POST_NOTIFICATIONS` (pedida no contexto, ao ativar o alerta em segundo plano), `VIBRATE`, `INTERNET` (somente
+para verificar/baixar atualizações da Release oficial, desligável) e `REQUEST_INSTALL_PACKAGES` (somente para
+entregar a atualização confirmada ao instalador do Android). Sem agenda, armazenamento amplo, alarmes exatos,
+localização, câmera etc. Os treinos nunca saem do aparelho. Arquivos são
 escolhidos pelo seletor do sistema (`ACTION_OPEN_DOCUMENT`/`ACTION_CREATE_DOCUMENT`). Backup automático
 do Android (nuvem) desativado. Um teste automatizado garante que o manifesto não ganhe permissões novas.
 

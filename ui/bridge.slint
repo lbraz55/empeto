@@ -411,6 +411,21 @@ export global Bridge {
     callback data-ics();
     callback show-diagnostics();
 
+    // ---------------- Atualizações (evolução 7.1/7.2) ----------------
+    in-out property <bool> upd-supported;
+    in-out property <bool> upd-auto;
+    in-out property <string> upd-status;
+    in-out property <bool> upd-available;
+    in-out property <string> upd-title;
+    in-out property <string> upd-details;
+    in-out property <string> upd-notes;
+    in-out property <bool> upd-busy;
+    in-out property <int> upd-progress: -1;
+    in-out property <bool> upd-ready;
+    callback upd-check();
+    callback upd-download();
+    callback upd-install();
+
     // ---------------- Análise e evolução (evolução 8.4, 8.7–8.9) ----------------
     in-out property <bool> effort-enabled;
     callback session-effort(int, string);

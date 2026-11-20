@@ -71,6 +71,18 @@ Sons e alertas · Cronômetro · Treinamento · Calendário · Interface · Dado
 - **Backup** é diferente de planilha: guarda o estado completo para restaurar o app. **Restaurar**
   valida o arquivo antes de substituir os dados atuais.
 
+## Atualizações
+
+- Configurações › Sobre › Atualizações: "Verificar agora" ou deixe "Verificar automaticamente" (no máximo uma vez
+  por semana). Quando houver versão nova, toque em "Baixar e instalar" e confirme na tela do Android. Na primeira
+  vez o Android pede para permitir que o EMPETO instale apps. Seus dados são mantidos.
+- Sem internet, nada muda: o app continua funcionando normalmente.
+
+## WellHub
+
+- Em Configurações › Atalhos da Home, escolha "WellHub (check-in)". O atalho abre o WellHub (app ou site oficial);
+  o check-in é feito lá. O EMPETO não acessa sua conta.
+
 ## Análise: relatório, diário e comparação
 
 - **Histórico › Mensal**: resumo do mês (treinos, duração, volume, recordes, sessões por semana e séries por

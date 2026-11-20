@@ -4,19 +4,25 @@
   - POST_NOTIFICATIONS: alertas do cronômetro com o app em segundo plano (pedida só quando o
     usuário ativa o alerta em segundo plano; Android 13+).
   - VIBRATE: vibração opcional nos alertas.
-  Não há INTERNET, calendário, armazenamento amplo, localização, câmera etc.
+  - INTERNET (desde 0.8.0): somente para verificar e baixar atualizações da Release oficial no GitHub,
+    sob demanda ou no máximo 1x/semana (desligável). Nenhum dado de treino é enviado; o resto do app é offline.
+  - REQUEST_INSTALL_PACKAGES (desde 0.8.0): entregar o APK verificado ao instalador do Android, que sempre pede a
+    confirmação do usuário (nunca há instalação silenciosa).
+  Não há calendário, armazenamento amplo, localização, câmera, contas etc.
   Arquivos são escolhidos pelo seletor do sistema (ACTION_OPEN_DOCUMENT / ACTION_CREATE_DOCUMENT).
   SCHEDULE_EXACT_ALARM não é usado: o alarme em segundo plano usa setAndAllowWhileIdle.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.academialuis.workout"
-    android:versionCode="700"
-    android:versionName="0.7.0">
+    android:versionCode="800"
+    android:versionName="0.8.0">
 
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <uses-feature android:glEsVersion="0x00020000" android:required="true" />
 
@@ -29,6 +35,7 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:hasCode="true"
         android:extractNativeLibs="true"
+        android:usesCleartextTraffic="false"
         android:theme="@style/AppTheme">
 
         <activity
@@ -53,6 +60,7 @@
         </activity>
 
         <receiver android:name=".TimerAlarmReceiver" android:exported="false" />
+        <receiver android:name=".UpdateInstallReceiver" android:exported="false" />
 
         <!-- Widget (somente leitura de um resumo gerado pelo app; nenhuma permissão nova). -->
         <receiver android:name=".EmpetoWidget" android:exported="true" android:label="EMPETO">

@@ -79,6 +79,11 @@ jobs:
       - name: Versão
         id: ver
         run: echo "version=$(sed -n 's/^version = \"\(.*\)\"/\1/p' Cargo.toml | head -1)" >> "$GITHUB_OUTPUT"
+      - name: Metadados de atualização (empeto-update.json)
+        run: |
+          V="${{ steps.ver.outputs.version }}"
+          CODE=$(echo "$V" | awk -F. '{print $1*10000 + $2*100 + $3}')
+          python3 scripts/update-metadata.py "$V" "$CODE" "${{ github.repository }}"
       - name: Publicar Release (tag v<versão> criada automaticamente)
         if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
@@ -90,5 +95,7 @@ jobs:
             APK do EMPETO ${{ steps.ver.outputs.version }} (Android 8.0+, arm64-v8a e x86_64).
             Baixe o arquivo `.apk` abaixo, abra no celular e permita "instalar apps desconhecidos".
             Checklist de teste: docs/RASTREABILIDADE.md.
-          files: dist/*.apk
+          files: |
+            dist/*.apk
+            dist/empeto-update.json
           make_latest: true

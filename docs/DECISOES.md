@@ -47,6 +47,17 @@ implementação seguiu exatamente essas recomendações; todas podem ser revista
   As ilustrações são desenhos próprios do projeto (mesma licença do código), sem conteúdo de terceiros.
   Vídeo é só um link que o próprio usuário cadastra; o app não baixa, não armazena e não sugere vídeos de
   terceiros. Pacotes opcionais de vídeo ficam para depois (exigem controle de download, versão e espaço).
+- **Atualizador** (evolução 7): metadados próprios (`empeto-update.json`) publicados pelo CI em cada Release,
+  em vez da API do GitHub (sem limite de requisições e com SHA-256/ABIs). Rede, hash, assinatura e instalador
+  ficam em Java com APIs do Android (HttpURLConnection, MessageDigest, PackageManager, PackageInstaller) — sem
+  bibliotecas novas; a decisão (versão, ABI, URL oficial, intervalo) fica em Rust (`src/updater`). Verificação
+  automática ligada por padrão, no máximo semanal, desligável; download só com toque do usuário.
+- **Assinatura**: a atualização só é aceita se o APK baixado tiver a mesma assinatura do app instalado. Enquanto
+  os Secrets de assinatura não estiverem cadastrados no GitHub, cada build tem chave diferente e o app recusa a
+  atualização com uma mensagem clara (o usuário pode instalar manualmente, desinstalando antes).
+- **WellHub**: não há API pública de check-in conhecida e não foi possível confirmar daqui o nome do pacote do app;
+  por isso o atalho abre o endereço oficial (`https://wellhub.com`) e o Android decide se abre o app ou o navegador.
+  A confirmação do comportamento em aparelho real fica pendente (documento, decisão 17.8).
 - **Idioma automático** ("Seguir o sistema"): português para aparelhos em português, espanhol para qualquer
   variante de espanhol e inglês para os demais idiomas. Datas continuam no formato dia/mês/ano em todos os idiomas.
 - **Dados não são traduzidos**: nomes da biblioteca inicial de exercícios, grupos musculares e equipamentos são

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.8.0 — 2026-11-20 (schema do banco: 7) — Integrações e distribuição (Fase 5 do documento de evolução v1.1)
+- **Verificação de atualizações** (Configurações › Sobre › Atualizações): consulta o `empeto-update.json` da
+  Release oficial no GitHub sob demanda ou automaticamente no máximo 1x/semana (desligável). Mostra versão
+  instalada e disponível, data, tamanho e novidades; cartão na Home quando há versão nova.
+- **Instalação assistida e segura**: só baixa quando você toca em "Baixar e instalar"; aceita apenas links da
+  Release oficial; confere tamanho e SHA-256, que o arquivo é o EMPETO, de versão maior e **assinado com a mesma
+  chave** do app instalado; entrega ao instalador do Android, que pede confirmação (nunca silencioso). Dados
+  locais preservados.
+- **WellHub** (atalho opcional da Home, "WellHub (check-in)"): abre o destino oficial do WellHub; o Android abre
+  o app instalado se ele tratar o endereço. Não acessa conta, não guarda credenciais e não faz check-in.
+- **Permissões revisadas**: novas `INTERNET` (só atualizações) e `REQUEST_INSTALL_PACKAGES` (só para entregar a
+  atualização confirmada ao instalador); tráfego sem HTTPS bloqueado (`usesCleartextTraffic=false`).
+- CI publica `empeto-update.json` (versão, código, notas do CHANGELOG, URL, tamanho, SHA-256 e ABIs de cada APK).
+- Texto "Sobre" atualizado e traduzido.
+
 ## 0.7.0 — 2026-11-20 (schema do banco: 7) — Análise e evolução (Fase 4 do documento de evolução v1.1)
 - **RPE/RIR** (opcional, Configurações › Treinamento): esforço percebido (1–10, meios pontos) e repetições em
   reserva por série; aparecem no detalhe da sessão, na comparação e no relatório (RPE médio).

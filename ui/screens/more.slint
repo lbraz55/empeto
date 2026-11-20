@@ -712,6 +712,59 @@ export component SettingsScreen inherits Scroll {
             horizontal-alignment: center;
         }
         Body { text: Bridge.about-text; }
+        Card {
+            SectionTitle { text: @tr("ATUALIZAÇÕES"); }
+            Body { text: Bridge.upd-status; }
+            if Bridge.upd-supported: ToggleRow {
+                text: @tr("Verificar automaticamente");
+                description: @tr("No máximo uma vez por semana, ao abrir o app. Só consulta a página oficial do EMPETO no GitHub; nada é baixado sem você pedir.");
+                checked: Bridge.upd-auto;
+                toggled => { Bridge.pref-toggle("update-auto"); }
+            }
+            if Bridge.upd-supported: Btn {
+                text: Bridge.upd-busy && Bridge.upd-progress < 0 ? @tr("Verificando…") : @tr("Verificar agora");
+                icon: Icons.reset;
+                enabled: !Bridge.upd-busy;
+                clicked => { Bridge.upd-check(); }
+            }
+            if Bridge.upd-available: VerticalLayout {
+                spacing: 6px;
+                Text {
+                    text: Bridge.upd-title;
+                    color: Theme.text;
+                    font-size: Theme.fs-l;
+                    font-weight: 700;
+                    wrap: word-wrap;
+                }
+                Label { text: Bridge.upd-details; }
+                if Bridge.upd-notes != "": Body { text: Bridge.upd-notes; }
+                if Bridge.upd-progress >= 0: Rectangle {
+                    height: 8px;
+                    border-radius: 4px;
+                    background: Theme.surface2;
+                    Rectangle {
+                        x: 0;
+                        width: parent.width * Bridge.upd-progress / 100;
+                        border-radius: 4px;
+                        background: Theme.text;
+                    }
+                }
+                if !Bridge.upd-ready: Btn {
+                    text: @tr("Baixar e instalar");
+                    icon: Icons.download;
+                    kind: "primary";
+                    enabled: !Bridge.upd-busy;
+                    clicked => { Bridge.upd-download(); }
+                }
+                if Bridge.upd-ready: Btn {
+                    text: @tr("Instalar atualização");
+                    icon: Icons.download;
+                    kind: "primary";
+                    clicked => { Bridge.upd-install(); }
+                }
+                Label { text: @tr("O Android pede sua confirmação antes de instalar. Seus dados são mantidos."); }
+            }
+        }
         Btn {
             text: @tr("Rever as boas-vindas");
             icon: Icons.play;

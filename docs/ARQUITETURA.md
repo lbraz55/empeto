@@ -32,6 +32,22 @@
 | `src/application` | Casos de uso transversais: preferências, busca global, desfazer, `GestureEvent`, atalhos da Home, armazenamento e backups locais, resumo do widget |
 | `android/java` | `MainActivity` (NativeActivity + ponte), `LauncherActivity` (diagnóstico de abertura), `TimerAlarmReceiver` e `EmpetoWidget` |
 
+## Atualizações (evolução v1.1, 7) — `src/updater`
+
+```
+Rust (updater)                         Java (MainActivity)                    Android
+METADATA_URL ─► updateCheck(url) ─────► HttpURLConnection (HTTPS) ──────────► GitHub Release
+parse_metadata/evaluate ◄─ pollUpdateCheck
+"Baixar e instalar" ─► updateDownload(url, sha256, size) ─► cache/update/*.apk + SHA-256
+                                       verifyApk: pacote, versionCode, assinatura
+installApk(path) ──────────────────────► PackageInstaller (sessão) ─► confirmação do usuário
+                                       UpdateInstallReceiver ─► status
+```
+
+- `is_official_url`: só `github.com/lbraz55/empeto` (ou o nome antigo do mesmo repositório) e `.apk`.
+- `pick_apk`: escolhe pelo `Build.SUPPORTED_ABIS`. `auto_check_due`: 7 dias, preferências `update.*`.
+- CI: `scripts/update-metadata.py` gera `dist/empeto-update.json` e o anexa à Release.
+
 ## Análise (evolução v1.1, 8.4, 8.7–8.9) — `history::analytics`
 
 - `set_set_effort`/`set_session_feeling`: só em sessão em andamento; gatilho `trg_session_feeling_immutable`.

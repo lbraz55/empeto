@@ -496,7 +496,8 @@ fn exercise_library_crud() {
 
 #[test]
 fn android_manifest_is_minimal() {
-    // Seção 10: somente POST_NOTIFICATIONS e VIBRATE; sem INTERNET/calendário/armazenamento amplo.
+    // Seção 10 + evolução v1.1 (13.2): notificações e vibração; INTERNET e REQUEST_INSTALL_PACKAGES só para a
+    // verificação/instalação de atualizações escolhida pelo usuário. Sem calendário/armazenamento amplo.
     let m = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/android/AndroidManifest.xml")).unwrap();
     let perms: Vec<&str> = m
         .lines()
@@ -504,8 +505,17 @@ fn android_manifest_is_minimal() {
         .filter_map(|l| l.split("android:name=\"").nth(1))
         .filter_map(|s| s.split('"').next())
         .collect();
-    assert_eq!(perms, vec!["android.permission.POST_NOTIFICATIONS", "android.permission.VIBRATE"]);
-    for forbidden in ["INTERNET", "CALENDAR", "STORAGE", "SCHEDULE_EXACT_ALARM", "LOCATION", "CAMERA"] {
+    assert_eq!(
+        perms,
+        vec![
+            "android.permission.POST_NOTIFICATIONS",
+            "android.permission.VIBRATE",
+            "android.permission.INTERNET",
+            "android.permission.REQUEST_INSTALL_PACKAGES"
+        ]
+    );
+    assert!(m.contains("android:usesCleartextTraffic=\"false\""), "só HTTPS");
+    for forbidden in ["CALENDAR", "STORAGE", "SCHEDULE_EXACT_ALARM", "LOCATION", "CAMERA", "CONTACTS", "ACCOUNTS"] {
         assert!(!perms.iter().any(|p| p.contains(forbidden)), "{forbidden}");
     }
 }

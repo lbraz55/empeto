@@ -438,6 +438,198 @@ public class MainActivity extends NativeActivity {
         }
     }
 
+    // ------------------------------------------------------------------
+    // Atualizações (documento de evolução 7.1/7.2). A decisão fica no Rust (src/updater);
+    // aqui só rede, verificação de integridade/assinatura e o instalador do sistema.
+    // ------------------------------------------------------------------
+    private volatile String updateCheckResult = null;
+    private volatile String updateDownloadResult = null;
+    private volatile int updateProgress = -1;
+
+    public String deviceAbis() {
+        return android.text.TextUtils.join(",", Build.SUPPORTED_ABIS);
+    }
+
+    public long versionCode() {
+        try {
+            android.content.pm.PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+            return Build.VERSION.SDK_INT >= 28 ? pi.getLongVersionCode() : pi.versionCode;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static boolean officialUrl(String url) {
+        return url != null && (url.startsWith("https://github.com/lbraz55/empeto/") || url.startsWith("https://github.com/lbraz55/AcademiaLuis/"));
+    }
+
+    private static java.net.HttpURLConnection open(String url) throws Exception {
+        java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+        c.setConnectTimeout(15000);
+        c.setReadTimeout(30000);
+        c.setInstanceFollowRedirects(true);
+        c.setRequestProperty("User-Agent", "EMPETO-updater");
+        return c;
+    }
+
+    /** Busca o arquivo de metadados da Release (em segundo plano). Resultado em pollUpdateCheck(). */
+    public void updateCheck(final String url) {
+        updateCheckResult = null;
+        new Thread(new Runnable() { public void run() {
+            try {
+                if (!officialUrl(url)) throw new Exception("url");
+                java.net.HttpURLConnection c = open(url);
+                int code = c.getResponseCode();
+                if (code != 200) throw new Exception("http " + code);
+                InputStream in = c.getInputStream();
+                java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    out.write(buf, 0, n);
+                    if (out.size() > 256 * 1024) throw new Exception("size");
+                }
+                in.close();
+                updateCheckResult = "ok:" + out.toString("UTF-8");
+            } catch (Exception e) {
+                updateCheckResult = "error:network:" + e.getMessage();
+            }
+        }}).start();
+    }
+
+    public String pollUpdateCheck() {
+        String r = updateCheckResult;
+        updateCheckResult = null;
+        return r;
+    }
+
+    /**
+     * Baixa o APK oficial, confere tamanho e SHA-256, confere que é o mesmo pacote, de versão maior e
+     * assinado com a mesma chave do app instalado. Resultado em pollUpdateDownload().
+     */
+    public void updateDownload(final String url, final String sha256, final long size) {
+        updateDownloadResult = null;
+        updateProgress = 0;
+        new Thread(new Runnable() { public void run() {
+            File dir = new File(getCacheDir(), "update");
+            File apk = new File(dir, "empeto-update.apk");
+            try {
+                if (!officialUrl(url)) throw new Exception("url");
+                dir.mkdirs();
+                if (dir.getUsableSpace() < size * 2) { updateDownloadResult = "error:space"; return; }
+                java.net.HttpURLConnection c = open(url);
+                if (c.getResponseCode() != 200) throw new Exception("http " + c.getResponseCode());
+                java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+                InputStream in = c.getInputStream();
+                OutputStream out = new FileOutputStream(apk);
+                byte[] buf = new byte[65536];
+                long total = 0;
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    out.write(buf, 0, n);
+                    md.update(buf, 0, n);
+                    total += n;
+                    if (total > size) break;
+                    updateProgress = (int) (total * 100 / Math.max(1, size));
+                }
+                out.close();
+                in.close();
+                if (total != size) { apk.delete(); updateDownloadResult = "error:size"; return; }
+                StringBuilder hex = new StringBuilder();
+                for (byte b : md.digest()) hex.append(String.format("%02x", b));
+                if (!hex.toString().equalsIgnoreCase(sha256)) { apk.delete(); updateDownloadResult = "error:hash"; return; }
+                String check = verifyApk(apk);
+                if (check != null) { apk.delete(); updateDownloadResult = "error:" + check; return; }
+                updateDownloadResult = "ok:" + apk.getAbsolutePath();
+            } catch (Exception e) {
+                apk.delete();
+                updateDownloadResult = "error:network:" + e.getMessage();
+            }
+        }}).start();
+    }
+
+    @SuppressWarnings("deprecation")
+    private String verifyApk(File apk) {
+        android.content.pm.PackageManager pm = getPackageManager();
+        int flags = Build.VERSION.SDK_INT >= 28 ? android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES
+                : android.content.pm.PackageManager.GET_SIGNATURES;
+        android.content.pm.PackageInfo archive = pm.getPackageArchiveInfo(apk.getAbsolutePath(), flags);
+        if (archive == null || !getPackageName().equals(archive.packageName)) return "package";
+        long newCode = Build.VERSION.SDK_INT >= 28 ? archive.getLongVersionCode() : archive.versionCode;
+        if (newCode <= versionCode()) return "version";
+        try {
+            android.content.pm.PackageInfo self = pm.getPackageInfo(getPackageName(), flags);
+            android.content.pm.Signature[] a, b;
+            if (Build.VERSION.SDK_INT >= 28) {
+                if (archive.signingInfo == null || self.signingInfo == null) return "signature";
+                a = archive.signingInfo.getApkContentsSigners();
+                b = self.signingInfo.getApkContentsSigners();
+            } else {
+                a = archive.signatures;
+                b = self.signatures;
+            }
+            if (a == null || b == null || a.length == 0 || a.length != b.length) return "signature";
+            for (int i = 0; i < a.length; i++) if (!a[i].equals(b[i])) return "signature";
+        } catch (Exception e) {
+            return "signature";
+        }
+        return null;
+    }
+
+    public String pollUpdateDownload() {
+        String r = updateDownloadResult;
+        if (r != null) { updateDownloadResult = null; updateProgress = -1; return r; }
+        return updateProgress >= 0 ? "progress:" + updateProgress : null;
+    }
+
+    public String pollInstallStatus() {
+        String r = UpdateInstallReceiver.lastStatus;
+        UpdateInstallReceiver.lastStatus = null;
+        return r;
+    }
+
+    public boolean canInstallPackages() {
+        return getPackageManager().canRequestPackageInstalls();
+    }
+
+    public void openInstallPermissionSettings() {
+        try {
+            Intent i = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()));
+            startActivity(i);
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** Entrega o APK verificado ao instalador do Android, que pede a confirmação do usuário. */
+    public boolean installApk(String path) {
+        try {
+            File apk = new File(path);
+            if (!apk.getParentFile().getCanonicalPath().equals(new File(getCacheDir(), "update").getCanonicalPath())) return false;
+            android.content.pm.PackageInstaller pi = getPackageManager().getPackageInstaller();
+            android.content.pm.PackageInstaller.SessionParams params =
+                new android.content.pm.PackageInstaller.SessionParams(android.content.pm.PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+            params.setAppPackageName(getPackageName());
+            int id = pi.createSession(params);
+            android.content.pm.PackageInstaller.Session s = pi.openSession(id);
+            OutputStream out = s.openWrite("empeto.apk", 0, apk.length());
+            InputStream in = new FileInputStream(apk);
+            byte[] buf = new byte[65536];
+            int n;
+            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            s.fsync(out);
+            out.close();
+            in.close();
+            Intent done = new Intent(this, UpdateInstallReceiver.class);
+            int f = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0);
+            PendingIntent piDone = PendingIntent.getBroadcast(this, id, done, f);
+            s.commit(piDone.getIntentSender());
+            s.close();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** Atualiza o widget depois que o app regravou files/widget.txt. */
     public void updateWidget() {
         EmpetoWidget.refreshAll(getApplicationContext());

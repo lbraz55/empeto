@@ -907,6 +907,30 @@ msgstr "Restore from a file…"
 msgid "Versão "
 msgstr "Version "
 
+msgid "ATUALIZAÇÕES"
+msgstr "UPDATES"
+
+msgid "Verificar automaticamente"
+msgstr "Check automatically"
+
+msgid "No máximo uma vez por semana, ao abrir o app. Só consulta a página oficial do EMPETO no GitHub; nada é baixado sem você pedir."
+msgstr "At most once a week, when the app opens. It only checks EMPETO's official page on GitHub; nothing is downloaded unless you ask."
+
+msgid "Verificando…"
+msgstr "Checking…"
+
+msgid "Verificar agora"
+msgstr "Check now"
+
+msgid "Baixar e instalar"
+msgstr "Download and install"
+
+msgid "Instalar atualização"
+msgstr "Install update"
+
+msgid "O Android pede sua confirmação antes de instalar. Seus dados são mantidos."
+msgstr "Android asks for your confirmation before installing. Your data is kept."
+
 msgid "Rever as boas-vindas"
 msgstr "Replay the welcome tour"
 
@@ -1438,6 +1462,18 @@ msgstr "No copy saved outside the app from here"
 msgid "{} backup(s) no aparelho. Eles não protegem contra perda ou desinstalação: salve uma cópia fora do aparelho."
 msgstr "{} backup(s) on the device. They do not protect against loss or uninstalling: save a copy off the device."
 
+msgid "ATUALIZAÇÃO DISPONÍVEL"
+msgstr "UPDATE AVAILABLE"
+
+msgid "EMPETO {}"
+msgstr "EMPETO {}"
+
+msgid "Veja as novidades e instale quando quiser."
+msgstr "See what's new and install whenever you want."
+
+msgid "Ver"
+msgstr "View"
+
 msgid "Sequência {}"
 msgstr "Sequence {}"
 
@@ -1906,6 +1942,9 @@ msgstr "None"
 msgid "{} · {} arquivo(s)"
 msgstr "{} · {} file(s)"
 
+msgid "Versão do app: {}\nVersão do banco de dados (schema): {}\n\nAplicativo pessoal e offline: seus treinos ficam somente neste aparelho, sem conta, anúncios nem sincronização — faça backups periódicos. A internet é usada apenas para verificar e baixar atualizações do EMPETO, se você permitir.\n\nO EMPETO é um organizador de treinos. Não é ferramenta de diagnóstico, prescrição ou recomendação médica e não substitui orientação de profissional de educação física ou saúde.\n\nAlternativas de exercícios são sugestões organizacionais e não indicam equivalência biomecânica.\n\nA precisão dos alertas em segundo plano depende das políticas e permissões do Android.\n\nPermissões usadas: notificações (alerta do cronômetro, opcional), vibração, internet (só atualizações) e instalação de apps (só para instalar a atualização que você confirmar).\n\nFeito com Rust, Slint e SQLite. Ilustrações próprias. Licenças de terceiros: veja o repositório do projeto."
+msgstr "App version: {}\nDatabase version (schema): {}\n\nPersonal, offline app: your workouts stay only on this device, with no account, ads or sync — make regular backups. The internet is used only to check for and download EMPETO updates, if you allow it.\n\nEMPETO is a workout organizer. It is not a tool for medical diagnosis, prescription or advice and does not replace guidance from a fitness or health professional.\n\nExercise alternatives are organizational suggestions and do not imply biomechanical equivalence.\n\nThe accuracy of background alerts depends on Android's policies and permissions.\n\nPermissions used: notifications (timer alert, optional), vibration, internet (updates only) and app installation (only to install an update you confirm).\n\nBuilt with Rust, Slint and SQLite. Original illustrations. Third-party licenses: see the project repository."
+
 msgid "Quilogramas (kg)"
 msgstr "Kilograms (kg)"
 
@@ -1923,6 +1962,81 @@ msgstr "Dark"
 
 msgid "Nenhum treino planejado para hoje. Escolha uma ficha."
 msgstr "No workout planned for today. Choose a plan."
+
+msgid "Não foi possível abrir o WellHub. Acesse pelo app ou site oficial."
+msgstr "Could not open WellHub. Use the official app or website."
+
+msgid "A verificação de atualizações está disponível no app Android."
+msgstr "Update checking is available in the Android app."
+
+msgid "Verificando atualizações…"
+msgstr "Checking for updates…"
+
+msgid "Você está na versão mais recente ({})."
+msgstr "You have the latest version ({})."
+
+msgid "Nova versão disponível: {}."
+msgstr "New version available: {}."
+
+msgid "A versão {} não tem pacote para este aparelho."
+msgstr "Version {} has no package for this device."
+
+msgid "Não foi possível verificar agora (sem internet ou página indisponível). O app continua funcionando normalmente."
+msgstr "Could not check right now (no internet or page unavailable). The app keeps working normally."
+
+msgid "Atualização baixada e verificada (SHA-256, pacote, versão e assinatura)."
+msgstr "Update downloaded and verified (SHA-256, package, version and signature)."
+
+msgid "O arquivo baixado não confere com o publicado (SHA-256). Ele foi apagado e nada foi instalado."
+msgstr "The downloaded file does not match the published one (SHA-256). It was deleted and nothing was installed."
+
+msgid "A atualização não tem a mesma assinatura do app instalado. Por segurança ela não será instalada; baixe manualmente pela página de Releases."
+msgstr "The update is not signed like the installed app. For safety it will not be installed; download it manually from the Releases page."
+
+msgid "O arquivo baixado não é o EMPETO. Ele foi apagado."
+msgstr "The downloaded file is not EMPETO. It was deleted."
+
+msgid "O arquivo baixado não é mais novo que a versão instalada."
+msgstr "The downloaded file is not newer than the installed version."
+
+msgid "Espaço insuficiente para baixar a atualização."
+msgstr "Not enough space to download the update."
+
+msgid "Falha no download. Verifique a conexão e tente de novo."
+msgstr "Download failed. Check your connection and try again."
+
+msgid "Atualização instalada."
+msgstr "Update installed."
+
+msgid "Instalação cancelada. Você pode instalar depois em Configurações › Sobre."
+msgstr "Installation cancelled. You can install later in Settings › About."
+
+msgid "O Android não concluiu a instalação. Seus dados não foram alterados."
+msgstr "Android did not complete the installation. Your data was not changed."
+
+msgid "Baixando atualização…"
+msgstr "Downloading update…"
+
+msgid "Permitir instalação"
+msgstr "Allow installation"
+
+msgid "Para instalar a atualização, o Android precisa que você permita que o EMPETO instale apps. Na tela que vai abrir, ative \"Permitir desta fonte\" e volte para tocar em \"Instalar atualização\"."
+msgstr "To install the update, Android needs you to allow EMPETO to install apps. On the screen that opens, turn on \"Allow from this source\" and come back to tap \"Install update\"."
+
+msgid "Confirme a instalação na tela do Android."
+msgstr "Confirm the installation on the Android screen."
+
+msgid "Não foi possível iniciar o instalador do Android."
+msgstr "Could not start the Android installer."
+
+msgid "Versão instalada: {}. Última verificação: {}."
+msgstr "Installed version: {}. Last check: {}."
+
+msgid "Versão instalada: {}."
+msgstr "Installed version: {}."
+
+msgid "Instalada: {} · Disponível: {}{} · Tamanho: {}"
+msgstr "Installed: {} · Available: {}{} · Size: {}"
 
 msgid "Encontramos a sessão \"{} — {}\", iniciada em {}, que não foi finalizada (o app pode ter sido fechado ou o aparelho desligado).\n\n{} de {} série(s) registradas estão salvas. Deseja continuar de onde parou?"
 msgstr "We found the session \"{} — {}\", started on {}, which was not finished (the app may have been closed or the device turned off).\n\n{} of {} logged set(s) are saved. Do you want to continue where you left off?"
@@ -2370,6 +2484,9 @@ msgstr "{:02}/{:02}/{} · {} set(s)"
 
 msgid "Próximo treino"
 msgstr "Next workout"
+
+msgid "WellHub (check-in)"
+msgstr "WellHub (check-in)"
 
 msgid "{} B"
 msgstr "{} B"
@@ -2997,4 +3114,7 @@ msgstr "Pull"
 
 msgid "Legs — Pernas"
 msgstr "Legs"
+
+msgid "Informações de atualização inválidas."
+msgstr "Invalid update information."
 

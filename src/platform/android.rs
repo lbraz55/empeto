@@ -248,6 +248,70 @@ impl Platform for AndroidPlatform {
         .unwrap_or(false)
     }
 
+    fn supports_updates(&self) -> bool {
+        true
+    }
+
+    fn device_abis(&self) -> Vec<String> {
+        self.call_string("deviceAbis").unwrap_or_default().split(',').filter(|s| !s.is_empty()).map(String::from).collect()
+    }
+
+    fn version_code(&self) -> i64 {
+        self.with_env(|env, act| env.call_method(act, "versionCode", "()J", &[])?.j()).unwrap_or(0)
+    }
+
+    fn update_check(&self, url: &str) {
+        let url = url.to_string();
+        self.call_void("updateCheck", "(Ljava/lang/String;)V", move |env| Ok(vec![jstr(env, &url)?]));
+    }
+
+    fn poll_update_check(&self) -> Option<Result<String, String>> {
+        let r = self.call_string("pollUpdateCheck")?;
+        Some(match r.strip_prefix("ok:") {
+            Some(body) => Ok(body.to_string()),
+            None => Err(r.trim_start_matches("error:").to_string()),
+        })
+    }
+
+    fn update_download(&self, url: &str, sha256: &str, size: u64) {
+        let (u, h) = (url.to_string(), sha256.to_string());
+        self.with_env(|env, act| {
+            let us = env.new_string(&u)?;
+            let hs = env.new_string(&h)?;
+            env.call_method(
+                act,
+                "updateDownload",
+                "(Ljava/lang/String;Ljava/lang/String;J)V",
+                &[JValue::Object(&us), JValue::Object(&hs), JValue::Long(size as i64)],
+            )?;
+            Ok(())
+        });
+    }
+
+    fn poll_update_download(&self) -> Option<String> {
+        self.call_string("pollUpdateDownload")
+    }
+
+    fn poll_install_status(&self) -> Option<String> {
+        self.call_string("pollInstallStatus")
+    }
+
+    fn can_install_packages(&self) -> bool {
+        self.with_env(|env, act| env.call_method(act, "canInstallPackages", "()Z", &[])?.z()).unwrap_or(false)
+    }
+
+    fn open_install_settings(&self) {
+        self.call_void("openInstallPermissionSettings", "()V", |_| Ok(vec![]));
+    }
+
+    fn install_apk(&self, path: &str) -> bool {
+        self.with_env(|env, act| {
+            let p = env.new_string(path)?;
+            env.call_method(act, "installApk", "(Ljava/lang/String;)Z", &[JValue::Object(&p)])?.z()
+        })
+        .unwrap_or(false)
+    }
+
     fn update_widget(&self) {
         self.call_void("updateWidget", "()V", |_| Ok(vec![]));
     }
