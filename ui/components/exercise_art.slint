@@ -1,0 +1,51 @@
+import { Theme } from "../theme.slint";
+
+// Ilustração própria do exercício (documento de evolução v1.1, 5.1): monocromática, embutida no app
+// (funciona offline) e recolorida pelo tema. Id desconhecido ou vazio usa a ilustração genérica.
+export component ExerciseArt inherits Rectangle {
+    in property <string> art;
+    in property <length> size: 48px;
+    in property <bool> framed: true;
+    width: root.size;
+    height: root.size;
+    border-radius: root.framed ? root.size * 0.22 : 0;
+    background: root.framed ? Theme.surface2 : transparent;
+    border-width: root.framed ? 1px : 0px;
+    border-color: Theme.border;
+    accessible-role: image;
+    Image {
+        x: root.framed ? root.size * 0.1 : 0;
+        y: root.framed ? root.size * 0.1 : 0;
+        width: root.framed ? root.size * 0.8 : root.size;
+        height: self.width;
+        colorize: Theme.text;
+        image-fit: contain;
+        source: false ? @image-url("../../assets/exercises/generic.svg")
+            : root.art == "bench-press" ? @image-url("../../assets/exercises/bench-press.svg")
+            : root.art == "push-up" ? @image-url("../../assets/exercises/push-up.svg")
+            : root.art == "fly" ? @image-url("../../assets/exercises/fly.svg")
+            : root.art == "pull-up" ? @image-url("../../assets/exercises/pull-up.svg")
+            : root.art == "pulldown" ? @image-url("../../assets/exercises/pulldown.svg")
+            : root.art == "row" ? @image-url("../../assets/exercises/row.svg")
+            : root.art == "overhead-press" ? @image-url("../../assets/exercises/overhead-press.svg")
+            : root.art == "dip" ? @image-url("../../assets/exercises/dip.svg")
+            : root.art == "lateral-raise" ? @image-url("../../assets/exercises/lateral-raise.svg")
+            : root.art == "curl" ? @image-url("../../assets/exercises/curl.svg")
+            : root.art == "triceps-extension" ? @image-url("../../assets/exercises/triceps-extension.svg")
+            : root.art == "squat" ? @image-url("../../assets/exercises/squat.svg")
+            : root.art == "leg-press" ? @image-url("../../assets/exercises/leg-press.svg")
+            : root.art == "leg-extension" ? @image-url("../../assets/exercises/leg-extension.svg")
+            : root.art == "lunge" ? @image-url("../../assets/exercises/lunge.svg")
+            : root.art == "deadlift" ? @image-url("../../assets/exercises/deadlift.svg")
+            : root.art == "leg-curl" ? @image-url("../../assets/exercises/leg-curl.svg")
+            : root.art == "hip-thrust" ? @image-url("../../assets/exercises/hip-thrust.svg")
+            : root.art == "hip-abduction" ? @image-url("../../assets/exercises/hip-abduction.svg")
+            : root.art == "calf-raise" ? @image-url("../../assets/exercises/calf-raise.svg")
+            : root.art == "plank" ? @image-url("../../assets/exercises/plank.svg")
+            : root.art == "crunch" ? @image-url("../../assets/exercises/crunch.svg")
+            : root.art == "leg-raise" ? @image-url("../../assets/exercises/leg-raise.svg")
+            : root.art == "cardio-run" ? @image-url("../../assets/exercises/cardio-run.svg")
+            : root.art == "cardio-bike" ? @image-url("../../assets/exercises/cardio-bike.svg")
+            : @image-url("../../assets/exercises/generic.svg");
+    }
+}

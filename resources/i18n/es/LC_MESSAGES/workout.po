@@ -34,6 +34,9 @@ msgstr "Modo enfoque"
 msgid "Buscar"
 msgstr "Buscar"
 
+msgid "Exercício"
+msgstr "Ejercicio"
+
 msgid "Sessão realizada"
 msgstr "Sesión realizada"
 
@@ -196,9 +199,6 @@ msgstr "Domingo"
 msgid "Ficha em sequência: a ordem dos dias define a fila (use as setas no editor)."
 msgstr "Rutina en secuencia: el orden de los días define la cola (usa las flechas del editor)."
 
-msgid "Exercício"
-msgstr "Ejercicio"
-
 msgid "Escolher…"
 msgstr "Elegir…"
 
@@ -259,6 +259,12 @@ msgstr "Notas personales / ajustes de la máquina"
 msgid "Ex.: banco no furo 3"
 msgstr "Ej.: banco en el agujero 3"
 
+msgid "Ilustração"
+msgstr "Ilustración"
+
+msgid "Link de vídeo demonstrativo (opcional)"
+msgstr "Enlace de vídeo demostrativo (opcional)"
+
 msgid "ALTERNATIVAS CADASTRADAS"
 msgstr "ALTERNATIVAS GUARDADAS"
 
@@ -309,6 +315,39 @@ msgstr "Volver al original"
 
 msgid "Substituir"
 msgstr "Sustituir"
+
+msgid "Personalizado"
+msgstr "Personalizado"
+
+msgid "Arquivado"
+msgstr "Archivado"
+
+msgid "Editar"
+msgstr "Editar"
+
+msgid "VÍDEO DEMONSTRATIVO"
+msgstr "VÍDEO DEMOSTRATIVO"
+
+msgid "Abre o link que você cadastrou no aplicativo ou navegador do aparelho. Requer internet; o EMPETO não baixa vídeos."
+msgstr "Abre el enlace que guardaste en una app o navegador del dispositivo. Requiere internet; EMPETO no descarga vídeos."
+
+msgid "Assistir vídeo"
+msgstr "Ver vídeo"
+
+msgid "TÉCNICA DE EXECUÇÃO"
+msgstr "TÉCNICA DE EJECUCIÓN"
+
+msgid "OBSERVAÇÕES PESSOAIS"
+msgstr "NOTAS PERSONALES"
+
+msgid "SEU HISTÓRICO"
+msgstr "TU HISTORIAL"
+
+msgid "ALTERNATIVAS"
+msgstr "ALTERNATIVAS"
+
+msgid "Sugestões organizacionais, sem garantia de equivalência biomecânica."
+msgstr "Sugerencias organizativas, sin garantía de equivalencia biomecánica."
 
 msgid "vazio"
 msgstr "vacío"
@@ -1093,12 +1132,6 @@ msgstr ", personalizado"
 msgid ", arquivado"
 msgstr ", archivado"
 
-msgid "Personalizado"
-msgstr "Personalizado"
-
-msgid "Arquivado"
-msgstr "Archivado"
-
 msgid "Carregar mais"
 msgstr "Cargar más"
 
@@ -1360,8 +1393,23 @@ msgstr "Añadida por ti"
 msgid "Alternativa cadastrada (vale nos dois sentidos)."
 msgstr "Alternativa guardada (vale en ambos sentidos)."
 
+msgid "Última vez em {}: {} série(s), carga máxima {}, melhor série com {} reps. {} sessão(ões) no total."
+msgstr "Última vez el {}: {} serie(s), carga máxima {}, mejor serie con {} reps. {} sesión(es) en total."
+
+msgid "Você ainda não registrou este exercício em uma sessão concluída."
+msgstr "Aún no registraste este ejercicio en una sesión completada."
+
+msgid "Melhores marcas — carga: {} · repetições: {} · 1RM estimada: {}"
+msgstr "Mejores marcas — carga: {} · repeticiones: {} · 1RM estimada: {}"
+
+msgid "Nenhum aplicativo disponível para abrir o vídeo. Verifique o link."
+msgstr "No hay ninguna app disponible para abrir el vídeo. Revisa el enlace."
+
 msgid "Novo exercício"
 msgstr "Nuevo ejercicio"
+
+msgid "Automática"
+msgstr "Automática"
 
 msgid "Exercício salvo."
 msgstr "Ejercicio guardado."
@@ -1903,6 +1951,12 @@ msgstr "¿Quitar este ejercicio de la rutina? El historial no se ve afectado."
 msgid "Atalhos padrão restaurados."
 msgstr "Accesos predeterminados restaurados."
 
+msgid "Automática (pelo padrão de movimento)"
+msgstr "Automática (según el patrón de movimiento)"
+
+msgid "Desenhos próprios do EMPETO, disponíveis sem internet."
+msgstr "Dibujos propios de EMPETO, disponibles sin internet."
+
 msgid "Reativar exercício"
 msgstr "Reactivar ejercicio"
 
@@ -2205,6 +2259,90 @@ msgstr "Sáb"
 
 msgid "Dom"
 msgstr "Dom"
+
+msgid "Link de vídeo inválido."
+msgstr "Enlace de vídeo no válido."
+
+msgid "Use um link que comece com https://"
+msgstr "Usa un enlace que empiece por https://"
+
+msgid "Supino"
+msgstr "Press de banca"
+
+msgid "Flexão de braços"
+msgstr "Flexión de brazos"
+
+msgid "Crucifixo"
+msgstr "Aperturas"
+
+msgid "Barra fixa"
+msgstr "Dominadas"
+
+msgid "Puxada"
+msgstr "Jalón"
+
+msgid "Remada"
+msgstr "Remo"
+
+msgid "Desenvolvimento"
+msgstr "Press de hombros"
+
+msgid "Mergulho"
+msgstr "Fondos"
+
+msgid "Elevação lateral"
+msgstr "Elevación lateral"
+
+msgid "Rosca"
+msgstr "Curl"
+
+msgid "Extensão de tríceps"
+msgstr "Extensión de tríceps"
+
+msgid "Agachamento"
+msgstr "Sentadilla"
+
+msgid "Leg press"
+msgstr "Prensa de piernas"
+
+msgid "Cadeira extensora"
+msgstr "Extensión de piernas"
+
+msgid "Afundo"
+msgstr "Zancada"
+
+msgid "Levantamento terra"
+msgstr "Peso muerto"
+
+msgid "Flexora"
+msgstr "Curl femoral"
+
+msgid "Elevação pélvica"
+msgstr "Empuje de cadera"
+
+msgid "Abdução de quadril"
+msgstr "Abducción de cadera"
+
+msgid "Panturrilha"
+msgstr "Elevación de talones"
+
+msgid "Prancha"
+msgstr "Plancha"
+
+msgid "Abdominal"
+msgstr "Abdominal"
+
+msgid "Elevação de pernas"
+msgstr "Elevación de piernas"
+
+msgid "Corrida"
+msgstr "Carrera"
+
+msgid "Bicicleta"
+msgstr "Bicicleta"
+
+msgid "Genérica"
+msgstr "Genérica"
 
 msgid "maior carga"
 msgstr "mayor carga"

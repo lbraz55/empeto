@@ -46,6 +46,9 @@
 | 3.2 (v1.1) Boas-vindas | `ui/screens/onboarding.slint`, `Controller::maybe_onboarding` | `prefs::tests::round_trip` + visual |
 | 4.1 (v1.1) Idiomas pt/en/es | `src/i18n`, `resources/i18n`, `scripts/i18n.py` | `tests/i18n.rs`, `i18n::tests`, CI `i18n.py check` |
 | 4.2 (v1.1) Tamanho da fonte | `Prefs::text_size` (`ui.font_size`), `Theme.k` × `font-scale` | `legacy_large_text_maps_to_grande` |
+| 5.1 (v1.1) Ilustrações | `assets/exercises`, `exercise_media`, `ExerciseArt`, migração 0005 | `exercise_media::tests`, `exercise_media_is_persisted_and_seeded` |
+| 5.2 (v1.1) Vídeos (link externo) | `Exercise::video_url`, `validate_video_url`, `Platform::open_url` | `video_links` + manual |
+| 9.3 (v1.1) Detalhes do exercício | `ui/screens/exercise_detail.slint`, `Controller::refresh_exercise_detail` | visual |
 | 9.4 Widget Android | `application/widget.rs`, `EmpetoWidget.java` | `widget::tests` + manual |
 
 ## Regras de negócio

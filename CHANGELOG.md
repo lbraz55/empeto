@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.0 — 2026-11-20 (schema do banco: 5) — Biblioteca visual (Fase 2 do documento de evolução v1.1)
+- **Ilustrações próprias** dos exercícios (25 desenhos monocromáticos + genérica) em `assets/exercises/`,
+  embutidas no app (funcionam offline) e recoloridas pelo tema claro/escuro. Aparecem na biblioteca, nos
+  detalhes, na sessão e no modo foco. Exercícios da biblioteca inicial já vêm ilustrados; personalizados usam
+  a ilustração escolhida ou uma automática pelo padrão de movimento.
+- **Tela de detalhes do exercício** (tocar no exercício na biblioteca): ilustração, grupo/tipo/equipamento,
+  técnica, observações pessoais, último registro, melhores marcas, alternativas e atalho para a evolução.
+- **Vídeo demonstrativo**: link externo opcional (https) cadastrado pelo usuário, aberto no app/navegador do
+  aparelho. O EMPETO não baixa nem redistribui vídeos e continua sem permissão de internet.
+- Migração 0005 (`exercise.illustration`, `exercise.video_url`); backups antigos continuam restauráveis.
+- Gerador das ilustrações em `scripts/gen_exercise_art.py`.
+
 ## 0.4.0 — 2026-11-20 (schema do banco: 4) — Identidade e experiência inicial (Fase 1 do documento de evolução v1.1)
 - **Idiomas**: português (Brasil), inglês e espanhol, com opção "Seguir o sistema" (Configurações › Interface ›
   Idioma). Catálogo único em `resources/i18n/<idioma>/LC_MESSAGES/workout.po`, usado pela interface Slint (`@tr`)

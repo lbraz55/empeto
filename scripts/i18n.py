@@ -54,6 +54,9 @@ def extract():
         if f.endswith("templates.rs"):
             for m in re.finditer(r'\b(?:name|description):\s*' + STR, text):
                 add(m.group(1))
+        if f.endswith(os.path.join("exercise_media", "mod.rs")):
+            for m in re.finditer(r'\("[a-z-]+",\s*' + STR, text):
+                add(m.group(1))
         if f.endswith("shortcuts.rs"):
             for m in re.finditer(r'\("[a-z_]+",\s*' + STR, text):
                 add(m.group(1))

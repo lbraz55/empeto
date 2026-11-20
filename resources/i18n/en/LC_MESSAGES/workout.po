@@ -34,6 +34,9 @@ msgstr "Focus mode"
 msgid "Buscar"
 msgstr "Search"
 
+msgid "Exercício"
+msgstr "Exercise"
+
 msgid "Sessão realizada"
 msgstr "Completed session"
 
@@ -196,9 +199,6 @@ msgstr "Sunday"
 msgid "Ficha em sequência: a ordem dos dias define a fila (use as setas no editor)."
 msgstr "Sequence plan: the order of the days defines the queue (use the arrows in the editor)."
 
-msgid "Exercício"
-msgstr "Exercise"
-
 msgid "Escolher…"
 msgstr "Choose…"
 
@@ -259,6 +259,12 @@ msgstr "Personal notes / machine settings"
 msgid "Ex.: banco no furo 3"
 msgstr "E.g.: bench on hole 3"
 
+msgid "Ilustração"
+msgstr "Illustration"
+
+msgid "Link de vídeo demonstrativo (opcional)"
+msgstr "Demo video link (optional)"
+
 msgid "ALTERNATIVAS CADASTRADAS"
 msgstr "SAVED ALTERNATIVES"
 
@@ -309,6 +315,39 @@ msgstr "Back to original"
 
 msgid "Substituir"
 msgstr "Replace"
+
+msgid "Personalizado"
+msgstr "Custom"
+
+msgid "Arquivado"
+msgstr "Archived"
+
+msgid "Editar"
+msgstr "Edit"
+
+msgid "VÍDEO DEMONSTRATIVO"
+msgstr "DEMO VIDEO"
+
+msgid "Abre o link que você cadastrou no aplicativo ou navegador do aparelho. Requer internet; o EMPETO não baixa vídeos."
+msgstr "Opens the link you saved in an app or browser on your device. Requires internet; EMPETO does not download videos."
+
+msgid "Assistir vídeo"
+msgstr "Watch video"
+
+msgid "TÉCNICA DE EXECUÇÃO"
+msgstr "TECHNIQUE"
+
+msgid "OBSERVAÇÕES PESSOAIS"
+msgstr "PERSONAL NOTES"
+
+msgid "SEU HISTÓRICO"
+msgstr "YOUR HISTORY"
+
+msgid "ALTERNATIVAS"
+msgstr "ALTERNATIVES"
+
+msgid "Sugestões organizacionais, sem garantia de equivalência biomecânica."
+msgstr "Organizational suggestions, with no guarantee of biomechanical equivalence."
 
 msgid "vazio"
 msgstr "empty"
@@ -1093,12 +1132,6 @@ msgstr ", custom"
 msgid ", arquivado"
 msgstr ", archived"
 
-msgid "Personalizado"
-msgstr "Custom"
-
-msgid "Arquivado"
-msgstr "Archived"
-
 msgid "Carregar mais"
 msgstr "Load more"
 
@@ -1360,8 +1393,23 @@ msgstr "Added by you"
 msgid "Alternativa cadastrada (vale nos dois sentidos)."
 msgstr "Alternative saved (works both ways)."
 
+msgid "Última vez em {}: {} série(s), carga máxima {}, melhor série com {} reps. {} sessão(ões) no total."
+msgstr "Last time on {}: {} set(s), max load {}, best set with {} reps. {} session(s) in total."
+
+msgid "Você ainda não registrou este exercício em uma sessão concluída."
+msgstr "You haven't logged this exercise in a completed session yet."
+
+msgid "Melhores marcas — carga: {} · repetições: {} · 1RM estimada: {}"
+msgstr "Personal bests — load: {} · reps: {} · estimated 1RM: {}"
+
+msgid "Nenhum aplicativo disponível para abrir o vídeo. Verifique o link."
+msgstr "No app available to open the video. Check the link."
+
 msgid "Novo exercício"
 msgstr "New exercise"
+
+msgid "Automática"
+msgstr "Automatic"
 
 msgid "Exercício salvo."
 msgstr "Exercise saved."
@@ -1903,6 +1951,12 @@ msgstr "Remove this exercise from the plan? History is not affected."
 msgid "Atalhos padrão restaurados."
 msgstr "Default shortcuts restored."
 
+msgid "Automática (pelo padrão de movimento)"
+msgstr "Automatic (by movement pattern)"
+
+msgid "Desenhos próprios do EMPETO, disponíveis sem internet."
+msgstr "EMPETO's own drawings, available offline."
+
 msgid "Reativar exercício"
 msgstr "Restore exercise"
 
@@ -2205,6 +2259,90 @@ msgstr "Sat"
 
 msgid "Dom"
 msgstr "Sun"
+
+msgid "Link de vídeo inválido."
+msgstr "Invalid video link."
+
+msgid "Use um link que comece com https://"
+msgstr "Use a link that starts with https://"
+
+msgid "Supino"
+msgstr "Bench press"
+
+msgid "Flexão de braços"
+msgstr "Push-up"
+
+msgid "Crucifixo"
+msgstr "Fly"
+
+msgid "Barra fixa"
+msgstr "Pull-up"
+
+msgid "Puxada"
+msgstr "Pulldown"
+
+msgid "Remada"
+msgstr "Row"
+
+msgid "Desenvolvimento"
+msgstr "Overhead press"
+
+msgid "Mergulho"
+msgstr "Dip"
+
+msgid "Elevação lateral"
+msgstr "Lateral raise"
+
+msgid "Rosca"
+msgstr "Curl"
+
+msgid "Extensão de tríceps"
+msgstr "Triceps extension"
+
+msgid "Agachamento"
+msgstr "Squat"
+
+msgid "Leg press"
+msgstr "Leg press"
+
+msgid "Cadeira extensora"
+msgstr "Leg extension"
+
+msgid "Afundo"
+msgstr "Lunge"
+
+msgid "Levantamento terra"
+msgstr "Deadlift"
+
+msgid "Flexora"
+msgstr "Leg curl"
+
+msgid "Elevação pélvica"
+msgstr "Hip thrust"
+
+msgid "Abdução de quadril"
+msgstr "Hip abduction"
+
+msgid "Panturrilha"
+msgstr "Calf raise"
+
+msgid "Prancha"
+msgstr "Plank"
+
+msgid "Abdominal"
+msgstr "Crunch"
+
+msgid "Elevação de pernas"
+msgstr "Leg raise"
+
+msgid "Corrida"
+msgstr "Running"
+
+msgid "Bicicleta"
+msgstr "Cycling"
+
+msgid "Genérica"
+msgstr "Generic"
 
 msgid "maior carga"
 msgstr "heaviest load"

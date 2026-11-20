@@ -45,6 +45,7 @@ const P_IMPORT: i32 = 21;
 const P_FOCUS: i32 = 16;
 const P_SEARCH: i32 = 17;
 const P_ONBOARDING: i32 = 18;
+const P_EXDETAIL: i32 = 19;
 
 const XLSX_MIMES: &[&str] = &[
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -86,6 +87,7 @@ enum ChoiceCtx {
     ExportKind,
     Template,
     Language,
+    Illustration,
     Shortcut(usize),
 }
 
@@ -143,6 +145,8 @@ pub struct Controller {
     pe: Option<PeCtx>,
     day_ctx: Option<(Option<Id>, u8)>,
     exf_id: Option<Id>,
+    /// Ilustração escolhida no formulário de exercício ('' = automática).
+    exf_illustration: String,
     lib_pick: bool,
     /// Quantos itens da biblioteca mostrar (carregamento incremental).
     lib_limit: usize,
@@ -380,6 +384,7 @@ impl Controller {
             P_HIST => self.refresh_history(),
             P_EDITOR => self.refresh_editor(),
             P_LIBRARY => self.refresh_library(),
+            P_EXDETAIL => self.refresh_exercise_detail(),
             P_SESSION => self.refresh_session(),
             P_TIMER => {
                 self.refresh_timer();
@@ -1093,13 +1098,90 @@ impl Controller {
             self.show_page(prev);
             self.with_bridge(|b| b.set_dialog(ss("plan-ex")));
         } else {
-            self.open_exercise_form(Some(id));
+            self.open_exercise_detail(id);
+        }
+    }
+
+    /// Detalhes do exercício (evolução 5.1): ilustração, técnica, observações, alternativas e histórico.
+    fn open_exercise_detail(&mut self, id: Id) {
+        self.with_bridge(|b| b.set_exd_id(id as i32));
+        if self.page() == P_EXDETAIL {
+            let r = self.refresh_exercise_detail();
+            self.report(r);
+        } else {
+            self.navigate(P_EXDETAIL);
+        }
+    }
+
+    fn refresh_exercise_detail(&mut self) -> AppResult<()> {
+        let id = self.with_bridge(|b| b.get_exd_id()) as Id;
+        let e = self.db.get_exercise(id)?;
+        let unit = self.prefs.unit;
+        let meta = [e.muscle_focus.as_str(), e.exercise_type.as_str(), e.equipment.as_str(), e.movement_pattern.as_str()]
+            .iter()
+            .filter(|s| !s.is_empty())
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(" · ");
+        let key = format!("id:{}", id);
+        let pts = self.db.exercise_evolution(&key, None)?;
+        let last = match pts.last() {
+            Some(p) => trf!(
+                "Última vez em {}: {} série(s), carga máxima {}, melhor série com {} reps. {} sessão(ões) no total.",
+                fmt_date_short(p.started_at),
+                p.sets,
+                format_load_unit(p.max_load_g, unit),
+                p.best_reps,
+                pts.len()
+            ),
+            None => tr("Você ainda não registrou este exercício em uma sessão concluída.").to_string(),
+        };
+        let bests = if pts.is_empty() || !self.prefs.module_records {
+            String::new()
+        } else {
+            let b = self.db.current_bests(&key)?;
+            trf!(
+                "Melhores marcas — carga: {} · repetições: {} · 1RM estimada: {}",
+                format_load_unit(b.load_g, unit),
+                b.reps,
+                format_load_unit(b.e1rm_g, unit)
+            )
+        };
+        let alts: Vec<ExRow> = self.db.list_alternatives(id).unwrap_or_default().iter().map(|(a, r)| ex_row(a, r)).collect();
+        let art = crate::exercise_media::resolve(&e);
+        self.with_bridge(|b| {
+            b.set_exd_name(ss(&e.name));
+            b.set_exd_art(ss(art));
+            b.set_exd_meta(ss(meta));
+            b.set_exd_description(ss(&e.description));
+            b.set_exd_notes(ss(&e.notes));
+            b.set_exd_video(ss(&e.video_url));
+            b.set_exd_favorite(e.favorite);
+            b.set_exd_archived(e.archived);
+            b.set_exd_custom(e.custom);
+            b.set_exd_last(ss(last));
+            b.set_exd_bests(ss(bests));
+            b.set_exd_has_history(!pts.is_empty());
+            b.set_exd_alternatives(model(alts));
+        });
+        Ok(())
+    }
+
+    fn exd_open_video(&mut self) {
+        let id = self.with_bridge(|b| b.get_exd_id()) as Id;
+        let Ok(e) = self.db.get_exercise(id) else { return };
+        if e.video_url.is_empty() {
+            return;
+        }
+        if !self.platform.open_url(&e.video_url) {
+            self.toast(tr("Nenhum aplicativo disponível para abrir o vídeo. Verifique o link."));
         }
     }
 
     fn open_exercise_form(&mut self, id: Option<Id>) {
         let e = id.and_then(|i| self.db.get_exercise(i).ok()).unwrap_or_default();
         self.exf_id = id;
+        self.exf_illustration = e.illustration.clone();
         self.with_bridge(|b| {
             b.set_exf_title(ss(if id.is_some() { tr("Editar exercício") } else { tr("Novo exercício") }));
             b.set_exf_name(ss(&e.name));
@@ -1109,6 +1191,9 @@ impl Controller {
             b.set_exf_pattern(ss(&e.movement_pattern));
             b.set_exf_description(ss(&e.description));
             b.set_exf_notes(ss(&e.notes));
+            b.set_exf_art(ss(if e.illustration.is_empty() { crate::exercise_media::resolve(&e) } else { e.illustration.as_str() }));
+            b.set_exf_art_label(ss(if e.illustration.is_empty() { tr("Automática") } else { crate::exercise_media::label(&e.illustration) }));
+            b.set_exf_video(ss(&e.video_url));
             b.set_exf_favorite(e.favorite);
             b.set_exf_editing(id.is_some());
             b.set_exf_archived(e.archived);
@@ -1139,6 +1224,10 @@ impl Controller {
                     self.lib_item(id);
                 } else {
                     self.toast(tr("Exercício salvo."));
+                    if self.page() == P_EXDETAIL {
+                        let r = self.refresh_exercise_detail();
+                        self.report(r);
+                    }
                 }
             }
             Err(e) => self.toast(e.to_string()),
@@ -1268,6 +1357,7 @@ impl Controller {
                     .and_then(|id| self.db.get_exercise(id).ok())
                     .map(|x| [x.description, x.notes].iter().filter(|t| !t.is_empty()).cloned().collect::<Vec<_>>().join("\n"))
                     .unwrap_or_default()),
+                art: ss(self.session_art(&e)),
                 completed: e.completed,
                 done_sets: done_sets as i32,
                 sets: model(sets),
@@ -1401,6 +1491,14 @@ impl Controller {
         f.exercises.get(i.min(f.exercises.len().saturating_sub(1))).cloned()
     }
 
+    /// Ilustração do exercício realizado (catálogo atual; se ele não existir mais, pelo nome).
+    fn session_art(&self, e: &SessionExercise) -> &'static str {
+        match e.performed_exercise_id.and_then(|id| self.db.get_exercise(id).ok()) {
+            Some(x) => crate::exercise_media::resolve(&x),
+            None => crate::exercise_media::guess("", &e.performed_name),
+        }
+    }
+
     fn first_open_set(e: &SessionExercise) -> usize {
         e.sets.iter().position(|s| s.completed_at.is_none()).unwrap_or(e.sets.len().saturating_sub(1))
     }
@@ -1440,9 +1538,11 @@ impl Controller {
     fn refresh_focus(&mut self) {
         self.focus_fresh = true;
         let Some(e) = self.current_session_exercise() else { return };
+        let art = self.session_art(&e);
         if e.sets.is_empty() {
             self.with_bridge(|b| {
                 b.set_focus_exercise(ss(&e.performed_name));
+            b.set_focus_art(ss(art));
                 b.set_focus_set_label(ss(tr("Sem séries — adicione na tela da sessão")));
             });
             return;
@@ -1479,6 +1579,7 @@ impl Controller {
         let fs = self.focus_set;
         self.with_bridge(|b| {
             b.set_focus_exercise(ss(&e.performed_name));
+            b.set_focus_art(ss(art));
             b.set_focus_meta(ss(meta));
             b.set_focus_set_label(ss(trf!("Série {} de {}", set.set_number, n)));
             b.set_focus_planned(ss(planned));
@@ -2978,6 +3079,28 @@ impl Controller {
                 }
                 self.save_prefs();
             }
+            ChoiceCtx::Illustration => {
+                // 0 = automática; demais = ILLUSTRATIONS[i-1]
+                let (id, label) = if i <= 0 {
+                    (String::new(), tr("Automática"))
+                } else {
+                    let (k, _) = crate::exercise_media::ILLUSTRATIONS[(i as usize - 1).min(crate::exercise_media::ILLUSTRATIONS.len() - 1)];
+                    (k.to_string(), crate::exercise_media::label(k))
+                };
+                let preview = if id.is_empty() {
+                    let name = self.with_bridge(|b| b.get_exf_name().to_string());
+                    let pattern = self.with_bridge(|b| b.get_exf_pattern().to_string());
+                    crate::exercise_media::guess(&pattern, &name).to_string()
+                } else {
+                    id.clone()
+                };
+                self.exf_illustration = id;
+                self.with_bridge(|b| {
+                    b.set_exf_art(ss(preview));
+                    b.set_exf_art_label(ss(label));
+                    b.set_dialog(ss("exercise"));
+                });
+            }
             ChoiceCtx::Language => {
                 self.prefs.language = LANG_CODES.get(i.max(0) as usize).unwrap_or(&"system").to_string();
                 let r = self.prefs.save(&self.db);
@@ -3699,6 +3822,7 @@ fn ex_row(e: &Exercise, note: &str) -> ExRow {
         archived: e.archived,
         favorite: e.favorite,
         custom: e.custom,
+        art: ss(crate::exercise_media::resolve(e)),
     }
 }
 
@@ -3745,6 +3869,7 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         pe: None,
         day_ctx: None,
         exf_id: None,
+        exf_illustration: String::new(),
         lib_pick: false,
         lib_limit: LIB_PAGE,
         alt_for: None,
@@ -4029,6 +4154,34 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
     });
     cb!(b, ctrl, on_lib_item, |c, id: i32| { c.lib_item(id as Id); });
     cb!(b, ctrl, on_lib_new, |c| { c.open_exercise_form(None); });
+    cb!(b, ctrl, on_exf_choose_art, |c| {
+        let mut opts = vec![tr("Automática (pelo padrão de movimento)").to_string()];
+        opts.extend(crate::exercise_media::ILLUSTRATIONS.iter().map(|(_, l)| tr(l).to_string()));
+        let sel = crate::exercise_media::ILLUSTRATIONS
+            .iter()
+            .position(|(k, _)| *k == c.exf_illustration)
+            .map(|i| i as i32 + 1)
+            .unwrap_or(0);
+        c.ask_choice(ChoiceCtx::Illustration, tr("Ilustração"), tr("Desenhos próprios do EMPETO, disponíveis sem internet."), opts, sel);
+    });
+    cb!(b, ctrl, on_exd_edit, |c| {
+        let id = c.with_bridge(|b| b.get_exd_id()) as Id;
+        c.open_exercise_form(Some(id));
+    });
+    cb!(b, ctrl, on_exd_open_video, |c| { c.exd_open_video(); });
+    cb!(b, ctrl, on_exd_evolution, |c| {
+        let id = c.with_bridge(|b| b.get_exd_id());
+        c.evo_key = format!("id:{}", id);
+        c.navigate(P_EVO);
+    });
+    cb!(b, ctrl, on_exd_favorite_toggle, |c| {
+        let id = c.with_bridge(|b| b.get_exd_id()) as Id;
+        let r = c.db.get_exercise(id).and_then(|e| c.db.set_exercise_favorite(id, !e.favorite));
+        c.report(r);
+        let r = c.refresh_exercise_detail();
+        c.report(r);
+    });
+    cb!(b, ctrl, on_exd_open, |c, id: i32| { c.open_exercise_detail(id as Id); });
     cb!(b, ctrl, on_lib_edit, |c, id: i32| { c.open_exercise_form(Some(id as Id)); });
     cb!(b, ctrl, on_lib_archive, |c, _id: i32| {
         if let Some(id) = c.exf_id {
@@ -4055,6 +4208,8 @@ fn register_callbacks(ui: &AppWindow, ctrl: &Rc<RefCell<Controller>>) {
             movement_pattern: p.to_string(),
             description: c.with_bridge(|b| b.get_exf_description().to_string()),
             notes: c.with_bridge(|b| b.get_exf_notes().to_string()),
+            illustration: c.exf_illustration.clone(),
+            video_url: c.with_bridge(|b| b.get_exf_video().to_string()),
         });
     });
 

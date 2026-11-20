@@ -409,6 +409,19 @@ public class MainActivity extends NativeActivity {
         }
     }
 
+    /** Abre um link https informado pelo usuário (vídeo demonstrativo) em outro app. */
+    public boolean openUrl(String url) {
+        try {
+            if (url == null || !url.toLowerCase(java.util.Locale.ROOT).startsWith("https://")) return false;
+            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** Atualiza o widget depois que o app regravou files/widget.txt. */
     public void updateWidget() {
         EmpetoWidget.refreshAll(getApplicationContext());

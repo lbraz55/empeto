@@ -1,3 +1,4 @@
+import { ExerciseArt } from "../components/exercise_art.slint";
 import { Theme, Icons } from "../theme.slint";
 import { Bridge, SetRow, SessionExRow } from "../bridge.slint";
 import { RestTimerIndicator } from "../components/rest_timer_indicator.slint";
@@ -284,7 +285,12 @@ export component LibraryScreen inherits Scroll {
         accessible-label: e.name + (e.favorite ? @tr(", favorito") : "") + (e.custom ? @tr(", personalizado") : "") + (e.archived ? @tr(", arquivado") : "");
         clicked => { Bridge.lib-item(e.id); }
         HorizontalLayout {
-            spacing: 4px;
+            spacing: 10px;
+            ExerciseArt {
+                art: e.art;
+                size: 46px;
+                y: (parent.height - self.height) / 2;
+            }
             VerticalLayout {
                 alignment: center;
                 spacing: 2px;
@@ -506,6 +512,13 @@ export component SessionScreen inherits Rectangle {
                     color: Theme.muted;
                     font-size: Theme.fs-s;
                     horizontal-alignment: center;
+                }
+                HorizontalLayout {
+                    alignment: center;
+                    ExerciseArt {
+                        art: root.cur.art;
+                        size: 72px;
+                    }
                 }
                 Text {
                     text: root.cur.name;

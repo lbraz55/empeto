@@ -22,13 +22,15 @@ fn row_exercise(r: &Row, base: usize) -> rusqlite::Result<Exercise> {
         notes: r.get(base + 8)?,
         favorite: r.get::<_, i64>(base + 9)? != 0,
         custom: r.get::<_, i64>(base + 10)? != 0,
+        illustration: r.get(base + 11)?,
+        video_url: r.get(base + 12)?,
     })
 }
 
 const EX_COLS: &str = "e.id, e.name, e.muscle_focus, e.exercise_type, e.equipment, e.movement_pattern, e.archived, \
-     e.description, e.notes, e.is_favorite, e.is_custom";
+     e.description, e.notes, e.is_favorite, e.is_custom, e.illustration, e.video_url";
 /// Quantidade de colunas de EX_COLS (para ler colunas extras após o exercício).
-const EX_N: usize = 11;
+const EX_N: usize = 13;
 
 fn row_plan(r: &Row) -> rusqlite::Result<Plan> {
     Ok(Plan {
@@ -180,9 +182,9 @@ impl Db {
         let now = now_ms();
         self.conn.execute(
             "INSERT INTO exercise(name, muscle_focus, exercise_type, equipment, movement_pattern, description, notes,
-               is_custom, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8, ?8)",
-            params![v.name, v.muscle_focus, v.exercise_type, v.equipment, v.movement_pattern, v.description, v.notes, now],
+               illustration, video_url, is_custom, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 1, ?10, ?10)",
+            params![v.name, v.muscle_focus, v.exercise_type, v.equipment, v.movement_pattern, v.description, v.notes, v.illustration, v.video_url, now],
         )?;
         Ok(self.conn.last_insert_rowid())
     }
@@ -192,8 +194,8 @@ impl Db {
         let v = input.validated()?;
         let n = self.conn.execute(
             "UPDATE exercise SET name=?2, muscle_focus=?3, exercise_type=?4, equipment=?5, movement_pattern=?6,
-               description=?7, notes=?8, updated_at=?9 WHERE id = ?1",
-            params![id, v.name, v.muscle_focus, v.exercise_type, v.equipment, v.movement_pattern, v.description, v.notes, now_ms()],
+               description=?7, notes=?8, illustration=?9, video_url=?10, updated_at=?11 WHERE id = ?1",
+            params![id, v.name, v.muscle_focus, v.exercise_type, v.equipment, v.movement_pattern, v.description, v.notes, v.illustration, v.video_url, now_ms()],
         )?;
         if n == 0 {
             return Err(AppError::NotFound(tr("Exercício não encontrado.").into()));

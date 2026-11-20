@@ -577,3 +577,33 @@ fn interrupted_session_is_recovered_after_reopen() {
     assert_eq!(db.list_session_summaries(None, None).unwrap().len(), 0);
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// Evolução v1.1, 5.1/5.2: mídia dos exercícios persiste e a biblioteca inicial já vem ilustrada.
+#[test]
+fn exercise_media_is_persisted_and_seeded() {
+    let db = Db::open_in_memory().unwrap();
+    let seed = db.find_exercise_by_name("Supino reto com barra").unwrap().unwrap();
+    assert_eq!(seed.illustration, "bench-press");
+    assert_eq!(workout::exercise_media::resolve(&seed), "bench-press");
+    let id = db
+        .create_exercise(&ExerciseInput {
+            name: "Remada cavalinho".into(),
+            movement_pattern: "Puxar horizontal".into(),
+            video_url: " https://example.com/remada ".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let e = db.get_exercise(id).unwrap();
+    assert_eq!(e.video_url, "https://example.com/remada");
+    assert_eq!(e.illustration, "");
+    assert_eq!(workout::exercise_media::resolve(&e), "row"); // automática pelo padrão
+    let mut input = ExerciseInput { name: e.name.clone(), illustration: "deadlift".into(), ..Default::default() };
+    db.update_exercise(id, &input).unwrap();
+    assert_eq!(db.get_exercise(id).unwrap().illustration, "deadlift");
+    input.video_url = "ftp://x.y".into();
+    assert!(db.update_exercise(id, &input).is_err(), "link inválido é recusado");
+    input.illustration = "nao-existe".into();
+    input.video_url.clear();
+    db.update_exercise(id, &input).unwrap();
+    assert_eq!(db.get_exercise(id).unwrap().illustration, "", "id desconhecido vira automática");
+}

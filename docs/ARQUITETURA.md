@@ -32,6 +32,14 @@
 | `src/application` | Casos de uso transversais: preferências, busca global, desfazer, `GestureEvent`, atalhos da Home, armazenamento e backups locais, resumo do widget |
 | `android/java` | `MainActivity` (NativeActivity + ponte), `LauncherActivity` (diagnóstico de abertura), `TimerAlarmReceiver` e `EmpetoWidget` |
 
+## Mídia dos exercícios (evolução v1.1, 5.1/5.2)
+
+- `src/exercise_media`: lista de ilustrações (ids estáveis), sugestão automática por padrão de movimento,
+  `resolve()` (escolhida → sugerida → genérica) e validação de links de vídeo (somente `https://`).
+- `ui/components/exercise_art.slint`: `@image-url` dos SVGs com `colorize: Theme.text` (segue o tema).
+- Vídeos: `Platform::open_url` → `MainActivity.openUrl` (Intent ACTION_VIEW, sem permissão). Pacotes de
+  mídia baixáveis (alternativa C do documento) entrariam como outra fonte em `exercise_media` sem mudar a UI.
+
 ## Localização (evolução v1.1, 4.1)
 
 - Texto-fonte em português; catálogos `resources/i18n/en|es/LC_MESSAGES/workout.po`.

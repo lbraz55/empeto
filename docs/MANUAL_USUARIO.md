@@ -71,6 +71,13 @@ Sons e alertas · Cronômetro · Treinamento · Calendário · Interface · Dado
 - **Backup** é diferente de planilha: guarda o estado completo para restaurar o app. **Restaurar**
   valida o arquivo antes de substituir os dados atuais.
 
+## Biblioteca visual
+
+- Cada exercício tem uma ilustração. Toque em um exercício na biblioteca para ver os detalhes: técnica,
+  observações, último registro, melhores marcas e alternativas.
+- Em **Editar**, escolha outra ilustração ou deixe "Automática", e cole um link de vídeo (https) se quiser.
+  O vídeo abre no navegador ou app do aparelho e precisa de internet; o resto do app funciona offline.
+
 ## Idioma, texto e boas-vindas
 
 - **Idioma**: Configurações › Interface › Idioma — Português, English, Español ou "Seguir o sistema". Os nomes

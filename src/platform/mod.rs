@@ -97,6 +97,12 @@ pub trait Platform {
     /// Devolve false se não houver app de agenda.
     fn add_calendar_event(&self, title: &str, description: &str, begin_ms: i64, end_ms: i64, all_day: bool) -> bool;
     fn move_to_back(&self);
+    /// Abre um link externo (vídeo) no app/navegador do aparelho (Intent ACTION_VIEW, sem permissão).
+    /// Devolve false se nenhum app puder abrir o link.
+    fn open_url(&self, url: &str) -> bool {
+        log::info!("abrir link: {url}");
+        true
+    }
     /// Pede ao widget da tela inicial para reler o resumo (`application::widget`).
     fn update_widget(&self) {}
 }

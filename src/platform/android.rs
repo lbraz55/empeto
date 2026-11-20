@@ -231,6 +231,14 @@ impl Platform for AndroidPlatform {
         self.with_env(|env, act| env.call_method(act, "fontScale", "()F", &[])?.f()).unwrap_or(1.0)
     }
 
+    fn open_url(&self, url: &str) -> bool {
+        self.with_env(|env, act| {
+            let u = env.new_string(url)?;
+            env.call_method(act, "openUrl", "(Ljava/lang/String;)Z", &[JValue::Object(&u)])?.z()
+        })
+        .unwrap_or(false)
+    }
+
     fn update_widget(&self) {
         self.call_void("updateWidget", "()V", |_| Ok(vec![]));
     }

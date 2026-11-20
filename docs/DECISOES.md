@@ -43,6 +43,10 @@ implementação seguiu exatamente essas recomendações; todas podem ser revista
   há tarefa em segundo plano, que exigiria `RECEIVE_BOOT_COMPLETED`/agendamentos).
 - **Widget** atualiza quando o app atualiza a Home (`updatePeriodMillis=0`): sem serviço em segundo plano.
 - **Gestos** são atalhos: nunca a única forma de fazer algo.
+- **Mídia dos exercícios**: começamos pela recomendação do documento — ilustrações locais e vídeos externos.
+  As ilustrações são desenhos próprios do projeto (mesma licença do código), sem conteúdo de terceiros.
+  Vídeo é só um link que o próprio usuário cadastra; o app não baixa, não armazena e não sugere vídeos de
+  terceiros. Pacotes opcionais de vídeo ficam para depois (exigem controle de download, versão e espaço).
 - **Idioma automático** ("Seguir o sistema"): português para aparelhos em português, espanhol para qualquer
   variante de espanhol e inglês para os demais idiomas. Datas continuam no formato dia/mês/ano em todos os idiomas.
 - **Dados não são traduzidos**: nomes da biblioteca inicial de exercícios, grupos musculares e equipamentos são

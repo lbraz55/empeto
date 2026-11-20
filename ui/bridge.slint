@@ -3,7 +3,7 @@
 export struct PlanRow { id: int, name: string, subtitle: string, active: bool, favorite: bool }
 export struct PlanExRow { id: int, name: string, detail: string, notes: string, suggestion: string, suggestion-detail: string }
 export struct DayRow { id: int, name: string, subtitle: string, exercises: [PlanExRow] }
-export struct ExRow { id: int, name: string, detail: string, note: string, archived: bool, favorite: bool, custom: bool }
+export struct ExRow { id: int, name: string, detail: string, note: string, archived: bool, favorite: bool, custom: bool, art: string }
 export struct SetRow { id: int, number: int, planned: string, load: string, reps: string, done: bool, hint: string }
 export struct SessionExRow {
     id: int,
@@ -17,6 +17,7 @@ export struct SessionExRow {
     rest: int,
     notes: string,
     technique: string,
+    art: string,
     completed: bool,
     done-sets: int,
     sets: [SetRow],
@@ -154,6 +155,11 @@ export global Bridge {
     in-out property <string> exf-pattern;
     in-out property <string> exf-description;
     in-out property <string> exf-notes;
+    // Mídia (evolução 5.1/5.2): ilustração escolhida (id) e link de vídeo opcional.
+    in-out property <string> exf-art;
+    in-out property <string> exf-art-label;
+    in-out property <string> exf-video;
+    callback exf-choose-art();
     in-out property <bool> exf-favorite;
     in-out property <bool> exf-editing;
     in-out property <bool> exf-archived;
@@ -220,6 +226,7 @@ export global Bridge {
 
     // ---------------- Modo foco (3.1) ----------------
     in-out property <string> focus-exercise;
+    in-out property <string> focus-art;
     in-out property <string> focus-meta;
     in-out property <string> focus-set-label;
     in-out property <string> focus-planned;
@@ -394,6 +401,27 @@ export global Bridge {
     callback data-restore();
     callback data-ics();
     callback show-diagnostics();
+
+    // ---------------- Detalhes do exercício (evolução 5.1) ----------------
+    in-out property <int> exd-id;
+    in-out property <string> exd-name;
+    in-out property <string> exd-art;
+    in-out property <string> exd-meta;
+    in-out property <string> exd-description;
+    in-out property <string> exd-notes;
+    in-out property <string> exd-video;
+    in-out property <bool> exd-favorite;
+    in-out property <bool> exd-archived;
+    in-out property <bool> exd-custom;
+    in-out property <string> exd-last;
+    in-out property <string> exd-bests;
+    in-out property <bool> exd-has-history;
+    in-out property <[ExRow]> exd-alternatives;
+    callback exd-edit();
+    callback exd-open-video();
+    callback exd-evolution();
+    callback exd-favorite-toggle();
+    callback exd-open(int);
 
     // ---------------- Boas-vindas (evolução 3.2) ----------------
     in-out property <int> onboarding-step: 0;

@@ -16,6 +16,7 @@ pub mod i18n;
 pub mod application;
 pub mod calendar;
 pub mod domain;
+pub mod exercise_media;
 pub mod history;
 pub mod import_export;
 pub mod persistence;

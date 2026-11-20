@@ -116,6 +116,12 @@ pub struct Exercise {
     pub favorite: bool,
     /// Criado pelo usuário (não faz parte da biblioteca inicial).
     pub custom: bool,
+    /// Id da ilustração própria (`exercise_media::ILLUSTRATIONS`); vazio = automática.
+    #[serde(default)]
+    pub illustration: String,
+    /// Link externo opcional de vídeo demonstrativo (https), informado pelo usuário.
+    #[serde(default)]
+    pub video_url: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -127,6 +133,8 @@ pub struct ExerciseInput {
     pub movement_pattern: String,
     pub description: String,
     pub notes: String,
+    pub illustration: String,
+    pub video_url: String,
 }
 
 impl ExerciseInput {
@@ -143,6 +151,12 @@ impl ExerciseInput {
             movement_pattern: clean_text(&self.movement_pattern, 40),
             description: clean_notes(&self.description),
             notes: clean_notes(&self.notes),
+            illustration: if crate::exercise_media::is_known(self.illustration.trim()) {
+                self.illustration.trim().to_string()
+            } else {
+                String::new()
+            },
+            video_url: crate::exercise_media::validate_video_url(&self.video_url)?,
         })
     }
 }

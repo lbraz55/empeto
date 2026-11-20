@@ -1,0 +1,99 @@
+import { Theme, Icons } from "../theme.slint";
+import { Bridge } from "../bridge.slint";
+import { Btn, Card, Label, Body, Title, SectionTitle, Scroll, Badge, StarBtn } from "../components/widgets.slint";
+import { ExerciseArt } from "../components/exercise_art.slint";
+
+// Detalhes do exercício (documento de evolução v1.1, 5.1/9.3): ilustração, técnica, observações,
+// alternativas, último registro e melhores marcas. O vídeo é um link externo opcional.
+export component ExerciseDetailScreen inherits Scroll {
+    HorizontalLayout {
+        alignment: center;
+        ExerciseArt {
+            art: Bridge.exd-art;
+            size: 148px;
+        }
+    }
+    HorizontalLayout {
+        spacing: 8px;
+        Title {
+            text: Bridge.exd-name;
+            font-size: Theme.fs-xl;
+            horizontal-stretch: 1;
+        }
+        StarBtn {
+            on: Bridge.exd-favorite;
+            name: Bridge.exd-name;
+            clicked => { Bridge.exd-favorite-toggle(); }
+        }
+    }
+    if Bridge.exd-meta != "": Label { text: Bridge.exd-meta; }
+    if Bridge.exd-custom || Bridge.exd-archived: HorizontalLayout {
+        alignment: start;
+        spacing: 6px;
+        if Bridge.exd-custom: Badge { text: @tr("Personalizado"); }
+        if Bridge.exd-archived: Badge { text: @tr("Arquivado"); }
+    }
+    HorizontalLayout {
+        spacing: 8px;
+        Btn {
+            text: @tr("Editar");
+            icon: Icons.edit;
+            clicked => { Bridge.exd-edit(); }
+        }
+        if Bridge.exd-has-history: Btn {
+            text: @tr("Evolução");
+            icon: Icons.chart;
+            clicked => { Bridge.exd-evolution(); }
+        }
+    }
+    if Bridge.exd-video != "": Card {
+        SectionTitle { text: @tr("VÍDEO DEMONSTRATIVO"); }
+        Label { text: @tr("Abre o link que você cadastrou no aplicativo ou navegador do aparelho. Requer internet; o EMPETO não baixa vídeos."); }
+        Btn {
+            text: @tr("Assistir vídeo");
+            icon: Icons.play;
+            kind: "primary";
+            clicked => { Bridge.exd-open-video(); }
+        }
+    }
+    if Bridge.exd-description != "": Card {
+        SectionTitle { text: @tr("TÉCNICA DE EXECUÇÃO"); }
+        Body { text: Bridge.exd-description; }
+    }
+    if Bridge.exd-notes != "": Card {
+        SectionTitle { text: @tr("OBSERVAÇÕES PESSOAIS"); }
+        Body { text: Bridge.exd-notes; }
+    }
+    Card {
+        SectionTitle { text: @tr("SEU HISTÓRICO"); }
+        Body { text: Bridge.exd-last; }
+        if Bridge.exd-bests != "": Label { text: Bridge.exd-bests; }
+    }
+    if Bridge.exd-alternatives.length > 0: VerticalLayout {
+        spacing: 6px;
+        SectionTitle { text: @tr("ALTERNATIVAS"); }
+        Label { text: @tr("Sugestões organizacionais, sem garantia de equivalência biomecânica."); }
+        for a in Bridge.exd-alternatives: Card {
+            clickable: true;
+            accessible-role: button;
+            accessible-label: a.name;
+            clicked => { Bridge.exd-open(a.id); }
+            HorizontalLayout {
+                spacing: 10px;
+                ExerciseArt {
+                    art: a.art;
+                    size: 36px;
+                    y: (parent.height - self.height) / 2;
+                }
+                VerticalLayout {
+                    alignment: center;
+                    Body {
+                        text: a.name;
+                        font-weight: 600;
+                    }
+                    if a.note != "": Label { text: a.note; }
+                }
+            }
+        }
+    }
+}

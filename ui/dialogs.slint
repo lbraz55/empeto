@@ -1,3 +1,4 @@
+import { ExerciseArt } from "components/exercise_art.slint";
 import { Theme, Icons } from "theme.slint";
 import { Bridge } from "bridge.slint";
 import { Btn, IconBtn, Label, Body, Field, DialogFrame, Chip, ValueRow, Segmented, Icon, SectionTitle, Divider } from "components/widgets.slint";
@@ -243,6 +244,44 @@ export component ExerciseDialog inherits DialogFrame {
                 placeholder: @tr("Ex.: banco no furo 3");
                 multiline: true;
                 text <=> Bridge.exf-notes;
+            }
+            // Mídia (evolução 5.1/5.2)
+            Rectangle {
+                height: 56px;
+                border-radius: 12px;
+                background: art-ta.pressed ? Theme.pressed : Theme.surface2;
+                accessible-role: button;
+                accessible-label: @tr("Ilustração") + ": " + Bridge.exf-art-label;
+                accessible-action-default => { Bridge.exf-choose-art(); }
+                art-ta := TouchArea { clicked => { Bridge.exf-choose-art(); } }
+                HorizontalLayout {
+                    padding-left: 8px;
+                    padding-right: 12px;
+                    spacing: 10px;
+                    ExerciseArt {
+                        art: Bridge.exf-art;
+                        size: 40px;
+                        y: (parent.height - self.height) / 2;
+                    }
+                    Text {
+                        text: @tr("Ilustração");
+                        color: Theme.text;
+                        font-size: Theme.fs-m;
+                        vertical-alignment: center;
+                        horizontal-stretch: 1;
+                    }
+                    Text {
+                        text: Bridge.exf-art-label + "  ›";
+                        color: Theme.muted;
+                        font-size: Theme.fs-s;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+            Field {
+                label: @tr("Link de vídeo demonstrativo (opcional)");
+                placeholder: "https://…";
+                text <=> Bridge.exf-video;
             }
             if Bridge.exf-editing: SectionTitle { text: @tr("ALTERNATIVAS CADASTRADAS"); }
             if Bridge.exf-editing: Text {
