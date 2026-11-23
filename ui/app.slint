@@ -322,25 +322,39 @@ export component AppWindow inherits Window {
             }
         }
 
-        // Abertura (evolução 3.1): logo centralizado que esmaece logo após o primeiro quadro.
-        // Não intercepta toques e não espera nada: respeita a desativação/redução de animações.
+        // Tela de carregamento: o logo aparece suavemente, fica um instante e a tela esmaece revelando o app.
+        // Com animações desligadas, o logo aparece sem efeitos e some logo em seguida.
         if !Bridge.splash-done: splash := Rectangle {
-            property <float> t: 1;
+            // 0 = início, 1 = logo visível, 2 = saindo
+            property <int> phase: 0;
             background: Theme.bg;
-            opacity: self.t;
-            animate t { duration: Theme.anim-enabled ? 380ms : 0ms; easing: ease-in; }
-            BrandLogoVertical {
-                x: (parent.width - self.preferred-width) / 2;
-                y: (parent.height - self.preferred-height) / 2;
+            opacity: self.phase == 2 ? 0 : 1;
+            animate opacity { duration: Theme.anim-enabled ? 650ms : 0ms; easing: ease-in-out; }
+            // Bloqueia toques enquanto a abertura está na tela.
+            TouchArea { }
+            logo-box := Rectangle {
+                width: logo.preferred-width;
+                height: logo.preferred-height;
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2 + (splash.phase == 0 && Theme.anim-enabled ? 14px : 0px);
+                opacity: splash.phase == 0 && Theme.anim-enabled ? 0 : 1;
+                animate opacity { duration: Theme.anim-enabled ? 550ms : 0ms; easing: ease-out; }
+                animate y { duration: Theme.anim-enabled ? 700ms : 0ms; easing: ease-out; }
+                logo := BrandLogoVertical { }
             }
             Timer {
-                interval: 120ms;
-                running: splash.t > 0;
-                triggered => { splash.t = 0; }
+                interval: 30ms;
+                running: splash.phase == 0;
+                triggered => { splash.phase = 1; }
             }
             Timer {
-                interval: 600ms;
-                running: true;
+                interval: Theme.anim-enabled ? 1500ms : 700ms;
+                running: splash.phase == 1;
+                triggered => { splash.phase = 2; }
+            }
+            Timer {
+                interval: Theme.anim-enabled ? 700ms : 10ms;
+                running: splash.phase == 2;
                 triggered => { Bridge.splash-done = true; }
             }
         }

@@ -1798,6 +1798,9 @@ msgstr "yes"
 msgid "não"
 msgstr "no"
 
+msgid "Último erro registrado:"
+msgstr "Last recorded error:"
+
 msgid "Diagnóstico"
 msgstr "Diagnostics"
 

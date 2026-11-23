@@ -40,7 +40,7 @@
 | Problema | O que fazer |
 |---|---|
 | "App não instalado" / conflito de pacote | Assinatura diferente da versão instalada: backup em arquivo → desinstalar → instalar → restaurar. |
-| O app fecha ao abrir | Abra de novo: aparece um relatório de diagnóstico. Envie-o por e-mail (Configurações › Ajuda e suporte). |
+| O app fecha ao abrir | Abra de novo. Se continuar, veja Configurações › Sobre › Diagnóstico técnico e envie o texto por e-mail (Configurações › Ajuda e suporte). |
 | Alerta do descanso não toca com a tela bloqueada | Permita notificações (Configurações › Sons e alertas) e desative a otimização de bateria para o EMPETO, se o seu Android for agressivo. |
 | "Permitir desta fonte" não aparece | Configurações do Android › Apps › Acesso especial › Instalar apps desconhecidos. |
 | Atualização recusada por assinatura | A versão nova foi assinada com outra chave; instale manualmente (passos acima). |

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.1 — 2026-11-23 (schema do banco: 7)
+- **Removida a tela "O EMPETO não abriu corretamente da última vez"**: ela aparecia por engano em aberturas
+  normais (o tratador de falhas nativas criava um `crash.txt` vazio a cada abertura e a tela tratava a simples
+  existência do arquivo como falha). Agora o app sempre abre direto; erros registrados, se houver, ficam em
+  Configurações › Sobre › Diagnóstico técnico.
+- **Nova tela de carregamento**: o logo EMPETO aparece suavemente, fica um instante na tela e depois a tela
+  esmaece revelando o app (com animações desligadas, o logo aparece sem efeitos e some logo em seguida).
+
 ## 0.9.0 — 2026-11-20 (schema do banco: 7) — Organização e publicação (Fase 6 do documento de evolução v1.1)
 - **Ajuda e suporte** no app (Configurações): 10 perguntas frequentes e botão "Fale conosco por e-mail"
   (iempetofaq@gmail.com, assunto "Suporte EMPETO"), que só abre o app de e-mail — nada é enviado sozinho.

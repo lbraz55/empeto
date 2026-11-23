@@ -62,7 +62,7 @@ flowchart TB
 | `src/persistence` | Conexão, PRAGMAs, migrações versionadas e transacionais, preferências |
 | `src/platform` | `AndroidAdapter`: notificações, vibração, alarmes, seletor de arquivos, ciclo de vida |
 | `src/application` | Casos de uso transversais: preferências, busca global, desfazer, `GestureEvent`, atalhos da Home, armazenamento e backups locais, resumo do widget |
-| `android/java` | `MainActivity` (NativeActivity + ponte), `LauncherActivity` (diagnóstico de abertura), `TimerAlarmReceiver` e `EmpetoWidget` |
+| `android/java` | `MainActivity` (NativeActivity + ponte), `LauncherActivity` (entrada do app; sempre abre a interface), `TimerAlarmReceiver` e `EmpetoWidget` |
 
 ## Atualizações (evolução v1.1, 7) — `src/updater`
 

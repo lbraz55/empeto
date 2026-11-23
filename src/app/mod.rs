@@ -2393,6 +2393,13 @@ impl Controller {
             format!("{:?}", self.timer.status),
             trace.lines().rev().take(25).collect::<Vec<_>>().into_iter().rev().collect::<Vec<_>>().join("\n")
         );
+        // Erro registrado (pânico ou sinal nativo), se houver — não há mais tela de falha na abertura.
+        let crash = std::fs::read_to_string(dir.join("crash.txt")).unwrap_or_default();
+        let text = if crash.trim().is_empty() {
+            text
+        } else {
+            format!("{text}\n\n{}\n{}", tr("Último erro registrado:"), crash.chars().take(3000).collect::<String>())
+        };
         self.show_info(InfoCtx::Plain, tr("Diagnóstico"), &text, tr("OK"), "");
     }
 
@@ -4752,10 +4759,7 @@ pub fn run(platform: Box<dyn Platform>) -> Result<(), slint::PlatformError> {
         }
     });
 
-    // A interface abriu: remove o marcador de inicialização usado pela tela de diagnóstico.
-    let marker = data_dir.join("startup.marker");
     slint::Timer::single_shot(std::time::Duration::from_millis(1500), move || {
-        let _ = std::fs::remove_file(&marker);
         crate::platform::crumbs::crumb("interface pronta (laço de eventos rodando)");
     });
 
